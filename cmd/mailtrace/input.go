@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/emersion/go-mbox"
 	"io"
+	"log"
 	"mime"
 	"mime/multipart"
 	"net/mail"
@@ -63,7 +64,11 @@ func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("Error closing file: %s: %s", fName, err)
+		}
+	}()
 	return ReadMBoxStream(f, fType, fName)
 }
 
@@ -91,7 +96,11 @@ func ReadMailFile(fType, fName string) ([]*MailWithSource, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
 	}
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("Error closing file: %s: %s", fName, err)
+		}
+	}()
 	return ReadMailStream(f, fType, fName)
 }
 
