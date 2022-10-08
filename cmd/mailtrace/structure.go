@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/mail"
 	"net/textproto"
+	"time"
 )
 
 type MailBody interface {
@@ -16,12 +17,8 @@ type MailBody interface {
 }
 
 type MailBodyFromPart struct {
-	Body *bytes.Buffer
+	MailBodyGeneral
 	Part *multipart.Part
-}
-
-func (m *MailBodyFromPart) Read(p []byte) (n int, err error) {
-	return m.Body.Read(p)
 }
 
 func (m *MailBodyFromPart) Header() textproto.MIMEHeader {
@@ -65,4 +62,21 @@ type MailWithSource struct {
 	MailBodies []MailBody
 	SourceType string
 	SourceFile string
+}
+
+func (s *MailWithSource) From() string {
+	if f := s.MailHeader.Get("From"); f != "" {
+		a, err := mail.ParseAddress(f)
+		if err == nil && a != nil {
+			return a.Name
+		}
+	}
+	return "nobody"
+}
+
+func (s *MailWithSource) Time() time.Time {
+	d := s.MailHeader.Get("Date")
+	// TODO better date detection
+	t, _ := mail.ParseDate(d)
+	return t
 }
