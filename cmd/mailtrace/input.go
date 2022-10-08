@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/emersion/go-mbox"
+	"github.com/emersion/go-message"
+	"github.com/emersion/go-message/mail"
 	"io"
 	"log"
 	"mime"
 	"mime/multipart"
-	"net/mail"
 	"os"
 )
 
@@ -107,7 +108,7 @@ func ReadMailFile(fType, fName string) ([]*MailWithSource, error) {
 func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource, error) {
 	ms := []*MailWithSource{}
 	for {
-		msg, err := mail.ReadMessage(f)
+		msg, err := message.Read(f)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("reading message %d from mail file %s: %w", len(ms)+1, fName, err)
 		}
@@ -133,7 +134,9 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 					return nil, fmt.Errorf("reading body of message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
 				}
 				mb = append(mb, &MailBodyFromPart{
-					Body: b,
+					MailBodyGeneral: &MailBodyGeneral{
+						Body: b,
+					},
 					Part: p,
 				})
 			}
@@ -149,7 +152,7 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 		ms = append(ms, &MailWithSource{
 			SourceFile: fName,
 			SourceType: fType,
-			MailHeader: msg.Header,
+			MailHeader: mail.HeaderFromMap(msg.Header.Map()),
 			MailBodies: mb,
 		})
 	}

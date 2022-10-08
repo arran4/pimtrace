@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
+	"github.com/emersion/go-message/mail"
 	"io"
 	"mime/multipart"
-	"net/mail"
 	"net/textproto"
 	"time"
 )
@@ -17,7 +17,7 @@ type MailBody interface {
 }
 
 type MailBodyFromPart struct {
-	MailBodyGeneral
+	*MailBodyGeneral
 	Part *multipart.Part
 }
 
@@ -75,8 +75,6 @@ func (s *MailWithSource) From() string {
 }
 
 func (s *MailWithSource) Time() time.Time {
-	d := s.MailHeader.Get("Date")
-	// TODO better date detection
-	t, _ := mail.ParseDate(d)
-	return t
+	d, _ := s.MailHeader.Date()
+	return d
 }
