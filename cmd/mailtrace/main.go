@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/emersion/go-mbox"
 	"io"
 	"log"
 	"mime"
@@ -14,9 +15,9 @@ import (
 )
 
 var (
-	inputType = flag.String("input-type", "mailfile", "The input type")
+	inputType = flag.String("input-type", "list", "The input type")
 	inputFile = flag.String("input", "-", "Input file or - for stdin")
-	//outputType = flag.String("output-type", "mbox", "The input type")
+	//outputType = flag.String("output-type", "list", "The input type")
 	outputFile = flag.String("output", "-", "Output file or - for stdin")
 )
 
@@ -98,6 +99,55 @@ func main() {
 			}
 			mails = append(mails, nm...)
 		}
+	case "mbox":
+		switch *inputFile {
+		case "-":
+			nm, err := ReadMBoxStream(os.Stdin, *inputType, *inputFile)
+			if err != nil {
+				log.Panicln(err)
+			}
+			mails = append(mails, nm...)
+		default:
+			nm, err := ReadMBoxFile(*inputType, *inputFile)
+			if err != nil {
+				log.Panicln(err)
+			}
+			mails = append(mails, nm...)
+		}
+	case "list":
+		fmt.Println("`--input-type`s: ")
+		fmt.Printf(" - `%-20s` %s", "mailfile", "A single mail file")
+		fmt.Printf(" - `%-20s` %s", "list", "This help text")
+	default:
+		fmt.Println("Please specify a -input-type")
+	}
+}
+
+func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
+	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
+	}
+	defer f.Close()
+	return ReadMBoxStream(f, fType, fName)
+}
+
+func ReadMBoxStream(f io.Reader, fType string, fName string) ([]*MailWithSource, error) {
+	mbr := mbox.NewReader(f)
+	ms := []*MailWithSource{}
+	for {
+		mr, err := mbr.NextMessage()
+		if err != nil {
+			return nil, fmt.Errorf("reading message %d from Mbox %s: %w", len(ms)+1, fName, err)
+		}
+		if mr == nil {
+			return ms, nil
+		}
+		mrms, err := ReadMailStream(mr, fType, fName)
+		if err != nil {
+			return nil, fmt.Errorf("parsing message %d from Mbox %s: %w", len(ms)+1, fName, err)
+		}
+		ms = append(ms, mrms...)
 	}
 }
 
@@ -115,7 +165,7 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 	for {
 		msg, err := mail.ReadMessage(f)
 		if err != nil {
-			return nil, fmt.Errorf("reading message %d from Mbox %s: %w", len(ms)+1, fName, err)
+			return nil, fmt.Errorf("reading message %d from mail file %s: %w", len(ms)+1, fName, err)
 		}
 		if msg == nil {
 			return ms, nil
