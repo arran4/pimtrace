@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/emersion/go-mbox"
+	"github.com/emersion/go-message/textproto"
 	"io"
 	"log"
 	"os"
@@ -94,7 +95,10 @@ func WriteMailFile(ms []*MailWithSource, fType, fName string) error {
 }
 
 func WriteMailStream(ms []*MailWithSource, f io.Writer, fType string, fName string) error {
-	for mi, m := range ms {
+	for _, m := range ms {
+		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
+			return
+		}
 
 	}
 }
