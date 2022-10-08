@@ -1,7 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"github.com/emersion/go-mbox"
+	"io"
+	"log"
 	"os"
 )
 
@@ -10,42 +14,87 @@ func OutputHandler(mails []*MailWithSource) error {
 	case "mailfile":
 		switch *inputFile {
 		case "-":
-			nm, err := WriteMailStream(os.Stdin, *inputType, *inputFile)
+			err := WriteMailStream(mails, os.Stdin, *inputType, *inputFile)
 			if err != nil {
 				return err
 			}
-			mails = append(mails, nm...)
 		default:
-			nm, err := WriteMailFile(*inputType, *inputFile)
+			err := WriteMailFile(mails, *inputType, *inputFile)
 			if err != nil {
 				return err
 			}
-			mails = append(mails, nm...)
 		}
 	case "mbox":
 		switch *inputFile {
 		case "-":
-			nm, err := WriteMBoxStream(os.Stdin, *inputType, *inputFile)
+			err := WriteMBoxStream(mails, os.Stdin, *inputType, *inputFile)
 			if err != nil {
 				return err
 			}
-			mails = append(mails, nm...)
 		default:
-			nm, err := WriteMBoxFile(*inputType, *inputFile)
+			err := WriteMBoxFile(mails, *inputType, *inputFile)
 			if err != nil {
 				return err
 			}
-			mails = append(mails, nm...)
 		}
+	case "count":
+		fmt.Println(len(mails))
 	case "list":
-		fmt.Println("`--input-type`s: ")
+		fmt.Println("`--output-type`s: ")
 		fmt.Printf(" =%-20s - %s\n", "mailfile", "A single mail file")
 		fmt.Printf(" =%-20s - %s\n", "mbox", "Mbox file")
 		fmt.Printf(" =%-20s - %s\n", "list", "This help text")
+		fmt.Printf(" =%-20s - %s\n", "count", "Just a count")
 		fmt.Println()
 	default:
 		fmt.Println("Please specify a -input-type")
 		fmt.Println()
 	}
 	return nil
+}
+
+func WriteMBoxFile(ms []*MailWithSource, fType, fName string) error {
+	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("creating Mbox %s: %w", fName, err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("Error closing file: %s: %s", fName, err)
+		}
+	}()
+	return WriteMBoxStream(ms, f, fType, fName)
+}
+
+func WriteMBoxStream(ms []*MailWithSource, f io.Writer, fType string, fName string) error {
+	mbw := mbox.NewWriter(f)
+	for mi, m := range ms {
+		mw, err := mbw.CreateMessage(m.From(), m.Time())
+		if err != nil && !errors.Is(err, io.EOF) {
+			return fmt.Errorf("creating message %d to Mbox %s: %w", mi+1, fName, err)
+		}
+		if err := WriteMailStream(ms[mi:mi+1], mw, fType, fName); err != nil {
+			return fmt.Errorf("writing message %d to Mbox %s: %w", mi+1, fName, err)
+		}
+	}
+	return nil
+}
+
+func WriteMailFile(ms []*MailWithSource, fType, fName string) error {
+	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("reading Mbox %s: %w", fName, err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Printf("Error closing file: %s: %s", fName, err)
+		}
+	}()
+	return WriteMailStream(ms, f, fType, fName)
+}
+
+func WriteMailStream(ms []*MailWithSource, f io.Writer, fType string, fName string) error {
+	for mi, m := range ms {
+
+	}
 }
