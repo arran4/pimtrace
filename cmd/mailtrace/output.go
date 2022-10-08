@@ -99,6 +99,9 @@ func WriteMailStream(ms []*MailWithSource, f io.Writer, fType string, fName stri
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
 			return
 		}
-
+		if err := m.WriteBody(f); err != nil {
+			return
+		}
 	}
+	return nil
 }
