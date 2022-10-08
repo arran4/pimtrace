@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/emersion/go-mbox"
@@ -116,10 +117,13 @@ func main() {
 		}
 	case "list":
 		fmt.Println("`--input-type`s: ")
-		fmt.Printf(" - `%-20s` %s", "mailfile", "A single mail file")
-		fmt.Printf(" - `%-20s` %s", "list", "This help text")
+		fmt.Printf(" =%-20s - %s\n", "mailfile", "A single mail file")
+		fmt.Printf(" =%-20s - %s\n", "mbox", "Mbox file")
+		fmt.Printf(" =%-20s - %s\n", "list", "This help text")
+		fmt.Println()
 	default:
 		fmt.Println("Please specify a -input-type")
+		fmt.Println()
 	}
 }
 
@@ -137,7 +141,7 @@ func ReadMBoxStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 	ms := []*MailWithSource{}
 	for {
 		mr, err := mbr.NextMessage()
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("reading message %d from Mbox %s: %w", len(ms)+1, fName, err)
 		}
 		if mr == nil {
@@ -164,7 +168,7 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 	ms := []*MailWithSource{}
 	for {
 		msg, err := mail.ReadMessage(f)
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("reading message %d from mail file %s: %w", len(ms)+1, fName, err)
 		}
 		if msg == nil {
@@ -176,18 +180,23 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 		switch mt {
 		case "multipart/alternative":
 			br := multipart.NewReader(msg.Body, mtp["boundary"])
-			p, err := br.NextPart()
-			if err != nil {
-				return nil, fmt.Errorf("reading message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
+			for {
+				p, err := br.NextPart()
+				if err != nil && !errors.Is(err, io.EOF) {
+					return nil, fmt.Errorf("reading message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
+				}
+				if p == nil {
+					break
+				}
+				b := bytes.NewBuffer(nil)
+				if _, err := io.Copy(b, p); err != nil {
+					return nil, fmt.Errorf("reading body of message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
+				}
+				mb = append(mb, &MailBodyFromPart{
+					Body: b,
+					Part: p,
+				})
 			}
-			b := bytes.NewBuffer(nil)
-			if _, err := io.Copy(b, p); err != nil {
-				return nil, fmt.Errorf("reading body of message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
-			}
-			mb = append(mb, &MailBodyFromPart{
-				Body: b,
-				Part: p,
-			})
 		default:
 			b := bytes.NewBuffer(nil)
 			if _, err := io.Copy(b, msg.Body); err != nil {
