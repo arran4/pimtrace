@@ -14,34 +14,34 @@ import (
 	"os"
 )
 
-func InputHandler() ([]*MailWithSource, error) {
+func InputHandler(inputType string, inputFile string) ([]*MailWithSource, error) {
 	mails := []*MailWithSource{}
-	switch *inputType {
+	switch inputType {
 	case "mailfile":
-		switch *inputFile {
+		switch inputFile {
 		case "-":
-			nm, err := ReadMailStream(os.Stdin, *inputType, *inputFile)
+			nm, err := ReadMailStream(os.Stdin, inputType, inputFile)
 			if err != nil {
 				return nil, err
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := ReadMailFile(*inputType, *inputFile)
+			nm, err := ReadMailFile(inputType, inputFile)
 			if err != nil {
 				return nil, err
 			}
 			mails = append(mails, nm...)
 		}
 	case "mbox":
-		switch *inputFile {
+		switch inputFile {
 		case "-":
-			nm, err := ReadMBoxStream(os.Stdin, *inputType, *inputFile)
+			nm, err := ReadMBoxStream(os.Stdin, inputType, inputFile)
 			if err != nil {
 				return nil, err
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := ReadMBoxFile(*inputType, *inputFile)
+			nm, err := ReadMBoxFile(inputType, inputFile)
 			if err != nil {
 				return nil, err
 			}

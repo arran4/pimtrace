@@ -10,17 +10,17 @@ import (
 	"os"
 )
 
-func OutputHandler(mails []*MailWithSource) error {
+func OutputHandler(mails []*MailWithSource, outputType *string, outputFile *string) error {
 	switch *outputType {
 	case "mailfile":
 		switch *outputFile {
 		case "-":
-			err := WriteMailStream(mails, os.Stdin, *outputType, *outputFile)
+			err := WriteMailStream(mails, os.Stdin, *outputFile)
 			if err != nil {
 				return err
 			}
 		default:
-			err := WriteMailFile(mails, *outputType, *outputFile)
+			err := WriteMailFile(mails, *outputFile)
 			if err != nil {
 				return err
 			}
@@ -28,12 +28,12 @@ func OutputHandler(mails []*MailWithSource) error {
 	case "mbox":
 		switch *outputFile {
 		case "-":
-			err := WriteMBoxStream(mails, os.Stdin, *outputType, *outputFile)
+			err := WriteMBoxStream(mails, os.Stdin, *outputFile)
 			if err != nil {
 				return err
 			}
 		default:
-			err := WriteMBoxFile(mails, *outputType, *outputFile)
+			err := WriteMBoxFile(mails, *outputFile)
 			if err != nil {
 				return err
 			}
@@ -54,7 +54,7 @@ func OutputHandler(mails []*MailWithSource) error {
 	return nil
 }
 
-func WriteMBoxFile(ms []*MailWithSource, fType, fName string) error {
+func WriteMBoxFile(ms []*MailWithSource, fName string) error {
 	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("creating Mbox %s: %w", fName, err)
@@ -64,24 +64,24 @@ func WriteMBoxFile(ms []*MailWithSource, fType, fName string) error {
 			log.Printf("Error closing file: %s: %s", fName, err)
 		}
 	}()
-	return WriteMBoxStream(ms, f, fType, fName)
+	return WriteMBoxStream(ms, f, fName)
 }
 
-func WriteMBoxStream(ms []*MailWithSource, f io.Writer, fType string, fName string) error {
+func WriteMBoxStream(ms []*MailWithSource, f io.Writer, fName string) error {
 	mbw := mbox.NewWriter(f)
 	for mi, m := range ms {
 		mw, err := mbw.CreateMessage(m.From(), m.Time())
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("creating message %d to Mbox %s: %w", mi+1, fName, err)
 		}
-		if err := WriteMailStream(ms[mi:mi+1], mw, fType, fName); err != nil {
+		if err := WriteMailStream(ms[mi:mi+1], mw, fName); err != nil {
 			return fmt.Errorf("writing message %d to Mbox %s: %w", mi+1, fName, err)
 		}
 	}
 	return nil
 }
 
-func WriteMailFile(ms []*MailWithSource, fType, fName string) error {
+func WriteMailFile(ms []*MailWithSource, fName string) error {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("reading Mbox %s: %w", fName, err)
@@ -91,13 +91,13 @@ func WriteMailFile(ms []*MailWithSource, fType, fName string) error {
 			log.Printf("Error closing file: %s: %s", fName, err)
 		}
 	}()
-	return WriteMailStream(ms, f, fType, fName)
+	return WriteMailStream(ms, f, fName)
 }
 
-func WriteMailStream(ms []*MailWithSource, f io.Writer, fType string, fName string) error {
+func WriteMailStream(ms []*MailWithSource, f io.Writer, fName string) error {
 	for _, m := range ms {
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
-			return
+			return fmt.Errorf("writing message %d header from Mbox %s: %w", len(ms)+1, fName, err)
 		}
 		if err := m.WriteBody(f); err != nil {
 			return
