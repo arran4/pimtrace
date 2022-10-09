@@ -15,7 +15,7 @@ import (
 	"os"
 )
 
-func InputHandler(inputType string, inputFile string) ([]*MailWithSource, error) {
+func InputHandler(inputType string, inputFile string) (Data, error) {
 	mails := []*MailWithSource{}
 	switch inputType {
 	case "mailfile":
@@ -58,7 +58,7 @@ func InputHandler(inputType string, inputFile string) ([]*MailWithSource, error)
 		fmt.Println("Please specify a -input-type")
 		fmt.Println()
 	}
-	return mails, nil
+	return PlainOldMailData(mails), nil
 }
 
 func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
