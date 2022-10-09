@@ -115,7 +115,12 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 		if msg == nil {
 			return ms, nil
 		}
-		mb := []MailBody{}
+		mws := &MailWithSource{
+			SourceFile: fName,
+			SourceType: fType,
+			MailHeader: mail.HeaderFromMap(msg.Header.Map()),
+			MailBodies: []MailBody{},
+		}
 		ct := msg.Header.Get("Content-Type")
 		mt, mtp, err := mime.ParseMediaType(ct)
 		switch mt {
@@ -124,18 +129,19 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 			for {
 				p, err := br.NextPart()
 				if err != nil && !errors.Is(err, io.EOF) {
-					return nil, fmt.Errorf("reading message %d part %d %s: %w", len(ms)+1, len(mb)+1, fName, err)
+					return nil, fmt.Errorf("reading message %d part %d %s: %w", len(ms)+1, len(mws.MailBodies)+1, fName, err)
 				}
 				if p == nil {
 					break
 				}
 				b := bytes.NewBuffer(nil)
 				if _, err := io.Copy(b, p); err != nil {
-					return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mb)+1, fName, err)
+					return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mws.MailBodies)+1, fName, err)
 				}
-				mb = append(mb, &MailBodyFromPart{
+				mws.MailBodies = append(mws.MailBodies, &MailBodyFromPart{
 					MailBodyGeneral: &MailBodyGeneral{
-						Body: b,
+						Body:    b,
+						Message: mws,
 					},
 					Part: p,
 				})
@@ -143,17 +149,13 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 		default:
 			b := bytes.NewBuffer(nil)
 			if _, err := io.Copy(b, msg.Body); err != nil {
-				return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mb)+1, fName, err)
+				return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mws.MailBodies)+1, fName, err)
 			}
-			mb = append(mb, &MailBodyGeneral{
-				Body: b,
+			mws.MailBodies = append(mws.MailBodies, &MailBodyGeneral{
+				Body:    b,
+				Message: mws,
 			})
 		}
-		ms = append(ms, &MailWithSource{
-			SourceFile: fName,
-			SourceType: fType,
-			MailHeader: mail.HeaderFromMap(msg.Header.Map()),
-			MailBodies: mb,
-		})
+		ms = append(ms, mws)
 	}
 }

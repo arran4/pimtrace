@@ -10,7 +10,7 @@ import (
 )
 
 type MailBody interface {
-	io.Reader
+	Reader() io.Reader
 	Header() textproto.MIMEHeader
 	FileName() string
 	FormName() string
@@ -36,11 +36,12 @@ func (m *MailBodyFromPart) FormName() string {
 var _ MailBody = (*MailBodyFromPart)(nil)
 
 type MailBodyGeneral struct {
-	Body *bytes.Buffer
+	Body    *bytes.Buffer
+	Message *MailWithSource
 }
 
-func (m *MailBodyGeneral) Read(p []byte) (n int, err error) {
-	return m.Body.Read(p)
+func (m *MailBodyGeneral) Reader() io.Reader {
+	return bytes.NewReader(m.Body.Bytes())
 }
 
 func (m *MailBodyGeneral) Header() textproto.MIMEHeader {

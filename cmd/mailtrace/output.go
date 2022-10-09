@@ -7,6 +7,8 @@ import (
 	"github.com/emersion/go-message/textproto"
 	"io"
 	"log"
+	"mime"
+	"mime/multipart"
 	"os"
 )
 
@@ -97,11 +99,36 @@ func WriteMailFile(ms []*MailWithSource, fName string) error {
 func WriteMailStream(ms []*MailWithSource, f io.Writer, fName string) error {
 	for _, m := range ms {
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
-			return fmt.Errorf("writing message %d header from Mbox %s: %w", len(ms)+1, fName, err)
+			return fmt.Errorf("writing message %d header %s: %w", len(ms)+1, fName, err)
 		}
-		if err := m.WriteBody(f); err != nil {
-			return
+		ct := m.MailHeader.Get("Content-Type")
+		mt, mtp, err := mime.ParseMediaType(ct)
+		if err != nil {
+			return fmt.Errorf("reading message %d header %s content type : %w", len(ms)+1, fName, err)
 		}
+		switch mt {
+		case "multipart/alternative":
+			mpw := multipart.NewWriter(f)
+			if err := mpw.SetBoundary(mtp["Boundary"]); err != nil {
+				return fmt.Errorf("multipart boundary error message %d header %s content type: %w", len(ms)+1, fName, err)
+			}
+			for _, mb := range m.MailBodies {
+				mpwf, err := mpw.CreatePart(mb.Header())
+				if err != nil {
+					return fmt.Errorf("creating part for multipart message %d body %s: %w", len(ms)+1, fName, err)
+				}
+				if _, err := io.Copy(mpwf, mb.Reader()); err != nil && !errors.Is(err, io.EOF) {
+					return fmt.Errorf("writing message %d body %s: %w", len(ms)+1, fName, err)
+				}
+			}
+		default:
+			for _, mb := range m.MailBodies {
+				if _, err := io.Copy(f, mb.Reader()); err != nil && !errors.Is(err, io.EOF) {
+					return fmt.Errorf("writing message %d body %s: %w", len(ms)+1, fName, err)
+				}
+			}
+		}
+
 	}
 	return nil
 }
