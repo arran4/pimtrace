@@ -18,21 +18,25 @@ func main() {
 
 	data, err := InputHandler(*inputType, *inputFile)
 	if err != nil {
-		log.Printf("Error: %s", err)
+		log.Printf("Read Error: %s", err)
 		os.Exit(-1)
 	}
 
-	ops := ParseOperations(flag.Args())
+	ops, err := ParseOperations(flag.Args())
+	if err != nil {
+		log.Printf("Parse Error: %s", err)
+		os.Exit(-1)
+	}
 	if ops != nil {
 		data, err = ops.Execute(data)
 		if err != nil {
-			log.Printf("Error: %s", err)
+			log.Printf("Execute Error: %s", err)
 			os.Exit(-1)
 		}
 	}
 
 	if err := OutputHandler(data, outputType, outputFile); err != nil {
-		log.Printf("Error: %s", err)
+		log.Printf("Write Error: %s", err)
 		os.Exit(-1)
 	}
 }

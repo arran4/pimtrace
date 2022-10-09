@@ -8,6 +8,7 @@ import (
 	mail2 "net/mail"
 	"net/textproto"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -68,8 +69,18 @@ type MailWithSource struct {
 }
 
 func (s *MailWithSource) Get(key string) Value {
-	// TODO to figure out a good prefix for non-header queries
-	return SimpleStringValue(s.MailHeader.Get(key))
+	ks := strings.SplitN(key, ".", 2)
+	switch ks[0] {
+	//case "sz", "sized": TODO
+	//	return SimpleNumberValue(s.
+	case "h", "header":
+		fallthrough
+	default:
+		if len(ks) > 1 {
+			return SimpleStringValue(s.MailHeader.Get(ks[1]))
+		}
+		return nil
+	}
 }
 
 func (s *MailWithSource) Mail() *MailWithSource {
@@ -146,10 +157,44 @@ type Entry interface {
 type Data interface {
 	Len() int
 	Entry(n int) Entry
+	Truncate(n int) Data
+	SetEntry(n int, entry Entry)
 	Mail() []*MailWithSource
 }
 
 type MailDataType []*MailWithSource
+
+func (p MailDataType) Truncate(n int) Data {
+	p = (([]*MailWithSource)(p))[:n]
+	return p
+}
+
+func (p MailDataType) SetEntry(n int, entry Entry) {
+	(([]*MailWithSource)(p))[n] = entry.Mail()
+}
+
+func Filter(d Data, expression BooleanExpression) (Data, error) {
+	i, o := 0, 0
+	for i+o < d.Len() {
+		e := d.Entry(i + o)
+		keep, err := expression.Execute(e)
+		if err != nil {
+			return nil, err
+		}
+		if o > 0 {
+			d.SetEntry(i, e)
+		}
+		if !keep {
+			o++
+		} else {
+			i++
+		}
+	}
+	if o > 0 {
+		d = d.Truncate(i)
+	}
+	return d, nil
+}
 
 func (p MailDataType) Len() int {
 	return len([]*MailWithSource(p))
