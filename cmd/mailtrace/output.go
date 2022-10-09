@@ -86,7 +86,7 @@ func WriteMBoxStream(ms []*MailWithSource, f io.Writer, fName string) error {
 func WriteMailFile(ms []*MailWithSource, fName string) error {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("reading Mbox %s: %w", fName, err)
+		return fmt.Errorf("writing mail file %s: %w", fName, err)
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
@@ -103,8 +103,8 @@ func WriteMailStream(ms []*MailWithSource, f io.Writer, fName string) error {
 		}
 		ct := m.MailHeader.Get("Content-Type")
 		mt, mtp, err := mime.ParseMediaType(ct)
-		if err != nil {
-			return fmt.Errorf("reading message %d header %s content type : %w", len(ms)+1, fName, err)
+		if err != nil && ct != "" {
+			return fmt.Errorf("writing message %d header %s content type : %w", len(ms)+1, fName, err)
 		}
 		switch mt {
 		case "multipart/alternative":
