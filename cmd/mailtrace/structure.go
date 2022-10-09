@@ -149,21 +149,21 @@ type Data interface {
 	Mail() []*MailWithSource
 }
 
-type PlainOldMailData []*MailWithSource
+type MailDataType []*MailWithSource
 
-func (p PlainOldMailData) Len() int {
+func (p MailDataType) Len() int {
 	return len([]*MailWithSource(p))
 }
 
-func (p PlainOldMailData) Entry(n int) Entry {
+func (p MailDataType) Entry(n int) Entry {
 	if n >= len([]*MailWithSource(p)) || n < 0 {
 		return nil
 	}
 	return ([]*MailWithSource(p))[n]
 }
 
-func (p PlainOldMailData) Mail() []*MailWithSource {
+func (p MailDataType) Mail() []*MailWithSource {
 	return []*MailWithSource(p)
 }
 
-var _ Data = PlainOldMailData(nil)
+var _ Data = MailDataType(nil)

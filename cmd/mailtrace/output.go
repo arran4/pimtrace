@@ -77,7 +77,7 @@ func WriteMBoxStream(d Data, f io.Writer, fName string) error {
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("creating message %d to Mbox %s: %w", mi+1, fName, err)
 		}
-		if err := WriteMailStream(PlainOldMailData(ms[mi:mi+1]), mw, fName); err != nil {
+		if err := WriteMailStream(MailDataType(ms[mi:mi+1]), mw, fName); err != nil {
 			return fmt.Errorf("writing message %d to Mbox %s: %w", mi+1, fName, err)
 		}
 	}

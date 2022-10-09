@@ -16,13 +16,18 @@ func main() {
 
 	flag.Parse()
 
-	mails, err := InputHandler(*inputType, *inputFile)
+	data, err := InputHandler(*inputType, *inputFile)
 	if err != nil {
 		log.Printf("Error: %s", err)
 		os.Exit(-1)
 	}
 
-	if err := OutputHandler(mails, outputType, outputFile); err != nil {
+	ops := ParseOperations(flag.Args())
+	if ops != nil {
+		data = ops.Execute(data)
+	}
+
+	if err := OutputHandler(data, outputType, outputFile); err != nil {
 		log.Printf("Error: %s", err)
 		os.Exit(-1)
 	}

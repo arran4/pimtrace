@@ -58,7 +58,7 @@ func InputHandler(inputType string, inputFile string) (Data, error) {
 		fmt.Println("Please specify a -input-type")
 		fmt.Println()
 	}
-	return PlainOldMailData(mails), nil
+	return MailDataType(mails), nil
 }
 
 func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
