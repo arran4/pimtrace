@@ -11,29 +11,29 @@ import (
 )
 
 func OutputHandler(mails []*MailWithSource) error {
-	switch *inputType {
+	switch *outputType {
 	case "mailfile":
-		switch *inputFile {
+		switch *outputFile {
 		case "-":
-			err := WriteMailStream(mails, os.Stdin, *inputType, *inputFile)
+			err := WriteMailStream(mails, os.Stdin, *outputType, *outputFile)
 			if err != nil {
 				return err
 			}
 		default:
-			err := WriteMailFile(mails, *inputType, *inputFile)
+			err := WriteMailFile(mails, *outputType, *outputFile)
 			if err != nil {
 				return err
 			}
 		}
 	case "mbox":
-		switch *inputFile {
+		switch *outputFile {
 		case "-":
-			err := WriteMBoxStream(mails, os.Stdin, *inputType, *inputFile)
+			err := WriteMBoxStream(mails, os.Stdin, *outputType, *outputFile)
 			if err != nil {
 				return err
 			}
 		default:
-			err := WriteMBoxFile(mails, *inputType, *inputFile)
+			err := WriteMBoxFile(mails, *outputType, *outputFile)
 			if err != nil {
 				return err
 			}
