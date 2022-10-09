@@ -24,7 +24,11 @@ func main() {
 
 	ops := ParseOperations(flag.Args())
 	if ops != nil {
-		data = ops.Execute(data)
+		data, err = ops.Execute(data)
+		if err != nil {
+			log.Printf("Error: %s", err)
+			os.Exit(-1)
+		}
 	}
 
 	if err := OutputHandler(data, outputType, outputFile); err != nil {
