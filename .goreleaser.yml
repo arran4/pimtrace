@@ -1,0 +1,40 @@
+project_name: golang-wordwrap
+builds:
+  -
+    id: "mailtrace"
+    binary: "mailtrace"
+    dir: cmd/mailtrace
+  -
+    id: "caltrace"
+    binary: "caltrace"
+    dir: cmd/caltrace
+    skip: true # TODO
+archives:
+  -
+    format_overrides:
+      - goos: windows
+        format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+nfpms:
+  -
+    vendor: Ubels Software Development
+    homepage: https://github.com/arran4/
+    maintainer: Arran Ubels <arran@ubels.com.au>
+    description: NA
+    license: Private
+    formats:
+      - apk
+      - deb
+      - rpm
+    release: 1
+    section: default
+    priority: extra
