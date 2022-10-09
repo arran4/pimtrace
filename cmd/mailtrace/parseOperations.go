@@ -104,8 +104,21 @@ type EqualOp struct {
 }
 
 func (e *EqualOp) Execute(d Entry) (bool, error) {
-	//TODO implement me
-	panic("implement me")
+	if e.LHS == nil {
+		return false, fmt.Errorf("LHS invalid issue with equals")
+	}
+	if e.RHS == nil {
+		return false, fmt.Errorf("RHS invalid with equals")
+	}
+	lhsv, err := e.LHS.Execute(d)
+	if err != nil {
+		return false, fmt.Errorf("LHS error: %w", err)
+	}
+	rhsv, err := e.RHS.Execute(d)
+	if err != nil {
+		return false, fmt.Errorf("RHS error: %w", err)
+	}
+	return rhsv.String() == lhsv.String(), nil
 }
 
 func ParseFilter(args []string, statements []Operation) (BooleanExpression, []string, error) {
