@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/emersion/go-mbox"
 	"github.com/emersion/go-message"
+	_ "github.com/emersion/go-message/charset"
 	"github.com/emersion/go-message/mail"
 	"io"
 	"log"
