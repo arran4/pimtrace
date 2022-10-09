@@ -5,7 +5,9 @@ import (
 	"github.com/emersion/go-message/mail"
 	"io"
 	"mime/multipart"
+	mail2 "net/mail"
 	"net/textproto"
+	"strconv"
 	"time"
 )
 
@@ -65,6 +67,19 @@ type MailWithSource struct {
 	SourceFile string
 }
 
+func (s *MailWithSource) Get(key string) Value {
+	// TODO to figure out a good prefix for non-header queries
+	return SimpleStringValue(s.MailHeader.Get(key))
+}
+
+func (s *MailWithSource) Mail() *MailWithSource {
+	return s
+}
+
+func (s *MailWithSource) Header() mail.Header {
+	return s.MailHeader
+}
+
 func (s *MailWithSource) From() string {
 	if f := s.MailHeader.Get("From"); f != "" {
 		a, err := mail.ParseAddress(f)
@@ -79,3 +94,76 @@ func (s *MailWithSource) Time() time.Time {
 	d, _ := s.MailHeader.Date()
 	return d
 }
+
+type SimpleStringValue string
+
+func (s SimpleStringValue) Time() *time.Time {
+	t, err := mail2.ParseDate(string(s))
+	if err != nil || t.UnixNano() == 0 {
+		return nil
+	}
+	return &t
+}
+
+func (s SimpleStringValue) Integer() *int {
+	i, err := strconv.ParseInt(string(s), 10, 64)
+	if err != nil {
+		return nil
+	}
+	ii := int(i)
+	return &ii
+}
+
+func (s SimpleStringValue) Type() Type {
+	return String
+}
+
+func (s SimpleStringValue) String() string {
+	return string(s)
+}
+
+var _ Value = SimpleStringValue("")
+
+type Type int
+
+const (
+	String Type = iota
+)
+
+type Value interface {
+	Type() Type
+	String() string
+	Time() *time.Time
+	Integer() *int
+}
+
+type Entry interface {
+	Get(string) Value
+	Mail() *MailWithSource
+	Header() mail.Header
+}
+
+type Data interface {
+	Len() int
+	Entry(n int) Entry
+	Mail() []*MailWithSource
+}
+
+type PlainOldMailData []*MailWithSource
+
+func (p PlainOldMailData) Len() int {
+	return len([]*MailWithSource(p))
+}
+
+func (p PlainOldMailData) Entry(n int) Entry {
+	if n >= len([]*MailWithSource(p)) || n < 0 {
+		return nil
+	}
+	return ([]*MailWithSource(p))[n]
+}
+
+func (p PlainOldMailData) Mail() []*MailWithSource {
+	return []*MailWithSource(p)
+}
+
+var _ Data = PlainOldMailData(nil)
