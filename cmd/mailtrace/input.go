@@ -124,14 +124,14 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 			for {
 				p, err := br.NextPart()
 				if err != nil && !errors.Is(err, io.EOF) {
-					return nil, fmt.Errorf("reading message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
+					return nil, fmt.Errorf("reading message %d part %d %s: %w", len(ms)+1, len(mb)+1, fName, err)
 				}
 				if p == nil {
 					break
 				}
 				b := bytes.NewBuffer(nil)
 				if _, err := io.Copy(b, p); err != nil {
-					return nil, fmt.Errorf("reading body of message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
+					return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mb)+1, fName, err)
 				}
 				mb = append(mb, &MailBodyFromPart{
 					MailBodyGeneral: &MailBodyGeneral{
@@ -143,7 +143,7 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 		default:
 			b := bytes.NewBuffer(nil)
 			if _, err := io.Copy(b, msg.Body); err != nil {
-				return nil, fmt.Errorf("reading body of message %d part %d from Mbox %s: %w", len(ms)+1, len(mb)+1, fName, err)
+				return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mb)+1, fName, err)
 			}
 			mb = append(mb, &MailBodyGeneral{
 				Body: b,
