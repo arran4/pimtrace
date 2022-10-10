@@ -29,6 +29,9 @@ func (o *CompoundStatement) Execute(d Data) (Data, error) {
 }
 
 func (o *CompoundStatement) Simplify() Operation {
+	if len(o.Statements) == 0 {
+		return nil
+	}
 	if len(o.Statements) == 1 {
 		return o.Statements[0]
 	}
@@ -45,6 +48,11 @@ type NotOp struct {
 	Not BooleanExpression
 }
 
+func (n *NotOp) Execute(d Entry) (bool, error) {
+	v, err := n.Not.Execute(d)
+	return !v, err
+}
+
 var _ BooleanExpression = (*NotOp)(nil)
 
 type ValueExpression interface {
@@ -57,15 +65,18 @@ func (ve ConstantExpression) Execute(d Entry) (Value, error) {
 	return SimpleStringValue(ve), nil
 }
 
-func (n *NotOp) Execute(d Entry) (bool, error) {
-	v, err := n.Not.Execute(d)
-	return !v, err
+type EntryExpression string
+
+func (ve EntryExpression) Execute(d Entry) (Value, error) {
+	return d.Get(string(ve)), nil
 }
 
 type FilterEquals string
-type EntryExpression string
 type FilterNot string
 type FilterTerminator string
+
+var _ ValueExpression = ConstantExpression("")
+var _ ValueExpression = EntryExpression("")
 
 func FilterIdentify(s string) (any, error) {
 	ss := strings.SplitN(s, ".", 2)
@@ -147,7 +158,7 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 		}, p, nil
 	}
 
-	return nil, nil, fmt.Errorf("at %s: %w", p[0], ErrParserNothingFound)
+	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
 }
 
 func FilterTokenMatcher(tks []any, tokenTypes ...any) bool {
@@ -222,7 +233,9 @@ func ParseOperations(args []string) (Operation, error) {
 				return nil, err
 			}
 			p = remain
-			result.Statements = append(result.Statements, op)
+			if op != nil {
+				result.Statements = append(result.Statements, op)
+			}
 		}
 	}
 	return result.Simplify(), nil
