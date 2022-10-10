@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 )
@@ -156,10 +157,16 @@ func FilterTokenMatcher(tks []any, tokenTypes ...any) bool {
 		}
 		switch reflect.TypeOf(tokenTypes[i]).Kind() {
 		case reflect.Slice:
+			m := false
 			for _, stt := range (tokenTypes[i]).([]any) {
-				if reflect.TypeOf(tks[i]) != reflect.TypeOf(stt) {
-					return false
+				log.Printf("%s %s", reflect.TypeOf(tks[i]), reflect.TypeOf(stt))
+				if reflect.TypeOf(tks[i]) == reflect.TypeOf(stt) {
+					m = true
+					break
 				}
+			}
+			if !m {
+				return m
 			}
 		case reflect.String:
 			if reflect.TypeOf(tks[i]) != reflect.TypeOf(tokenTypes[i]) {
