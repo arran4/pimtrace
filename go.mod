@@ -9,6 +9,7 @@ require (
 
 require (
 	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
 
