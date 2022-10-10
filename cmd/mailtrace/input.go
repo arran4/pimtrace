@@ -123,7 +123,7 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 			MailBodies: []MailBody{},
 		}
 		ct := msg.Header.Get("Content-Type")
-		mt, mtp, err := mime.ParseMediaType(ct)
+		mt, mtp, _ := mime.ParseMediaType(ct)
 		switch mt {
 		case "multipart/alternative":
 			br := multipart.NewReader(msg.Body, mtp["boundary"])
