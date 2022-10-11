@@ -134,7 +134,6 @@ func (e *EqualOp) Execute(d Entry) (bool, error) {
 }
 
 func ParseFilter(args []string, statements []Operation) (BooleanExpression, []string, error) {
-	p := args
 	tks, remain, err := FilterTokenizerScanN(args, 3)
 	if err != nil {
 		return nil, nil, err
@@ -145,17 +144,15 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 		if err != nil {
 			return nil, nil, err
 		}
-		p = remain
 		return &NotOp{
 			Not: op,
-		}, p, nil
+		}, remain, nil
 	}
 	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterEquals(""), []any{EntryExpression(""), ConstantExpression("")}) {
-		p = remain
 		return &EqualOp{
 			LHS: tks[0].(ValueExpression),
 			RHS: tks[2].(ValueExpression),
-		}, p, nil
+		}, remain, nil
 	}
 
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
