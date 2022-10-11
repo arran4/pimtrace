@@ -215,15 +215,17 @@ func TestParseFilter(t *testing.T) {
 			statements:         []Operation{},
 			expectedExpression: nil,
 			remaining:          []string{},
-			wantErr:            true,
+			wantErr:            false,
 		},
 		{
-			name:               "Basic neg expression",
-			args:               []string{"not", "h.user-agent", "eq", ".Kmail"},
-			statements:         []Operation{},
-			expectedExpression: nil,
-			remaining:          []string{},
-			wantErr:            true,
+			name: "Basic neg expression",
+			args: []string{"not", "h.user-agent", "eq", ".Kmail"},
+			expectedExpression: &NotOp{
+				Not: &EqualOp{LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			},
+			statements: []Operation{},
+			remaining:  []string{},
+			wantErr:    true,
 		},
 	}
 	for _, tt := range tests {
@@ -233,11 +235,11 @@ func TestParseFilter(t *testing.T) {
 				t.Errorf("ParseFilter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.expectedExpression) {
-				t.Errorf("ParseFilter() got = %v, want %v", got, tt.expectedExpression)
+			if diff := cmp.Diff(got, tt.expectedExpression); diff != "" {
+				t.Errorf("ParseFilter() expectedExpression %s", diff)
 			}
-			if !reflect.DeepEqual(got1, tt.remaining) {
-				t.Errorf("ParseFilter() got1 = %v, want %v", got1, tt.remaining)
+			if diff := cmp.Diff(got1, tt.remaining); diff != "" {
+				t.Errorf("ParseFilter() remaining %s", diff)
 			}
 		})
 	}
