@@ -214,7 +214,7 @@ func TestParseFilter(t *testing.T) {
 			args:               []string{},
 			statements:         []Operation{},
 			expectedExpression: nil,
-			remaining:          []string{},
+			remaining:          nil,
 			wantErr:            true,
 		},
 		{
