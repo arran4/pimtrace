@@ -215,7 +215,7 @@ func TestParseFilter(t *testing.T) {
 			statements:         []Operation{},
 			expectedExpression: nil,
 			remaining:          []string{},
-			wantErr:            false,
+			wantErr:            true,
 		},
 		{
 			name: "Basic neg expression",
@@ -225,7 +225,7 @@ func TestParseFilter(t *testing.T) {
 			},
 			statements: []Operation{},
 			remaining:  []string{},
-			wantErr:    true,
+			wantErr:    false,
 		},
 	}
 	for _, tt := range tests {
