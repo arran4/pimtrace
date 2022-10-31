@@ -5,11 +5,11 @@ go 1.18
 require (
 	github.com/emersion/go-mbox v1.0.3
 	github.com/emersion/go-message v0.16.0
+	github.com/google/go-cmp v0.5.9
 )
 
 require (
 	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
 
