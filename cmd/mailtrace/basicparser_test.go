@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/google/go-cmp/cmp"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -233,15 +234,6 @@ func TestParseFilter(t *testing.T) {
 			remaining:  []string{},
 			wantErr:    false,
 		},
-		{
-			args: "not h.user-argent icontains .kmail into maildir",
-		},
-		{
-			args: "not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]",
-		},
-		{
-			args: "not h.user-argent icontains .kmail into summary count with h.user-agent group by year[h.date] month[h.date] calculate sum[h.size]",
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -259,6 +251,62 @@ func TestParseFilter(t *testing.T) {
 			}
 			if diff := cmp.Diff(got1, tt.remaining); diff != "" {
 				t.Errorf("ParseFilter() remaining %s", diff)
+			}
+		})
+	}
+}
+func TestParseOperations(t *testing.T) {
+	tests := []struct {
+		name              string
+		args              []string
+		expectedOperation Operation
+		remaining         []string
+		wantErr           bool
+	}{
+		{
+			name:              "Empty args go no where - since filter is already provided it's safe to die here",
+			args:              []string{},
+			expectedOperation: nil,
+			remaining:         nil,
+			wantErr:           false,
+		},
+		{
+			name: "Basic neg expression",
+			args: []string{"filter", "not", "h.user-agent", "eq", ".Kmail"},
+			expectedOperation: &FilterStatement{
+				Expression: &NotOp{
+					Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+				},
+			},
+			remaining: []string{},
+			wantErr:   false,
+		},
+		{
+			name: "filter out into a maildir",
+			args: strings.Split("not h.user-argent icontains .kmail into maildir", " "),
+		},
+		{
+			name: "filter into a table",
+			args: strings.Split("not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]", " "),
+		},
+		{
+			name: "Filter into summary with count and a calculated sum",
+			args: strings.Split("not h.user-argent icontains .kmail into summary count h.user-agent year[h.date] month[h.date] calculate sum[h.size]", " "),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseOperations(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseFilter() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(got, tt.expectedOperation, cmp.Comparer(func(o1 OpFunc, o2 OpFunc) bool {
+				sf1 := reflect.ValueOf(o1)
+				sf2 := reflect.ValueOf(o2)
+				return sf1.Pointer() == sf2.Pointer()
+			})); diff != "" {
+				t.Errorf("ParseFilter() expectedExpression %s", diff)
 			}
 		})
 	}

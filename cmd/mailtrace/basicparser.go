@@ -7,6 +7,7 @@ import (
 )
 
 var ErrParserNothingFound = fmt.Errorf("no token found")
+var ErrUnknownExpression = fmt.Errorf("unknown expression")
 
 type FilterEquals string
 type FilterContains string
@@ -135,7 +136,7 @@ func ParseFilters(args []string) (Operation, []string, error) {
 		case "filter", "where":
 			fallthrough
 		default:
-			boolExp, remain, err := ParseFilter(p[1:], result.Statements)
+			boolExp, remain, err := ParseFilter(p[:], result.Statements)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -163,6 +164,8 @@ func ParseOperations(args []string) (Operation, error) {
 			if op != nil {
 				result.Statements = append(result.Statements, op)
 			}
+		default:
+			return nil, fmt.Errorf("%w: %s", ErrUnknownExpression, p[0])
 		}
 	}
 	return result.Simplify(), nil
