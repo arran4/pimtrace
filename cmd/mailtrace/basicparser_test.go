@@ -37,7 +37,7 @@ func TestFilterTokenizerScanN(t *testing.T) {
 			args: []string{"where"},
 			n:    1,
 			tokens: []any{
-				FilterTerminator("where"),
+				Terminator("where"),
 			},
 			remainer: []string{},
 			wantErr:  false,
@@ -47,7 +47,7 @@ func TestFilterTokenizerScanN(t *testing.T) {
 			args: []string{"where"},
 			n:    10,
 			tokens: []any{
-				FilterTerminator("where"),
+				Terminator("where"),
 			},
 			remainer: []string{},
 			wantErr:  false,
@@ -57,7 +57,7 @@ func TestFilterTokenizerScanN(t *testing.T) {
 			args: []string{"where", "where", "where", "where", "where", "where", "where", "where"},
 			n:    1,
 			tokens: []any{
-				FilterTerminator("where"),
+				Terminator("where"),
 			},
 			remainer: []string{"where", "where", "where", "where", "where", "where", "where"},
 			wantErr:  false,
@@ -96,27 +96,27 @@ func TestFilterTokenMatcher(t *testing.T) {
 		{
 			name: "Terminator where match",
 			inputTokens: []any{
-				FilterTerminator("where"),
+				Terminator("where"),
 			},
 			matchTokens: []any{
-				FilterTerminator("where"),
+				Terminator("where"),
 			},
-			want: []any{FilterTerminator("where")},
+			want: []any{Terminator("where")},
 		},
 		{
 			name: "Terminator where and map match",
 			inputTokens: []any{
-				FilterTerminator("where"),
+				Terminator("where"),
 			},
 			matchTokens: []any{
-				FilterTerminator("map"),
+				Terminator("map"),
 			},
-			want: []any{FilterTerminator("map")},
+			want: []any{Terminator("map")},
 		},
 		{
 			name: "Terminator where and not don't match",
 			inputTokens: []any{
-				FilterTerminator("where"),
+				Terminator("where"),
 			},
 			matchTokens: []any{
 				FilterNot("not"),
@@ -127,14 +127,14 @@ func TestFilterTokenMatcher(t *testing.T) {
 			name:        "No tokens but expected token types exist don't match",
 			inputTokens: []any{},
 			matchTokens: []any{
-				FilterTerminator("map"),
+				Terminator("map"),
 			},
 			want: nil,
 		},
 		{
 			name: "1 tokens but no expected token types exist match",
 			inputTokens: []any{
-				FilterTerminator("map"),
+				Terminator("map"),
 			},
 			matchTokens: []any{},
 			want:        []any{},
@@ -142,22 +142,22 @@ func TestFilterTokenMatcher(t *testing.T) {
 		{
 			name: "1 tokens match one or the other where there is a match",
 			inputTokens: []any{
-				FilterTerminator("map"),
+				Terminator("map"),
 			},
 			matchTokens: []any{
 				[]any{
 					FilterNot("not"),
-					FilterTerminator("map"),
+					Terminator("map"),
 				},
 			},
 			want: []any{
-				FilterTerminator("map"),
+				Terminator("map"),
 			},
 		},
 		{
 			name: "1 tokens don't match one or the other where there isn't a match",
 			inputTokens: []any{
-				FilterTerminator("map"),
+				Terminator("map"),
 			},
 			matchTokens: []any{
 				[]any{
@@ -172,7 +172,7 @@ func TestFilterTokenMatcher(t *testing.T) {
 			inputTokens: []any{
 				EntryExpression("h.User-Agent"),
 				FilterNot("not"),
-				FilterTerminator("map"),
+				Terminator("map"),
 			},
 			matchTokens: []any{
 				EntryExpression("h.User-Agent"),
@@ -187,7 +187,7 @@ func TestFilterTokenMatcher(t *testing.T) {
 			name: "sequence of don't match",
 			inputTokens: []any{
 				EntryExpression("h.User-Agent"),
-				FilterTerminator("map"),
+				Terminator("map"),
 				FilterNot("not"),
 			},
 			matchTokens: []any{
@@ -297,7 +297,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "filter into a table",
-			args: strings.Split("filter not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]", " "),
+			args: strings.Split("filter not h.user-argent icontains .kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date]", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -306,11 +306,11 @@ func TestParseOperations(t *testing.T) {
 						},
 					},
 					&TableTransformer{
-						Columns: []ColumnExpression{
+						Columns: []*ColumnExpression{
 							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &Function{Function: "year", Args: []Value:{EntryExpression("h.date")},}},
-							{Name: "month-date", Operation: &Function{Function: "month", Args: []Value:{EntryExpression("h.date")},}},
+							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
 						},
 					},
 				},
@@ -328,14 +328,16 @@ func TestParseOperations(t *testing.T) {
 					},
 					&MBoxOutput{},
 					&SortTransformer{
-						Expression:EntryExpression("h.date"),
+						Expression: []ValueExpression{
+							EntryExpression("h.date"),
+						},
 					},
 				},
 			},
 		},
 		{
 			name: "filter into a table sorted by date",
-			args: strings.Split("filter not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date] sort h.date", " "),
+			args: strings.Split("filter not h.user-argent icontains .kmail into table with h.user-agent h.subject f.year[h.date] f.month[h.date] sort h.date", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -344,15 +346,17 @@ func TestParseOperations(t *testing.T) {
 						},
 					},
 					&TableTransformer{
-						Columns: []ColumnExpression{
+						Columns: []*ColumnExpression{
 							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &Function{Function: "year", Args: []Value:{EntryExpression("h.date")},}},
-							{Name: "month-date", Operation: &Function{Function: "month", Args: []Value:{EntryExpression("h.date")},}},
+							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
 						},
 					},
 					&SortTransformer{
-						Expression:EntryExpression("h.date"),
+						Expression: []ValueExpression{
+							EntryExpression("h.date"),
+						},
 					},
 				},
 			},
@@ -368,21 +372,21 @@ func TestParseOperations(t *testing.T) {
 						},
 					},
 					&TableTransformer{
-						Columns: []ColumnExpression{
+						Columns: []*ColumnExpression{
 							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &Function{Function: "year", Args: []Value:{EntryExpression("h.date")},}},
-							{Name: "month-date", Operation: &Function{Function: "month", Args: []Value:{EntryExpression("h.date")},}},
+							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
 						},
 					},
 					&TableTransformer{
-						Columns: []ColumnExpression{
+						Columns: []*ColumnExpression{
 							{Name: "user-agent", Operation: EntryExpression("c.user-agent")},
 							{Name: "subject", Operation: EntryExpression("c.subject")},
 							{Name: "year-date", Operation: EntryExpression("c.year-date")},
 							{Name: "month-date", Operation: EntryExpression("c.month-date")},
-							{Name: "sum-size", Operation: &Function{Function: "sum", Args: []Value:{EntryExpression("h.size")},}},
-							{Name: "count", Operation: &Function{Function: "count", Args: []Value:{EntryExpression("t.contents")},}},
+							{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ValueExpression{EntryExpression("h.size")}}},
+							{Name: "count", Operation: &FunctionExpression{Function: "count", Args: []ValueExpression{EntryExpression("t.contents")}}},
 						},
 					},
 				},
