@@ -123,3 +123,12 @@ func (f FilterStatement) Execute(d Data) (Data, error) {
 }
 
 var _ Operation = (*FilterStatement)(nil)
+
+type MBoxOutput struct{}
+
+func (M *MBoxOutput) Execute(d Data) (Data, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+var _ Operation = (*MBoxOutput)(nil)

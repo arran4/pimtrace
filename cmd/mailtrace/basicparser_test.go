@@ -284,42 +284,105 @@ func TestParseOperations(t *testing.T) {
 		{
 			name: "filter out into a mbox",
 			args: strings.Split("filter not h.user-argent icontains .kmail into mbox", " "),
-			expectedOperation: &MBoxOutput{},
+			expectedOperation: &CompoundStatement{
+				Statements: []Operation{
+					&FilterStatement{
+						Expression: &NotOp{
+							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+						},
+					},
+					&MBoxOutput{},
+				},
+			},
 		},
 		{
 			name: "filter into a table",
 			args: strings.Split("filter not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]", " "),
-			expectedOperation: &TableTransformer{
-				Columns: []ColumnExpression{
-					{ Name: "user-agent", Operation: EntryExpression("h.user-agent"), },
-					{ Name: "subject", Operation: EntryExpression("h.subject"), },
-					{ Name: "year-date", Operation: &Function{ Function: "year", Args: []Value: { EntryExpression("h.date"), }, }, },
-					{ Name: "month-date", Operation: &Function{ Function: "month", Args: []Value: { EntryExpression("h.date"), }, }, },
+			expectedOperation: &CompoundStatement{
+				Statements: []Operation{
+					&FilterStatement{
+						Expression: &NotOp{
+							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+						},
+					},
+					&TableTransformer{
+						Columns: []ColumnExpression{
+							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
+							{Name: "subject", Operation: EntryExpression("h.subject")},
+							{Name: "year-date", Operation: &Function{Function: "year", Args: []Value:{EntryExpression("h.date")},}},
+							{Name: "month-date", Operation: &Function{Function: "month", Args: []Value:{EntryExpression("h.date")},}},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "filter out into a mbox sorted by date",
+			args: strings.Split("filter not h.user-argent icontains .kmail into mbox sort h.date", " "),
+			expectedOperation: &CompoundStatement{
+				Statements: []Operation{
+					&FilterStatement{
+						Expression: &NotOp{
+							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+						},
+					},
+					&MBoxOutput{},
+					&SortTransformer{
+						Expression:EntryExpression("h.date"),
+					},
+				},
+			},
+		},
+		{
+			name: "filter into a table sorted by date",
+			args: strings.Split("filter not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date] sort h.date", " "),
+			expectedOperation: &CompoundStatement{
+				Statements: []Operation{
+					&FilterStatement{
+						Expression: &NotOp{
+							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+						},
+					},
+					&TableTransformer{
+						Columns: []ColumnExpression{
+							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
+							{Name: "subject", Operation: EntryExpression("h.subject")},
+							{Name: "year-date", Operation: &Function{Function: "year", Args: []Value:{EntryExpression("h.date")},}},
+							{Name: "month-date", Operation: &Function{Function: "month", Args: []Value:{EntryExpression("h.date")},}},
+						},
+					},
+					&SortTransformer{
+						Expression:EntryExpression("h.date"),
+					},
 				},
 			},
 		},
 		{
 			name: "Filter into summary with count and a calculated sum",
 			args: strings.Split("filter not h.user-argent icontains .kmail into summary h.user-agent year[h.date] month[h.date] calculate sum[h.size] count", " "),
-			expectedOperation: &IntoStatements{
-				Transformations: []IntoTransformer{
-					&TableTransformer{
-						Columns: []ColumnExpression{
-							{ Name: "user-agent", Operation: EntryExpression("h.user-agent"), },
-							{ Name: "subject", Operation: EntryExpression("h.subject"), },
-							{ Name: "year-date", Operation: &Function{ Function: "year", Args: []Value: { EntryExpression("h.date"), }, }, },
-							{ Name: "month-date", Operation: &Function{ Function: "month", Args: []Value: { EntryExpression("h.date"), }, }, },
-							{ Name: "size", Operation: EntryExpression("h.size"), },
+			expectedOperation: &CompoundStatement{
+				Statements: []Operation{
+					&FilterStatement{
+						Expression: &NotOp{
+							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
 						},
 					},
 					&TableTransformer{
 						Columns: []ColumnExpression{
-							{ Name: "user-agent", Operation: EntryExpression("c.user-agent"), },
-							{ Name: "subject", Operation: EntryExpression("c.subject"), },
-							{ Name: "year-date", Operation: EntryExpression("c.year-date"), },
-							{ Name: "month-date", Operation: EntryExpression("c.month-date"), },
-							{ Name: "sum-size", Operation: &Function{ Function: "sum", Args: []Value: { EntryExpression("c.size"), }, }, },
-							{ Name: "count", Operation: &Function{ Function: "count", Args: []Value: { }, }, },
+							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
+							{Name: "subject", Operation: EntryExpression("h.subject")},
+							{Name: "year-date", Operation: &Function{Function: "year", Args: []Value:{EntryExpression("h.date")},}},
+							{Name: "month-date", Operation: &Function{Function: "month", Args: []Value:{EntryExpression("h.date")},}},
+						},
+					},
+					&TableTransformer{
+						Columns: []ColumnExpression{
+							{Name: "user-agent", Operation: EntryExpression("c.user-agent")},
+							{Name: "subject", Operation: EntryExpression("c.subject")},
+							{Name: "year-date", Operation: EntryExpression("c.year-date")},
+							{Name: "month-date", Operation: EntryExpression("c.month-date")},
+							{Name: "sum-size", Operation: &Function{Function: "sum", Args: []Value:{EntryExpression("h.size")},}},
+							{Name: "count", Operation: &Function{Function: "count", Args: []Value:{EntryExpression("t.contents")},}},
 						},
 					},
 				},

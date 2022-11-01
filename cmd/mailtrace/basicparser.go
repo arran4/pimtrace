@@ -23,7 +23,7 @@ var _ ValueExpression = EntryExpression("")
 func FilterIdentify(s string) (any, error) {
 	ss := strings.SplitN(s, ".", 2)
 	switch ss[0] {
-	case "into", "filter", "where":
+	case "into", "filter", "where", "sort":
 		return FilterTerminator(s), nil
 	case "not":
 		return FilterNot(s), nil
@@ -164,7 +164,7 @@ func ParseInto(args []string) (Operation, []string, error) {
 	if len(p) > 0 {
 		switch p[0] {
 		case "mbox":
-			return ParseIntoMaildir(p[:], result.Statements)
+			return &MBoxOutput{}, p[1:], nil
 		case "summary":
 			return ParseIntoSummary(p[:], result.Statements)
 		case "table":
@@ -191,6 +191,15 @@ func ParseOperations(args []string) (Operation, error) {
 			}
 		case "into":
 			op, remain, err := ParseInto(p[1:])
+			if err != nil {
+				return nil, err
+			}
+			p = remain
+			if op != nil {
+				result.Statements = append(result.Statements, op)
+			}
+		case "sort":
+			op, remain, err := ParseSort(p[1:])
 			if err != nil {
 				return nil, err
 			}
