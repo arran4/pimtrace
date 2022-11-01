@@ -9,6 +9,7 @@ import (
 var ErrParserNothingFound = fmt.Errorf("no token found")
 var ErrUnknownExpression = fmt.Errorf("unknown expression")
 var ErrParserFault = fmt.Errorf("parser fault")
+var ErrUnknownIntoStatement = fmt.Errorf("unknown into")
 
 type FilterEquals string
 type FilterContains string
@@ -150,6 +151,27 @@ func ParseFilters(args []string) (Operation, []string, error) {
 		}
 	}
 	return result.Simplify(), p, nil
+}
+
+func ParseInto(args []string) (Operation, []string, error) {
+	p := args
+	if len(p) > 0 {
+		switch p[0] {
+		case "into":
+			p = p[1:]
+		}
+	}
+	if len(p) > 0 {
+		switch p[0] {
+		case "mbox":
+			return ParseIntoMaildir(p[:], result.Statements)
+		case "summary":
+			return ParseIntoSummary(p[:], result.Statements)
+		case "table":
+			return ParseIntoTable(p[:], result.Statements)
+		}
+	}
+	return nil, nil, ErrUnknownIntoStatement
 }
 
 func ParseOperations(args []string) (Operation, error) {
