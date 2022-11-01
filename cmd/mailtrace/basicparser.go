@@ -64,7 +64,8 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 		}, remain, nil
 	}
 	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterEquals(""), []any{EntryExpression(""), ConstantExpression("")}) {
-		return &EqualOp{
+		return &Op{
+			Op:  EqualOp,
 			LHS: tks[0].(ValueExpression),
 			RHS: tks[2].(ValueExpression),
 		}, remain, nil

@@ -64,17 +64,29 @@ func (ve EntryExpression) Execute(d Entry) (Value, error) {
 	return d.Get(string(ve)), nil
 }
 
-type EqualOp struct {
+type OpFunc func(Value, Value) (bool, error)
+
+func EqualOp(rhsv Value, lhsv Value) (bool, error) {
+	return rhsv.String() == lhsv.String(), nil
+}
+
+var _ OpFunc = EqualOp
+
+type Op struct {
+	Op  OpFunc
 	LHS ValueExpression
 	RHS ValueExpression
 }
 
-func (e *EqualOp) Execute(d Entry) (bool, error) {
+func (e *Op) Execute(d Entry) (bool, error) {
 	if e.LHS == nil {
-		return false, fmt.Errorf("LHS invalid issue with equals")
+		return false, fmt.Errorf("LHS invalid issue with Op")
 	}
 	if e.RHS == nil {
-		return false, fmt.Errorf("RHS invalid with equals")
+		return false, fmt.Errorf("RHS invalid with Op")
+	}
+	if e.Op == nil {
+		return false, fmt.Errorf("op invalid with Op")
 	}
 	lhsv, err := e.LHS.Execute(d)
 	if err != nil {
@@ -84,7 +96,7 @@ func (e *EqualOp) Execute(d Entry) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("RHS error: %w", err)
 	}
-	return rhsv.String() == lhsv.String(), nil
+	return e.Op(rhsv, lhsv)
 }
 
 type FilterStatement struct {

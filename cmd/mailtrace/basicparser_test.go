@@ -221,7 +221,7 @@ func TestParseFilter(t *testing.T) {
 			name: "Basic neg expression",
 			args: []string{"not", "h.user-agent", "eq", ".Kmail"},
 			expectedExpression: &NotOp{
-				Not: &EqualOp{LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+				Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
 			},
 			statements: []Operation{},
 			remaining:  []string{},
@@ -235,7 +235,11 @@ func TestParseFilter(t *testing.T) {
 				t.Errorf("ParseFilter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if diff := cmp.Diff(got, tt.expectedExpression); diff != "" {
+			if diff := cmp.Diff(got, tt.expectedExpression, cmp.Comparer(func(o1 OpFunc, o2 OpFunc) bool {
+				sf1 := reflect.ValueOf(o1)
+				sf2 := reflect.ValueOf(o2)
+				return sf1.Pointer() == sf2.Pointer()
+			})); diff != "" {
 				t.Errorf("ParseFilter() expectedExpression %s", diff)
 			}
 			if diff := cmp.Diff(got1, tt.remaining); diff != "" {
