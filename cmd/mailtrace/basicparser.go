@@ -85,6 +85,14 @@ type FunctionExpression struct {
 	Args     []ValueExpression
 }
 
+func (f *FunctionExpression) ColumnName() string {
+	elems := []string{f.Function}
+	for _, arg := range f.Args {
+		elems = append(elems, arg.ColumnName())
+	}
+	return strings.Join(elems, "-")
+}
+
 var _ ValueExpression = (*FunctionExpression)(nil)
 
 func (f FunctionExpression) Execute(d Entry) (Value, error) {

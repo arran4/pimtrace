@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 type Operation interface {
@@ -53,15 +54,34 @@ var _ BooleanExpression = (*NotOp)(nil)
 
 type ValueExpression interface {
 	Execute(d Entry) (Value, error)
+	ColumnName() string
 }
 
 type ConstantExpression string
+
+func (ve ConstantExpression) ColumnName() string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) {
+			return r
+		}
+		return '-'
+	}, string(ve))
+}
 
 func (ve ConstantExpression) Execute(d Entry) (Value, error) {
 	return SimpleStringValue(ve), nil
 }
 
 type EntryExpression string
+
+func (ve EntryExpression) ColumnName() string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) {
+			return r
+		}
+		return '-'
+	}, string(ve))
+}
 
 func (ve EntryExpression) Execute(d Entry) (Value, error) {
 	return d.Get(string(ve)), nil
