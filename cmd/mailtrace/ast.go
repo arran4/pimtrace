@@ -32,6 +32,24 @@ func (o *CompoundStatement) Simplify() Operation {
 	if len(o.Statements) == 1 {
 		return o.Statements[0]
 	}
+	var result []Operation
+	for i, statement := range o.Statements {
+		switch statement := statement.(type) {
+		case *CompoundStatement:
+			if result == nil {
+				result = append([]Operation{}, o.Statements[:i]...)
+			}
+			result = append(result, statement.Statements...)
+		default:
+			if result == nil {
+				continue
+			}
+			result = append(result, statement)
+		}
+	}
+	if result != nil {
+		o.Statements = result
+	}
 	return o
 }
 

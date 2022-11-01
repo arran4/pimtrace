@@ -40,6 +40,8 @@ func FilterIdentify(s string) (any, error) {
 		return FilterIContains(s), nil
 	case "h", "header":
 		return EntryExpression(s), nil
+	case "c", "column":
+		return EntryExpression(s), nil
 	case "":
 		if strings.HasPrefix(s, ".") {
 			return ConstantExpression(ss[1]), nil
@@ -58,6 +60,8 @@ func IntoIdentify(args []string) (any, []string, error) {
 		return Terminator(args[0]), args[0:], nil
 	case "h", "header":
 		return EntryExpression(args[0]), args[1:], nil
+	case "c", "column":
+		return EntryExpression(args[0]), args[1:], nil
 	case "f", "func":
 		return ParseFunctionExpression(args)
 	}
@@ -72,13 +76,15 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 	switch ss[0] {
 	case "h", "header":
 		return EntryExpression(args[0]), args[1:], nil
+	case "c", "column":
+		return EntryExpression(args[0]), args[1:], nil
 	case "f", "func":
 		return ParseFunctionExpression(args)
 	}
 	return nil, nil, fmt.Errorf("function param tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
 }
 
-var fere = regexp.MustCompile("^(f|func)\\.([^[]+)\\[([^]]+)\\]$")
+var fere = regexp.MustCompile("^(f|func)\\.([^[]+)(\\[([^]]+)\\])?$")
 
 type FunctionExpression struct {
 	Function string
@@ -102,10 +108,14 @@ func (f FunctionExpression) Execute(d Entry) (Value, error) {
 
 func ParseFunctionExpression(args []string) (ValueExpression, []string, error) {
 	m := fere.FindStringSubmatch(args[0])
-	if len(m) == 4 {
-		params, err := ParseExpressions(m[3])
-		if err != nil {
-			return nil, nil, fmt.Errorf("parameter parse error: %w", err)
+	if len(m) == 5 {
+		var params []ValueExpression
+		if len(m[3]) > 0 {
+			var err error
+			params, err = ParseExpressions(m[4])
+			if err != nil {
+				return nil, nil, fmt.Errorf("parameter parse error: %w", err)
+			}
 		}
 		return &FunctionExpression{
 			Function: m[2],
@@ -225,17 +235,38 @@ func (t *TableTransformer) Execute(d Data) (Data, error) {
 }
 
 func ParseIntoSummary(args []string) (Operation, []string, error) {
-	tks, remain, err := IntoTokenizerScan(args)
+	results, remain, err := ParseIntoTable(args)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("summary table: %w", err)
 	}
-	if len(tks) > 0 {
-		var expressions []*ColumnExpression
+	table := results.(*TableTransformer)
+	if len(remain) > 0 {
+		switch remain[0] {
+		case "calculate":
+			remain = remain[1:]
+		}
+		c := &CompoundStatement{
+			Statements: []Operation{
+				results,
+			},
+		}
+		var tks []any
+		tks, remain, err = IntoTokenizerScan(remain)
+		if err != nil {
+			return nil, nil, fmt.Errorf("summary table: %w", err)
+		}
+		t := &TableTransformer{}
+		for _, origC := range table.Columns {
+			t.Columns = append(t.Columns, &ColumnExpression{
+				Name:      origC.Name,
+				Operation: EntryExpression("c." + origC.Name),
+			})
+		}
 	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
 			case ValueExpression:
-				expressions = append(expressions, &ColumnExpression{
+				t.Columns = append(t.Columns, &ColumnExpression{
 					Name:      tkn.ColumnName(),
 					Operation: tkn,
 				})
@@ -245,18 +276,18 @@ func ParseIntoSummary(args []string) (Operation, []string, error) {
 				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
 			}
 		}
-		result := &TableTransformer{
-			Columns: expressions,
+		if len(t.Columns) > len(table.Columns) {
+			c.Statements = append(c.Statements, t)
 		}
-		return result, remain, nil
+		results = c.Simplify()
 	}
-	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
+	return results, remain, nil
 }
 
 func ParseIntoTable(args []string) (Operation, []string, error) {
 	tks, remain, err := IntoTokenizerScan(args)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("table: %w", err)
 	}
 	if len(tks) > 0 {
 		var expressions []*ColumnExpression

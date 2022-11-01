@@ -362,7 +362,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "Filter into summary with count and a calculated sum",
-			args: strings.Split("filter not h.user-agent icontains .Kmail into summary h.user-agent f.year[h.date] f.month[h.date] calculate f.sum[h.size] f.count", " "),
+			args: strings.Split("filter not h.user-agent icontains .Kmail into summary h.user-agent h.subject f.year[h.date] f.month[h.date] calculate f.sum[h.size] f.count", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -385,7 +385,7 @@ func TestParseOperations(t *testing.T) {
 							{Name: "year-date", Operation: EntryExpression("c.year-date")},
 							{Name: "month-date", Operation: EntryExpression("c.month-date")},
 							{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ValueExpression{EntryExpression("h.size")}}},
-							{Name: "count", Operation: &FunctionExpression{Function: "count", Args: []ValueExpression{EntryExpression("t.contents")}}},
+							{Name: "count", Operation: &FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
 						},
 					},
 				},
