@@ -10,6 +10,8 @@ import (
 var ErrParserNothingFound = fmt.Errorf("no token found")
 
 type FilterEquals string
+type FilterContains string
+type FilterIContains string
 type FilterNot string
 type FilterTerminator string
 
@@ -25,6 +27,10 @@ func FilterIdentify(s string) (any, error) {
 		return FilterNot(s), nil
 	case "eq":
 		return FilterEquals(s), nil
+	case "contains":
+		return FilterContains(s), nil
+	case "icontains":
+		return FilterIContains(s), nil
 	case "h", "header":
 		return EntryExpression(s), nil
 	case "":
@@ -66,6 +72,20 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterEquals(""), []any{EntryExpression(""), ConstantExpression("")}) {
 		return &Op{
 			Op:  EqualOp,
+			LHS: tks[0].(ValueExpression),
+			RHS: tks[2].(ValueExpression),
+		}, remain, nil
+	}
+	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterContains(""), []any{EntryExpression(""), ConstantExpression("")}) {
+		return &Op{
+			Op:  ContainsOp,
+			LHS: tks[0].(ValueExpression),
+			RHS: tks[2].(ValueExpression),
+		}, remain, nil
+	}
+	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterIContains(""), []any{EntryExpression(""), ConstantExpression("")}) {
+		return &Op{
+			Op:  IContainsOp,
 			LHS: tks[0].(ValueExpression),
 			RHS: tks[2].(ValueExpression),
 		}, remain, nil

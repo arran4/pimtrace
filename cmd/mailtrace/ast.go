@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Operation interface {
 	Execute(d Data) (Data, error)
@@ -71,6 +74,18 @@ func EqualOp(rhsv Value, lhsv Value) (bool, error) {
 }
 
 var _ OpFunc = EqualOp
+
+func ContainsOp(rhsv Value, lhsv Value) (bool, error) {
+	return strings.Contains(rhsv.String(), lhsv.String()), nil
+}
+
+var _ OpFunc = ContainsOp
+
+func IContainsOp(rhsv Value, lhsv Value) (bool, error) {
+	return strings.Contains(strings.ToLower(rhsv.String()), strings.ToLower(lhsv.String())), nil
+}
+
+var _ OpFunc = IContainsOp
 
 type Op struct {
 	Op  OpFunc
