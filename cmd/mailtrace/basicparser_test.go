@@ -283,7 +283,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "filter out into a mbox",
-			args: strings.Split("filter not h.user-argent icontains .kmail into mbox", " "),
+			args: strings.Split("filter not h.user-agent icontains .Kmail into mbox", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -297,7 +297,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "filter into a table",
-			args: strings.Split("filter not h.user-argent icontains .kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date]", " "),
+			args: strings.Split("filter not h.user-agent icontains .Kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date]", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -318,7 +318,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "filter out into a mbox sorted by date",
-			args: strings.Split("filter not h.user-argent icontains .kmail into mbox sort h.date", " "),
+			args: strings.Split("filter not h.user-agent icontains .Kmail into mbox sort h.date", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -337,7 +337,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "filter into a table sorted by date",
-			args: strings.Split("filter not h.user-argent icontains .kmail into table with h.user-agent h.subject f.year[h.date] f.month[h.date] sort h.date", " "),
+			args: strings.Split("filter not h.user-agent icontains .kmail into table with h.user-agent h.subject f.year[h.date] f.month[h.date] sort h.date", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -363,7 +363,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "Filter into summary with count and a calculated sum",
-			args: strings.Split("filter not h.user-argent icontains .kmail into summary h.user-agent year[h.date] month[h.date] calculate sum[h.size] count", " "),
+			args: strings.Split("filter not h.user-agent icontains .kmail into summary h.user-agent year[h.date] month[h.date] calculate sum[h.size] count", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{

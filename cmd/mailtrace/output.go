@@ -70,6 +70,16 @@ func OutputHandler(d Data, outputType *string, outputFile *string) error {
 	return nil
 }
 
+func WriteCSVStream(d Data, stdin *os.File, s string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func WriteCSVFile(d Data, s string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func WriteMBoxFile(d Data, fName string) error {
 	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
