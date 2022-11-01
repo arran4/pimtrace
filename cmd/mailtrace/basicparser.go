@@ -85,6 +85,8 @@ type FunctionExpression struct {
 	Args     []ValueExpression
 }
 
+var _ ValueExpression = (*FunctionExpression)(nil)
+
 func (f FunctionExpression) Execute(d Entry) (Value, error) {
 	//TODO implement me
 	panic("implement me")
