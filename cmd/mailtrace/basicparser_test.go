@@ -240,7 +240,7 @@ func TestParseFilter(t *testing.T) {
 			args: "not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]",
 		},
 		{
-			args: "not h.user-argent icontains .kmail into summary table count of year[h.date] month[h.date] h.user-agent",
+			args: "not h.user-argent icontains .kmail into summary count with h.user-agent group by year[h.date] month[h.date] calculate sum[h.size]",
 		},
 	}
 	for _, tt := range tests {
