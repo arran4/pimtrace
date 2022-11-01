@@ -75,12 +75,17 @@ func (ve ConstantExpression) Execute(d Entry) (Value, error) {
 type EntryExpression string
 
 func (ve EntryExpression) ColumnName() string {
+	ss := strings.SplitN(string(ve), ".", 2)
+	s := ""
+	if len(ss) > 1 {
+		s = ss[1]
+	}
 	return strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) {
 			return r
 		}
 		return '-'
-	}, string(ve))
+	}, s)
 }
 
 func (ve EntryExpression) Execute(d Entry) (Value, error) {

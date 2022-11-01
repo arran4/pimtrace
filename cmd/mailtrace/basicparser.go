@@ -78,7 +78,7 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 	return nil, nil, fmt.Errorf("%w: %s", ErrParserUnknownToken, ss[0])
 }
 
-var fere = regexp.MustCompile("^([^[]+)\\[([^]]+)\\]$")
+var fere = regexp.MustCompile("^(f|func)\\.([^[]+)\\[([^]]+)\\]$")
 
 type FunctionExpression struct {
 	Function string
@@ -102,13 +102,13 @@ func (f FunctionExpression) Execute(d Entry) (Value, error) {
 
 func ParseFunctionExpression(args []string) (ValueExpression, []string, error) {
 	m := fere.FindStringSubmatch(args[0])
-	if len(m) == 3 {
-		params, err := ParseExpressions(m[2])
+	if len(m) == 4 {
+		params, err := ParseExpressions(m[3])
 		if err != nil {
 			return nil, nil, fmt.Errorf("parameter parse error: %w", err)
 		}
 		return &FunctionExpression{
-			Function: m[1],
+			Function: m[2],
 			Args:     params,
 		}, args[1:], nil
 	}
@@ -369,9 +369,9 @@ func ParseInto(args []string) (Operation, []string, error) {
 		case "mbox":
 			return &MBoxOutput{}, p[1:], nil
 		case "summary":
-			return ParseIntoSummary(p[:])
+			return ParseIntoSummary(p[1:])
 		case "table":
-			return ParseIntoTable(p[:])
+			return ParseIntoTable(p[1:])
 		}
 	}
 	return nil, nil, ErrUnknownIntoStatement
@@ -386,7 +386,7 @@ func ParseOperations(args []string) (Operation, error) {
 		case "filter":
 			op, remain, err := ParseFilters(p[1:])
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse filters: %w", err)
 			}
 			p = remain
 			if op != nil {
@@ -395,7 +395,7 @@ func ParseOperations(args []string) (Operation, error) {
 		case "into":
 			op, remain, err := ParseInto(p[1:])
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse into: %w", err)
 			}
 			p = remain
 			if op != nil {
@@ -404,7 +404,7 @@ func ParseOperations(args []string) (Operation, error) {
 		case "sort":
 			op, remain, err := ParseSort(p[1:])
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse sort: %w", err)
 			}
 			p = remain
 			if op != nil {

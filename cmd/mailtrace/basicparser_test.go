@@ -288,7 +288,7 @@ func TestParseOperations(t *testing.T) {
 				Statements: []Operation{
 					&FilterStatement{
 						Expression: &NotOp{
-							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
 						},
 					},
 					&MBoxOutput{},
@@ -302,7 +302,7 @@ func TestParseOperations(t *testing.T) {
 				Statements: []Operation{
 					&FilterStatement{
 						Expression: &NotOp{
-							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
 						},
 					},
 					&TableTransformer{
@@ -323,7 +323,7 @@ func TestParseOperations(t *testing.T) {
 				Statements: []Operation{
 					&FilterStatement{
 						Expression: &NotOp{
-							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
 						},
 					},
 					&MBoxOutput{},
@@ -342,7 +342,7 @@ func TestParseOperations(t *testing.T) {
 				Statements: []Operation{
 					&FilterStatement{
 						Expression: &NotOp{
-							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
 						},
 					},
 					&TableTransformer{
@@ -368,7 +368,7 @@ func TestParseOperations(t *testing.T) {
 				Statements: []Operation{
 					&FilterStatement{
 						Expression: &NotOp{
-							Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
 						},
 					},
 					&TableTransformer{
