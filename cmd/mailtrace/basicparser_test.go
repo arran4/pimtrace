@@ -9,28 +9,28 @@ import (
 
 func TestFilterTokenizerScanN(t *testing.T) {
 	tests := []struct {
-		name     string
-		args     []string
-		n        int
-		tokens   []any
-		remainer []string
-		wantErr  bool
+		name      string
+		args      []string
+		n         int
+		tokens    []any
+		remainder []string
+		wantErr   bool
 	}{
 		{
-			name:     "Empty",
-			args:     []string{},
-			n:        1,
-			tokens:   []any{},
-			remainer: []string{},
-			wantErr:  false,
+			name:      "Empty",
+			args:      []string{},
+			n:         1,
+			tokens:    []any{},
+			remainder: []string{},
+			wantErr:   false,
 		},
 		{
-			name:     "Small N does nothing",
-			args:     []string{"where"},
-			n:        0,
-			tokens:   []any{},
-			remainer: []string{"where"},
-			wantErr:  false,
+			name:      "Small N does nothing",
+			args:      []string{"where"},
+			n:         0,
+			tokens:    []any{},
+			remainder: []string{"where"},
+			wantErr:   false,
 		},
 		{
 			name: "'Where' by itself",
@@ -39,8 +39,10 @@ func TestFilterTokenizerScanN(t *testing.T) {
 			tokens: []any{
 				Terminator("where"),
 			},
-			remainer: []string{},
-			wantErr:  false,
+			remainder: []string{
+				"where",
+			},
+			wantErr: false,
 		},
 		{
 			name: "'Where' by itself - n in excess",
@@ -49,8 +51,10 @@ func TestFilterTokenizerScanN(t *testing.T) {
 			tokens: []any{
 				Terminator("where"),
 			},
-			remainer: []string{},
-			wantErr:  false,
+			remainder: []string{
+				"where",
+			},
+			wantErr: false,
 		},
 		{
 			name: "'Where' by itself - tokens in excess",
@@ -59,22 +63,22 @@ func TestFilterTokenizerScanN(t *testing.T) {
 			tokens: []any{
 				Terminator("where"),
 			},
-			remainer: []string{"where", "where", "where", "where", "where", "where", "where"},
-			wantErr:  false,
+			remainder: []string{"where", "where", "where", "where", "where", "where", "where", "where"},
+			wantErr:   false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := FilterTokenizerScanN(tt.args, tt.n)
+			tokens, remainder, err := FilterTokenizerScanN(tt.args, tt.n)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FilterTokenizerScanN() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if diff := cmp.Diff(got, tt.tokens); diff != "" {
-				t.Errorf("FilterTokenizerScanN() got / tt.want diff:\n %s", diff)
+			if diff := cmp.Diff(tokens, tt.tokens); diff != "" {
+				t.Errorf("FilterTokenizerScanN() tokens / tt.want diff:\n %s", diff)
 			}
-			if !reflect.DeepEqual(got1, tt.remainer) {
-				t.Errorf("FilterTokenizerScanN() got1 = %v, want %v", got1, tt.remainer)
+			if !reflect.DeepEqual(remainder, tt.remainder) {
+				t.Errorf("FilterTokenizerScanN() remainder = %v, want %v", remainder, tt.remainder)
 			}
 		})
 	}
@@ -255,6 +259,7 @@ func TestParseFilter(t *testing.T) {
 		})
 	}
 }
+
 func TestParseOperations(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -337,7 +342,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "filter into a table sorted by date",
-			args: strings.Split("filter not h.user-agent icontains .kmail into table with h.user-agent h.subject f.year[h.date] f.month[h.date] sort h.date", " "),
+			args: strings.Split("filter not h.user-agent icontains .Kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date] sort h.date", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
@@ -363,7 +368,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "Filter into summary with count and a calculated sum",
-			args: strings.Split("filter not h.user-agent icontains .kmail into summary h.user-agent year[h.date] month[h.date] calculate sum[h.size] count", " "),
+			args: strings.Split("filter not h.user-agent icontains .Kmail into summary h.user-agent year[h.date] month[h.date] calculate sum[h.size] count", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{

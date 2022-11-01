@@ -138,18 +138,24 @@ func ParseExpressions(s string) ([]ValueExpression, error) {
 func FilterTokenizerScanN(args []string, n int) ([]any, []string, error) {
 	i := 0
 	r := []any{}
+done:
 	for ; i < n && i < len(args); i++ {
 		t, err := FilterIdentify(args[i])
 		if err != nil {
 			return nil, nil, err
 		}
 		r = append(r, t)
+		switch t.(type) {
+		case Terminator:
+			break done
+		}
 	}
 	return r, args[i:], nil
 }
 
 func IntoTokenizerScan(args []string) ([]any, []string, error) {
 	var r []any
+done:
 	for len(args) > 0 {
 		var err error
 		var t any
@@ -158,6 +164,10 @@ func IntoTokenizerScan(args []string) ([]any, []string, error) {
 			return nil, nil, err
 		}
 		r = append(r, t)
+		switch t.(type) {
+		case Terminator:
+			break done
+		}
 	}
 	return r, args, nil
 }
@@ -221,6 +231,7 @@ func ParseIntoSummary(args []string) (Operation, []string, error) {
 	}
 	if len(tks) > 0 {
 		var expressions []*ColumnExpression
+	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
 			case ValueExpression:
@@ -228,8 +239,10 @@ func ParseIntoSummary(args []string) (Operation, []string, error) {
 					Name:      tkn.ColumnName(),
 					Operation: tkn,
 				})
+			case Terminator:
+				break done
 			default:
-				return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserFault)
+				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
 			}
 		}
 		result := &TableTransformer{
@@ -247,6 +260,7 @@ func ParseIntoTable(args []string) (Operation, []string, error) {
 	}
 	if len(tks) > 0 {
 		var expressions []*ColumnExpression
+	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
 			case ValueExpression:
@@ -254,8 +268,10 @@ func ParseIntoTable(args []string) (Operation, []string, error) {
 					Name:      tkn.ColumnName(),
 					Operation: tkn,
 				})
+			case Terminator:
+				break done
 			default:
-				return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserFault)
+				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
 			}
 		}
 		result := &TableTransformer{
@@ -282,12 +298,15 @@ func ParseSort(args []string) (Operation, []string, error) {
 	}
 	if len(tks) > 0 {
 		var expressions []ValueExpression
+	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
 			case ValueExpression:
 				expressions = append(expressions, tkn)
+			case Terminator:
+				break done
 			default:
-				return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserFault)
+				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
 			}
 		}
 		result := &SortTransformer{
