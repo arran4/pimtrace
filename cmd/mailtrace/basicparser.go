@@ -58,7 +58,7 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 	if err != nil {
 		return nil, nil, err
 	}
-	if FilterTokenMatcher(tks, FilterNot("")) != nil {
+	if TokenMatcher(tks, FilterNot("")) != nil {
 		var op BooleanExpression
 		op, remain, err = ParseFilter(args[1:], []Operation{})
 		if err != nil {
@@ -68,7 +68,7 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 			Not: op,
 		}, remain, nil
 	}
-	if matches := FilterTokenMatcher(tks,
+	if matches := TokenMatcher(tks,
 		[]any{EntryExpression(""), ConstantExpression("")},
 		[]any{FilterEquals(""), FilterContains(""), FilterIContains("")},
 		[]any{EntryExpression(""), ConstantExpression("")},
@@ -92,7 +92,7 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
 }
 
-func FilterTokenMatcher(inputTokens []any, matchTokens ...any) []any {
+func TokenMatcher(inputTokens []any, matchTokens ...any) []any {
 	var result []any = nil
 	for i := 0; i < len(matchTokens); i++ {
 		var m any = nil

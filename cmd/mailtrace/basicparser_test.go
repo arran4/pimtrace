@@ -198,9 +198,9 @@ func TestFilterTokenMatcher(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := FilterTokenMatcher(tt.inputTokens, tt.matchTokens...)
+			got := TokenMatcher(tt.inputTokens, tt.matchTokens...)
 			if diff := cmp.Diff(got, tt.want); len(diff) > 0 {
-				t.Errorf("FilterTokenMatcher() = \n%s", diff)
+				t.Errorf("TokenMatcher() = \n%s", diff)
 			}
 		})
 	}
