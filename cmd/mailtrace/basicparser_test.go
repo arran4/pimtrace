@@ -233,6 +233,15 @@ func TestParseFilter(t *testing.T) {
 			remaining:  []string{},
 			wantErr:    false,
 		},
+		{
+			args: "not h.user-argent icontains .kmail into maildir",
+		},
+		{
+			args: "not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]",
+		},
+		{
+			args: "not h.user-argent icontains .kmail into summary table count of year[h.date] month[h.date] h.user-agent",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
