@@ -40,6 +40,19 @@ func OutputHandler(d Data, outputType *string, outputFile *string) error {
 				return err
 			}
 		}
+	case "csv":
+		switch *outputFile {
+		case "-":
+			err := WriteCSVStream(d, os.Stdin, *outputFile)
+			if err != nil {
+				return err
+			}
+		default:
+			err := WriteCSVFile(d, *outputFile)
+			if err != nil {
+				return err
+			}
+		}
 	case "count":
 		fmt.Println(d.Len())
 	case "list":
@@ -48,6 +61,7 @@ func OutputHandler(d Data, outputType *string, outputFile *string) error {
 		fmt.Printf(" =%-20s - %s\n", "mbox", "Mbox file")
 		fmt.Printf(" =%-20s - %s\n", "list", "This help text")
 		fmt.Printf(" =%-20s - %s\n", "count", "Just a count")
+		fmt.Printf(" =%-20s - %s\n", "csv", "Data in csv format")
 		fmt.Println()
 	default:
 		fmt.Println("Please specify a -input-type")
