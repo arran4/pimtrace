@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 )
@@ -59,7 +58,7 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 	if err != nil {
 		return nil, nil, err
 	}
-	if FilterTokenMatcher(tks, FilterNot("")) {
+	if FilterTokenMatcher(tks, FilterNot("")) != nil {
 		var op BooleanExpression
 		op, remain, err = ParseFilter(args[1:], []Operation{})
 		if err != nil {
@@ -69,23 +68,22 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 			Not: op,
 		}, remain, nil
 	}
-	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterEquals(""), []any{EntryExpression(""), ConstantExpression("")}) {
+	if matches := FilterTokenMatcher(tks,
+		[]any{EntryExpression(""), ConstantExpression("")},
+		[]any{FilterEquals(""), FilterContains(""), FilterIContains("")},
+		[]any{EntryExpression(""), ConstantExpression("")},
+	); len(matches) > 0 {
+		var op OpFunc
+		switch /*opMatch :=*/ matches[1].(type) {
+		case FilterEquals:
+			op = EqualOp
+		case FilterContains:
+			op = ContainsOp
+		case FilterIContains:
+			op = IContainsOp
+		}
 		return &Op{
-			Op:  EqualOp,
-			LHS: tks[0].(ValueExpression),
-			RHS: tks[2].(ValueExpression),
-		}, remain, nil
-	}
-	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterContains(""), []any{EntryExpression(""), ConstantExpression("")}) {
-		return &Op{
-			Op:  ContainsOp,
-			LHS: tks[0].(ValueExpression),
-			RHS: tks[2].(ValueExpression),
-		}, remain, nil
-	}
-	if FilterTokenMatcher(tks, []any{EntryExpression(""), ConstantExpression("")}, FilterIContains(""), []any{EntryExpression(""), ConstantExpression("")}) {
-		return &Op{
-			Op:  IContainsOp,
+			Op:  op,
 			LHS: tks[0].(ValueExpression),
 			RHS: tks[2].(ValueExpression),
 		}, remain, nil
@@ -94,31 +92,37 @@ func ParseFilter(args []string, statements []Operation) (BooleanExpression, []st
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
 }
 
-func FilterTokenMatcher(tks []any, tokenTypes ...any) bool {
-	for i := 0; i < len(tokenTypes); i++ {
-		if i >= len(tks) && i < len(tokenTypes) {
-			return false
+func FilterTokenMatcher(inputTokens []any, matchTokens ...any) []any {
+	var result []any = nil
+	for i := 0; i < len(matchTokens); i++ {
+		var m any = nil
+		if i >= len(inputTokens) && i < len(matchTokens) {
+			return nil
 		}
-		switch reflect.TypeOf(tokenTypes[i]).Kind() {
+		switch reflect.TypeOf(matchTokens[i]).Kind() {
 		case reflect.Slice:
-			m := false
-			for _, stt := range (tokenTypes[i]).([]any) {
-				log.Printf("%s %s", reflect.TypeOf(tks[i]), reflect.TypeOf(stt))
-				if reflect.TypeOf(tks[i]) == reflect.TypeOf(stt) {
-					m = true
+			for _, stt := range (matchTokens[i]).([]any) {
+				if reflect.TypeOf(inputTokens[i]) == reflect.TypeOf(stt) {
+					stt := stt
+					m = stt
 					break
 				}
 			}
-			if !m {
-				return m
+			if m == nil {
+				return result
 			}
 		case reflect.String:
-			if reflect.TypeOf(tks[i]) != reflect.TypeOf(tokenTypes[i]) {
-				return false
+			if reflect.TypeOf(inputTokens[i]) != reflect.TypeOf(matchTokens[i]) {
+				return nil
 			}
+			m = matchTokens[i]
 		}
+		result = append(result, m)
 	}
-	return true
+	if result == nil {
+		result = make([]any, 0)
+	}
+	return result
 }
 
 func ParseFilters(args []string) (Operation, []string, error) {

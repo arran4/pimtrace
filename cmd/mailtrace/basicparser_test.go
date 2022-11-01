@@ -81,120 +81,126 @@ func TestFilterTokenizerScanN(t *testing.T) {
 
 func TestFilterTokenMatcher(t *testing.T) {
 	tests := []struct {
-		name       string
-		tks        []any
-		tokenTypes []any
-		want       bool
+		name        string
+		inputTokens []any
+		matchTokens []any
+		want        []any
 	}{
 		{
-			name:       "Empty",
-			tks:        []any{},
-			tokenTypes: []any{},
-			want:       true,
+			name:        "Empty",
+			inputTokens: []any{},
+			matchTokens: []any{},
+			want:        []any{},
 		},
 		{
 			name: "Terminator where match",
-			tks: []any{
+			inputTokens: []any{
 				FilterTerminator("where"),
 			},
-			tokenTypes: []any{
+			matchTokens: []any{
 				FilterTerminator("where"),
 			},
-			want: true,
+			want: []any{FilterTerminator("where")},
 		},
 		{
 			name: "Terminator where and map match",
-			tks: []any{
+			inputTokens: []any{
 				FilterTerminator("where"),
 			},
-			tokenTypes: []any{
+			matchTokens: []any{
 				FilterTerminator("map"),
 			},
-			want: true,
+			want: []any{FilterTerminator("map")},
 		},
 		{
 			name: "Terminator where and not don't match",
-			tks: []any{
+			inputTokens: []any{
 				FilterTerminator("where"),
 			},
-			tokenTypes: []any{
+			matchTokens: []any{
 				FilterNot("not"),
 			},
-			want: false,
+			want: nil,
 		},
 		{
-			name: "No tokens but expected token types exist don't match",
-			tks:  []any{},
-			tokenTypes: []any{
+			name:        "No tokens but expected token types exist don't match",
+			inputTokens: []any{},
+			matchTokens: []any{
 				FilterTerminator("map"),
 			},
-			want: false,
+			want: nil,
 		},
 		{
 			name: "1 tokens but no expected token types exist match",
-			tks: []any{
+			inputTokens: []any{
 				FilterTerminator("map"),
 			},
-			tokenTypes: []any{},
-			want:       true,
+			matchTokens: []any{},
+			want:        []any{},
 		},
 		{
 			name: "1 tokens match one or the other where there is a match",
-			tks: []any{
+			inputTokens: []any{
 				FilterTerminator("map"),
 			},
-			tokenTypes: []any{
+			matchTokens: []any{
 				[]any{
 					FilterNot("not"),
 					FilterTerminator("map"),
 				},
 			},
-			want: true,
+			want: []any{
+				FilterTerminator("map"),
+			},
 		},
 		{
 			name: "1 tokens don't match one or the other where there isn't a match",
-			tks: []any{
+			inputTokens: []any{
 				FilterTerminator("map"),
 			},
-			tokenTypes: []any{
+			matchTokens: []any{
 				[]any{
 					EntryExpression("h.User-Agent"),
 					FilterNot("not"),
 				},
 			},
-			want: false,
+			want: nil,
 		},
 		{
 			name: "sequence of 2 match",
-			tks: []any{
+			inputTokens: []any{
 				EntryExpression("h.User-Agent"),
 				FilterNot("not"),
 				FilterTerminator("map"),
 			},
-			tokenTypes: []any{
+			matchTokens: []any{
 				EntryExpression("h.User-Agent"),
 				FilterNot("not"),
 			},
-			want: true,
+			want: []any{
+				EntryExpression("h.User-Agent"),
+				FilterNot("not"),
+			},
 		},
 		{
 			name: "sequence of don't match",
-			tks: []any{
+			inputTokens: []any{
 				EntryExpression("h.User-Agent"),
 				FilterTerminator("map"),
 				FilterNot("not"),
 			},
-			tokenTypes: []any{
+			matchTokens: []any{
 				EntryExpression("h.User-Agent"),
 				FilterNot("not"),
 			},
-			want: false,
+			want: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FilterTokenMatcher(tt.tks, tt.tokenTypes...); got != tt.want {
-				t.Errorf("FilterTokenMatcher() = %v, want %v", got, tt.want)
+			got := FilterTokenMatcher(tt.inputTokens, tt.matchTokens...)
+			if diff := cmp.Diff(got, tt.want); len(diff) > 0 {
+				t.Errorf("FilterTokenMatcher() = \n%s", diff)
 			}
 		})
 	}
