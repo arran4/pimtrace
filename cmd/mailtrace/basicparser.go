@@ -8,6 +8,7 @@ import (
 
 var ErrParserNothingFound = fmt.Errorf("no token found")
 var ErrUnknownExpression = fmt.Errorf("unknown expression")
+var ErrParserFault = fmt.Errorf("parser fault")
 
 type FilterEquals string
 type FilterContains string
@@ -21,7 +22,7 @@ var _ ValueExpression = EntryExpression("")
 func FilterIdentify(s string) (any, error) {
 	ss := strings.SplitN(s, ".", 2)
 	switch ss[0] {
-	case "map", "filter", "where":
+	case "into", "filter", "where":
 		return FilterTerminator(s), nil
 	case "not":
 		return FilterNot(s), nil
@@ -131,7 +132,7 @@ func ParseFilters(args []string) (Operation, []string, error) {
 	p := args
 	for len(p) > 0 {
 		switch p[0] {
-		case "map":
+		case "into":
 			return result.Simplify(), p, nil
 		case "filter", "where":
 			fallthrough
@@ -154,6 +155,7 @@ func ParseOperations(args []string) (Operation, error) {
 	result := &CompoundStatement{}
 	p := args
 	for len(p) > 0 {
+		l := len(p)
 		switch p[0] {
 		case "filter":
 			op, remain, err := ParseFilters(p[1:])
@@ -164,8 +166,13 @@ func ParseOperations(args []string) (Operation, error) {
 			if op != nil {
 				result.Statements = append(result.Statements, op)
 			}
+		case "into":
+
 		default:
 			return nil, fmt.Errorf("%w: %s", ErrUnknownExpression, p[0])
+		}
+		if len(p) == l {
+			return nil, ErrParserFault
 		}
 	}
 	return result.Simplify(), nil
