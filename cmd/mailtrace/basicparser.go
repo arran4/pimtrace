@@ -45,7 +45,7 @@ func FilterIdentify(s string) (any, error) {
 			return ConstantExpression(ss[1]), nil
 		}
 	}
-	return nil, fmt.Errorf("%w: %s", ErrParserUnknownToken, ss[0])
+	return nil, fmt.Errorf("filter tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
 }
 
 func IntoIdentify(args []string) (any, []string, error) {
@@ -61,7 +61,7 @@ func IntoIdentify(args []string) (any, []string, error) {
 	case "f", "func":
 		return ParseFunctionExpression(args)
 	}
-	return nil, nil, fmt.Errorf("%w: %s", ErrParserUnknownToken, ss[0])
+	return nil, nil, fmt.Errorf("into tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
 }
 
 func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
@@ -75,7 +75,7 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 	case "f", "func":
 		return ParseFunctionExpression(args)
 	}
-	return nil, nil, fmt.Errorf("%w: %s", ErrParserUnknownToken, ss[0])
+	return nil, nil, fmt.Errorf("function param tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
 }
 
 var fere = regexp.MustCompile("^(f|func)\\.([^[]+)\\[([^]]+)\\]$")
