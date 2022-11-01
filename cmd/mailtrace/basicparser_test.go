@@ -368,7 +368,7 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "Filter into summary with count and a calculated sum",
-			args: strings.Split("filter not h.user-agent icontains .Kmail into summary h.user-agent year[h.date] month[h.date] calculate sum[h.size] count", " "),
+			args: strings.Split("filter not h.user-agent icontains .Kmail into summary h.user-agent f.year[h.date] f.month[h.date] calculate f.sum[h.size] f.count", " "),
 			expectedOperation: &CompoundStatement{
 				Statements: []Operation{
 					&FilterStatement{
