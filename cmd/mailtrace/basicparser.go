@@ -144,11 +144,11 @@ done:
 		if err != nil {
 			return nil, nil, err
 		}
-		r = append(r, t)
 		switch t.(type) {
 		case Terminator:
 			break done
 		}
+		r = append(r, t)
 	}
 	return r, args[i:], nil
 }
@@ -163,11 +163,11 @@ done:
 		if err != nil {
 			return nil, nil, err
 		}
-		r = append(r, t)
 		switch t.(type) {
 		case Terminator:
 			break done
 		}
+		r = append(r, t)
 	}
 	return r, args, nil
 }

@@ -33,36 +33,30 @@ func TestFilterTokenizerScanN(t *testing.T) {
 			wantErr:   false,
 		},
 		{
-			name: "'Where' by itself",
-			args: []string{"where"},
-			n:    1,
-			tokens: []any{
-				Terminator("where"),
-			},
+			name:   "'Where' by itself",
+			args:   []string{"where"},
+			n:      1,
+			tokens: []any{},
 			remainder: []string{
 				"where",
 			},
 			wantErr: false,
 		},
 		{
-			name: "'Where' by itself - n in excess",
-			args: []string{"where"},
-			n:    10,
-			tokens: []any{
-				Terminator("where"),
-			},
+			name:   "'Where' by itself - n in excess",
+			args:   []string{"where"},
+			n:      10,
+			tokens: []any{},
 			remainder: []string{
 				"where",
 			},
 			wantErr: false,
 		},
 		{
-			name: "'Where' by itself - tokens in excess",
-			args: []string{"where", "where", "where", "where", "where", "where", "where", "where"},
-			n:    1,
-			tokens: []any{
-				Terminator("where"),
-			},
+			name:      "'Where' by itself - tokens in excess",
+			args:      []string{"where", "where", "where", "where", "where", "where", "where", "where"},
+			n:         1,
+			tokens:    []any{},
 			remainder: []string{"where", "where", "where", "where", "where", "where", "where", "where"},
 			wantErr:   false,
 		},
