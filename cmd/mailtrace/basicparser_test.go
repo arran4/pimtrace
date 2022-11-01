@@ -283,15 +283,15 @@ func TestParseOperations(t *testing.T) {
 		},
 		{
 			name: "filter out into a maildir",
-			args: strings.Split("not h.user-argent icontains .kmail into maildir", " "),
+			args: strings.Split("filter not h.user-argent icontains .kmail into maildir", " "),
 		},
 		{
 			name: "filter into a table",
-			args: strings.Split("not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]", " "),
+			args: strings.Split("filter not h.user-argent icontains .kmail into table with h.user-agent h.subject year[h.date] month[h.date]", " "),
 		},
 		{
 			name: "Filter into summary with count and a calculated sum",
-			args: strings.Split("not h.user-argent icontains .kmail into summary count h.user-agent year[h.date] month[h.date] calculate sum[h.size]", " "),
+			args: strings.Split("filter not h.user-argent icontains .kmail into summary count h.user-agent year[h.date] month[h.date] calculate sum[h.size]", " "),
 		},
 	}
 	for _, tt := range tests {
