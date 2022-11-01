@@ -135,6 +135,7 @@ func ParseFilters(args []string) (Operation, []string, error) {
 		case "into":
 			return result.Simplify(), p, nil
 		case "filter", "where":
+			p = p[1:]
 			fallthrough
 		default:
 			boolExp, remain, err := ParseFilter(p[:], result.Statements)
@@ -167,7 +168,14 @@ func ParseOperations(args []string) (Operation, error) {
 				result.Statements = append(result.Statements, op)
 			}
 		case "into":
-
+			op, remain, err := ParseInto(p[1:])
+			if err != nil {
+				return nil, err
+			}
+			p = remain
+			if op != nil {
+				result.Statements = append(result.Statements, op)
+			}
 		default:
 			return nil, fmt.Errorf("%w: %s", ErrUnknownExpression, p[0])
 		}
