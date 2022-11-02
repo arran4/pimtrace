@@ -306,12 +306,12 @@ func TestParseOperations(t *testing.T) {
 							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&TableTransformer{
-						Columns: []*ColumnExpression{
+					&ast.TableTransformer{
+						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
 				},
@@ -328,7 +328,7 @@ func TestParseOperations(t *testing.T) {
 						},
 					},
 					&maildata.MBoxOutput{},
-					&SortTransformer{
+					&ast.SortTransformer{
 						Expression: []ast.ValueExpression{
 							ast.EntryExpression("h.date"),
 						},
@@ -346,15 +346,15 @@ func TestParseOperations(t *testing.T) {
 							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&TableTransformer{
-						Columns: []*ColumnExpression{
+					&ast.TableTransformer{
+						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
-					&SortTransformer{
+					&ast.SortTransformer{
 						Expression: []ast.ValueExpression{
 							ast.EntryExpression("h.date"),
 						},
@@ -372,22 +372,22 @@ func TestParseOperations(t *testing.T) {
 							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&TableTransformer{
-						Columns: []*ColumnExpression{
+					&ast.TableTransformer{
+						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
-					&TableTransformer{
-						Columns: []*ColumnExpression{
+					&ast.TableTransformer{
+						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("c.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("c.subject")},
 							{Name: "year-date", Operation: ast.EntryExpression("c.year-date")},
 							{Name: "month-date", Operation: ast.EntryExpression("c.month-date")},
-							{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ast.ValueExpression{ast.EntryExpression("h.size")}}},
-							{Name: "count", Operation: &FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
+							{Name: "sum-size", Operation: &ast.FunctionExpression{Function: "sum", Args: []ast.ValueExpression{ast.EntryExpression("h.size")}}},
+							{Name: "count", Operation: &ast.FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
 						},
 					},
 				},

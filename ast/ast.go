@@ -3,8 +3,13 @@ package ast
 import (
 	"fmt"
 	"pimtrace"
+	"pimtrace/funcs"
 	"strings"
 	"unicode"
+)
+
+var (
+	ErrUnknownFunction = fmt.Errorf("unknown function")
 )
 
 type Operation[T any] interface {
@@ -167,3 +172,51 @@ func (f FilterStatement[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error
 }
 
 var _ Operation[any] = (*FilterStatement[any])(nil)
+
+type FunctionExpression[T any] struct {
+	Function string
+	Args     []ValueExpression[T]
+}
+
+func (f *FunctionExpression[T]) ColumnName() string {
+	elems := []string{f.Function}
+	for _, arg := range f.Args {
+		elems = append(elems, arg.ColumnName())
+	}
+	return strings.Join(elems, "-")
+}
+
+func (f *FunctionExpression[T]) Execute(d pimtrace.Entry[T]) (pimtrace.Value, error) {
+	functions := funcs.Functions[T]()
+	if f, ok := functions[f.Function]; ok {
+		return f(d)
+	}
+	return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, f.Function)
+}
+
+var _ ValueExpression[any] = (*FunctionExpression[any])(nil)
+
+type FunctionDef[T any] func(d pimtrace.Entry[T]) (pimtrace.Value, error)
+
+type ColumnExpression[T any] struct {
+	Name      string
+	Operation ValueExpression[T]
+}
+
+type TableTransformer[T any] struct {
+	Columns []*ColumnExpression[T]
+}
+
+func (t *TableTransformer[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+type SortTransformer[T any] struct {
+	Expression []ValueExpression[T]
+}
+
+func (s SortTransformer[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+	//TODO implement me
+	panic("implement me")
+}
