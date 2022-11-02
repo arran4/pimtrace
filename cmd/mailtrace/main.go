@@ -4,6 +4,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"pimtrace/argparsers/basic"
+	_ "pimtrace/funcs"
 )
 
 func main() {
@@ -22,7 +24,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	ops, err := ParseOperations(flag.Args())
+	ops, err := basic.ParseOperations(flag.Args())
 	if err != nil {
 		log.Printf("Parse Error: %s", err)
 		os.Exit(-1)

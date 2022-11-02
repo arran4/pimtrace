@@ -1,20 +1,21 @@
-package main
+package ast
 
 import (
 	"fmt"
+	"pimtrace"
 	"strings"
 	"unicode"
 )
 
 type Operation interface {
-	Execute(d Data) (Data, error)
+	Execute(d pimtrace.Data) (pimtrace.Data, error)
 }
 
 type CompoundStatement struct {
 	Statements []Operation
 }
 
-func (o *CompoundStatement) Execute(d Data) (Data, error) {
+func (o *CompoundStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	for _, op := range o.Statements {
 		var err error
 		d, err = op.Execute(d)
@@ -56,14 +57,14 @@ func (o *CompoundStatement) Simplify() Operation {
 var _ Operation = (*CompoundStatement)(nil)
 
 type BooleanExpression interface {
-	Execute(d Entry) (bool, error)
+	Execute(d pimtrace.Entry) (bool, error)
 }
 
 type NotOp struct {
 	Not BooleanExpression
 }
 
-func (n *NotOp) Execute(d Entry) (bool, error) {
+func (n *NotOp) Execute(d pimtrace.Entry) (bool, error) {
 	v, err := n.Not.Execute(d)
 	return !v, err
 }
@@ -71,7 +72,7 @@ func (n *NotOp) Execute(d Entry) (bool, error) {
 var _ BooleanExpression = (*NotOp)(nil)
 
 type ValueExpression interface {
-	Execute(d Entry) (Value, error)
+	Execute(d pimtrace.Entry) (pimtrace.Value, error)
 	ColumnName() string
 }
 
@@ -86,8 +87,8 @@ func (ve ConstantExpression) ColumnName() string {
 	}, string(ve))
 }
 
-func (ve ConstantExpression) Execute(d Entry) (Value, error) {
-	return SimpleStringValue(ve), nil
+func (ve ConstantExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+	return pimtrace.SimpleStringValue(ve), nil
 }
 
 type EntryExpression string
@@ -106,25 +107,25 @@ func (ve EntryExpression) ColumnName() string {
 	}, s)
 }
 
-func (ve EntryExpression) Execute(d Entry) (Value, error) {
+func (ve EntryExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
 	return d.Get(string(ve)), nil
 }
 
-type OpFunc func(Value, Value) (bool, error)
+type OpFunc func(pimtrace.Value, pimtrace.Value) (bool, error)
 
-func EqualOp(rhsv Value, lhsv Value) (bool, error) {
+func EqualOp(rhsv pimtrace.Value, lhsv pimtrace.Value) (bool, error) {
 	return rhsv.String() == lhsv.String(), nil
 }
 
 var _ OpFunc = EqualOp
 
-func ContainsOp(rhsv Value, lhsv Value) (bool, error) {
+func ContainsOp(rhsv pimtrace.Value, lhsv pimtrace.Value) (bool, error) {
 	return strings.Contains(rhsv.String(), lhsv.String()), nil
 }
 
 var _ OpFunc = ContainsOp
 
-func IContainsOp(rhsv Value, lhsv Value) (bool, error) {
+func IContainsOp(rhsv pimtrace.Value, lhsv pimtrace.Value) (bool, error) {
 	return strings.Contains(strings.ToLower(rhsv.String()), strings.ToLower(lhsv.String())), nil
 }
 
@@ -136,7 +137,7 @@ type Op struct {
 	RHS ValueExpression
 }
 
-func (e *Op) Execute(d Entry) (bool, error) {
+func (e *Op) Execute(d pimtrace.Entry) (bool, error) {
 	if e.LHS == nil {
 		return false, fmt.Errorf("LHS invalid issue with Op")
 	}
@@ -161,15 +162,15 @@ type FilterStatement struct {
 	Expression BooleanExpression
 }
 
-func (f FilterStatement) Execute(d Data) (Data, error) {
-	return Filter(d, f.Expression)
+func (f FilterStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+	return pimtrace.Filter(d, f.Expression)
 }
 
 var _ Operation = (*FilterStatement)(nil)
 
 type MBoxOutput struct{}
 
-func (M *MBoxOutput) Execute(d Data) (Data, error) {
+func (M *MBoxOutput) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	//TODO implement me
 	panic("implement me")
 }

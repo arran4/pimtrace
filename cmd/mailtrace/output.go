@@ -10,9 +10,10 @@ import (
 	"mime"
 	"mime/multipart"
 	"os"
+	"pimtrace"
 )
 
-func OutputHandler(d Data, outputType *string, outputFile *string) error {
+func OutputHandler(d pimtrace.Data, outputType *string, outputFile *string) error {
 	switch *outputType {
 	case "mailfile":
 		switch *outputFile {
@@ -70,17 +71,17 @@ func OutputHandler(d Data, outputType *string, outputFile *string) error {
 	return nil
 }
 
-func WriteCSVStream(d Data, stdin *os.File, s string) error {
+func WriteCSVStream(d pimtrace.Data, stdin *os.File, s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func WriteCSVFile(d Data, s string) error {
+func WriteCSVFile(d pimtrace.Data, s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func WriteMBoxFile(d Data, fName string) error {
+func WriteMBoxFile(d pimtrace.Data, fName string) error {
 	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("creating Mbox %s: %w", fName, err)
@@ -93,7 +94,7 @@ func WriteMBoxFile(d Data, fName string) error {
 	return WriteMBoxStream(d, f, fName)
 }
 
-func WriteMBoxStream(d Data, f io.Writer, fName string) error {
+func WriteMBoxStream(d pimtrace.Data, f io.Writer, fName string) error {
 	ms := d.Mail()
 	mbw := mbox.NewWriter(f)
 	for mi, m := range ms {
@@ -101,14 +102,14 @@ func WriteMBoxStream(d Data, f io.Writer, fName string) error {
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("creating message %d to Mbox %s: %w", mi+1, fName, err)
 		}
-		if err := WriteMailStream(MailDataType(ms[mi:mi+1]), mw, fName); err != nil {
+		if err := WriteMailStream(pimtrace.MailDataType(ms[mi:mi+1]), mw, fName); err != nil {
 			return fmt.Errorf("writing message %d to Mbox %s: %w", mi+1, fName, err)
 		}
 	}
 	return nil
 }
 
-func WriteMailFile(d Data, fName string) error {
+func WriteMailFile(d pimtrace.Data, fName string) error {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("writing mail file %s: %w", fName, err)
@@ -121,7 +122,7 @@ func WriteMailFile(d Data, fName string) error {
 	return WriteMailStream(d, f, fName)
 }
 
-func WriteMailStream(d Data, f io.Writer, fName string) error {
+func WriteMailStream(d pimtrace.Data, f io.Writer, fName string) error {
 	for mi, m := range d.Mail() {
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
 			return fmt.Errorf("writing message %d header %s: %w", mi+1, fName, err)

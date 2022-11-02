@@ -1,4 +1,4 @@
-package main
+package pimtrace
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	mail2 "net/mail"
 	"net/textproto"
+	"pimtrace/ast"
 	"strconv"
 	"strings"
 	"time"
@@ -173,7 +174,7 @@ func (p MailDataType) SetEntry(n int, entry Entry) {
 	(([]*MailWithSource)(p))[n] = entry.Mail()
 }
 
-func Filter(d Data, expression BooleanExpression) (Data, error) {
+func Filter(d Data, expression ast.BooleanExpression) (Data, error) {
 	i, o := 0, 0
 	for i+o < d.Len() {
 		e := d.Entry(i + o)

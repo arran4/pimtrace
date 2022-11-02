@@ -13,10 +13,11 @@ import (
 	"mime"
 	"mime/multipart"
 	"os"
+	"pimtrace"
 )
 
-func InputHandler(inputType string, inputFile string) (Data, error) {
-	mails := []*MailWithSource{}
+func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
+	mails := []*pimtrace.MailWithSource{}
 	switch inputType {
 	case "mailfile":
 		switch inputFile {
@@ -58,10 +59,10 @@ func InputHandler(inputType string, inputFile string) (Data, error) {
 		fmt.Println("Please specify a -input-type")
 		fmt.Println()
 	}
-	return MailDataType(mails), nil
+	return pimtrace.MailDataType(mails), nil
 }
 
-func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
+func ReadMBoxFile(fType, fName string) ([]*pimtrace.MailWithSource, error) {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
@@ -74,9 +75,9 @@ func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
 	return ReadMBoxStream(f, fType, fName)
 }
 
-func ReadMBoxStream(f io.Reader, fType string, fName string) ([]*MailWithSource, error) {
+func ReadMBoxStream(f io.Reader, fType string, fName string) ([]*pimtrace.MailWithSource, error) {
 	mbr := mbox.NewReader(f)
-	ms := []*MailWithSource{}
+	ms := []*pimtrace.MailWithSource{}
 	for {
 		mr, err := mbr.NextMessage()
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -93,7 +94,7 @@ func ReadMBoxStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 	}
 }
 
-func ReadMailFile(fType, fName string) ([]*MailWithSource, error) {
+func ReadMailFile(fType, fName string) ([]*pimtrace.MailWithSource, error) {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
@@ -106,8 +107,8 @@ func ReadMailFile(fType, fName string) ([]*MailWithSource, error) {
 	return ReadMailStream(f, fType, fName)
 }
 
-func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource, error) {
-	ms := []*MailWithSource{}
+func ReadMailStream(f io.Reader, fType string, fName string) ([]*pimtrace.MailWithSource, error) {
+	ms := []*pimtrace.MailWithSource{}
 	for {
 		msg, err := message.Read(f)
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -116,11 +117,11 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 		if msg == nil {
 			return ms, nil
 		}
-		mws := &MailWithSource{
+		mws := &pimtrace.MailWithSource{
 			SourceFile: fName,
 			SourceType: fType,
 			MailHeader: mail.HeaderFromMap(msg.Header.Map()),
-			MailBodies: []MailBody{},
+			MailBodies: []pimtrace.MailBody{},
 		}
 		ct := msg.Header.Get("Content-Type")
 		mt, mtp, _ := mime.ParseMediaType(ct)
@@ -139,8 +140,8 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 				if _, err := io.Copy(b, p); err != nil {
 					return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mws.MailBodies)+1, fName, err)
 				}
-				mws.MailBodies = append(mws.MailBodies, &MailBodyFromPart{
-					MailBodyGeneral: &MailBodyGeneral{
+				mws.MailBodies = append(mws.MailBodies, &pimtrace.MailBodyFromPart{
+					MailBodyGeneral: &pimtrace.MailBodyGeneral{
 						Body:    b,
 						Message: mws,
 					},
@@ -152,7 +153,7 @@ func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource,
 			if _, err := io.Copy(b, msg.Body); err != nil {
 				return nil, fmt.Errorf("reading body of message %d part %d %s: %w", len(ms)+1, len(mws.MailBodies)+1, fName, err)
 			}
-			mws.MailBodies = append(mws.MailBodies, &MailBodyGeneral{
+			mws.MailBodies = append(mws.MailBodies, &pimtrace.MailBodyGeneral{
 				Body:    b,
 				Message: mws,
 			})

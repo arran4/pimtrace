@@ -1,7 +1,8 @@
-package main
+package basic
 
 import (
 	"github.com/google/go-cmp/cmp"
+	"pimtrace/ast"
 	"reflect"
 	"strings"
 	"testing"
@@ -159,7 +160,7 @@ func TestFilterTokenMatcher(t *testing.T) {
 			},
 			matchTokens: []any{
 				[]any{
-					EntryExpression("h.User-Agent"),
+					ast.EntryExpression("h.User-Agent"),
 					FilterNot("not"),
 				},
 			},
@@ -168,28 +169,28 @@ func TestFilterTokenMatcher(t *testing.T) {
 		{
 			name: "sequence of 2 match",
 			inputTokens: []any{
-				EntryExpression("h.User-Agent"),
+				ast.EntryExpression("h.User-Agent"),
 				FilterNot("not"),
 				Terminator("map"),
 			},
 			matchTokens: []any{
-				EntryExpression("h.User-Agent"),
+				ast.EntryExpression("h.User-Agent"),
 				FilterNot("not"),
 			},
 			want: []any{
-				EntryExpression("h.User-Agent"),
+				ast.EntryExpression("h.User-Agent"),
 				FilterNot("not"),
 			},
 		},
 		{
 			name: "sequence of don't match",
 			inputTokens: []any{
-				EntryExpression("h.User-Agent"),
+				ast.EntryExpression("h.User-Agent"),
 				Terminator("map"),
 				FilterNot("not"),
 			},
 			matchTokens: []any{
-				EntryExpression("h.User-Agent"),
+				ast.EntryExpression("h.User-Agent"),
 				FilterNot("not"),
 			},
 			want: nil,
@@ -209,15 +210,15 @@ func TestParseFilter(t *testing.T) {
 	tests := []struct {
 		name               string
 		args               []string
-		statements         []Operation
-		expectedExpression BooleanExpression
+		statements         []ast.Operation
+		expectedExpression ast.BooleanExpression
 		remaining          []string
 		wantErr            bool
 	}{
 		{
 			name:               "Empty args go no where - since filter is already provided it's safe to die here",
 			args:               []string{},
-			statements:         []Operation{},
+			statements:         []ast.Operation{},
 			expectedExpression: nil,
 			remaining:          nil,
 			wantErr:            true,
@@ -225,10 +226,10 @@ func TestParseFilter(t *testing.T) {
 		{
 			name: "Basic neg expression",
 			args: []string{"not", "h.user-agent", "eq", ".Kmail"},
-			expectedExpression: &NotOp{
-				Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			expectedExpression: &ast.NotOp{
+				Not: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 			},
-			statements: []Operation{},
+			statements: []ast.Operation{},
 			remaining:  []string{},
 			wantErr:    false,
 		},
@@ -240,7 +241,7 @@ func TestParseFilter(t *testing.T) {
 				t.Errorf("ParseFilter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if diff := cmp.Diff(got, tt.expectedExpression, cmp.Comparer(func(o1 OpFunc, o2 OpFunc) bool {
+			if diff := cmp.Diff(got, tt.expectedExpression, cmp.Comparer(func(o1 ast.OpFunc, o2 ast.OpFunc) bool {
 				sf1 := reflect.ValueOf(o1)
 				sf2 := reflect.ValueOf(o2)
 				return sf1.Pointer() == sf2.Pointer()
@@ -258,7 +259,7 @@ func TestParseOperations(t *testing.T) {
 	tests := []struct {
 		name              string
 		args              []string
-		expectedOperation Operation
+		expectedOperation ast.Operation
 		remaining         []string
 		wantErr           bool
 	}{
@@ -272,9 +273,9 @@ func TestParseOperations(t *testing.T) {
 		{
 			name: "Basic neg expression",
 			args: []string{"filter", "not", "h.user-agent", "eq", ".Kmail"},
-			expectedOperation: &FilterStatement{
-				Expression: &NotOp{
-					Not: &Op{Op: EqualOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			expectedOperation: &ast.FilterStatement{
+				Expression: &ast.NotOp{
+					Not: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 				},
 			},
 			remaining: []string{},
@@ -283,33 +284,33 @@ func TestParseOperations(t *testing.T) {
 		{
 			name: "filter out into a mbox",
 			args: strings.Split("filter not h.user-agent icontains .Kmail into mbox", " "),
-			expectedOperation: &CompoundStatement{
-				Statements: []Operation{
-					&FilterStatement{
-						Expression: &NotOp{
-							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &ast.NotOp{
+							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&MBoxOutput{},
+					&ast.MBoxOutput{},
 				},
 			},
 		},
 		{
 			name: "filter into a table",
 			args: strings.Split("filter not h.user-agent icontains .Kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date]", " "),
-			expectedOperation: &CompoundStatement{
-				Statements: []Operation{
-					&FilterStatement{
-						Expression: &NotOp{
-							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &ast.NotOp{
+							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
 					&TableTransformer{
 						Columns: []*ColumnExpression{
-							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
-							{Name: "subject", Operation: EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
+							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
+							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
+							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
 				},
@@ -318,17 +319,17 @@ func TestParseOperations(t *testing.T) {
 		{
 			name: "filter out into a mbox sorted by date",
 			args: strings.Split("filter not h.user-agent icontains .Kmail into mbox sort h.date", " "),
-			expectedOperation: &CompoundStatement{
-				Statements: []Operation{
-					&FilterStatement{
-						Expression: &NotOp{
-							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &ast.NotOp{
+							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&MBoxOutput{},
+					&ast.MBoxOutput{},
 					&SortTransformer{
-						Expression: []ValueExpression{
-							EntryExpression("h.date"),
+						Expression: []ast.ValueExpression{
+							ast.EntryExpression("h.date"),
 						},
 					},
 				},
@@ -337,24 +338,24 @@ func TestParseOperations(t *testing.T) {
 		{
 			name: "filter into a table sorted by date",
 			args: strings.Split("filter not h.user-agent icontains .Kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date] sort h.date", " "),
-			expectedOperation: &CompoundStatement{
-				Statements: []Operation{
-					&FilterStatement{
-						Expression: &NotOp{
-							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &ast.NotOp{
+							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
 					&TableTransformer{
 						Columns: []*ColumnExpression{
-							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
-							{Name: "subject", Operation: EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
+							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
+							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
+							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
 					&SortTransformer{
-						Expression: []ValueExpression{
-							EntryExpression("h.date"),
+						Expression: []ast.ValueExpression{
+							ast.EntryExpression("h.date"),
 						},
 					},
 				},
@@ -363,28 +364,28 @@ func TestParseOperations(t *testing.T) {
 		{
 			name: "Filter into summary with count and a calculated sum",
 			args: strings.Split("filter not h.user-agent icontains .Kmail into summary h.user-agent h.subject f.year[h.date] f.month[h.date] calculate f.sum[h.size] f.count", " "),
-			expectedOperation: &CompoundStatement{
-				Statements: []Operation{
-					&FilterStatement{
-						Expression: &NotOp{
-							Not: &Op{Op: IContainsOp, LHS: EntryExpression("h.user-agent"), RHS: ConstantExpression("Kmail")},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &ast.NotOp{
+							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
 					&TableTransformer{
 						Columns: []*ColumnExpression{
-							{Name: "user-agent", Operation: EntryExpression("h.user-agent")},
-							{Name: "subject", Operation: EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
+							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
+							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
+							{Name: "year-date", Operation: &FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
 					&TableTransformer{
 						Columns: []*ColumnExpression{
-							{Name: "user-agent", Operation: EntryExpression("c.user-agent")},
-							{Name: "subject", Operation: EntryExpression("c.subject")},
-							{Name: "year-date", Operation: EntryExpression("c.year-date")},
-							{Name: "month-date", Operation: EntryExpression("c.month-date")},
-							{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ValueExpression{EntryExpression("h.size")}}},
+							{Name: "user-agent", Operation: ast.EntryExpression("c.user-agent")},
+							{Name: "subject", Operation: ast.EntryExpression("c.subject")},
+							{Name: "year-date", Operation: ast.EntryExpression("c.year-date")},
+							{Name: "month-date", Operation: ast.EntryExpression("c.month-date")},
+							{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ast.ValueExpression{ast.EntryExpression("h.size")}}},
 							{Name: "count", Operation: &FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
 						},
 					},
@@ -399,7 +400,7 @@ func TestParseOperations(t *testing.T) {
 				t.Errorf("ParseFilter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if diff := cmp.Diff(got, tt.expectedOperation, cmp.Comparer(func(o1 OpFunc, o2 OpFunc) bool {
+			if diff := cmp.Diff(got, tt.expectedOperation, cmp.Comparer(func(o1 ast.OpFunc, o2 ast.OpFunc) bool {
 				sf1 := reflect.ValueOf(o1)
 				sf2 := reflect.ValueOf(o2)
 				return sf1.Pointer() == sf2.Pointer()
