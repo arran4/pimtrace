@@ -2,13 +2,8 @@ package funcs
 
 import (
 	"pimtrace"
-	"pimtrace/argparsers/basic"
 )
 
-func init() {
-	basic.RegisterFunction("count", Count)
-}
-
-func Count(d pimtrace.Entry) (pimtrace.Value, error) {
+func Count[T any](d pimtrace.Entry[T]) (pimtrace.Value, error) {
 
 }

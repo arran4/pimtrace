@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pimtrace"
 	"pimtrace/ast"
+	"pimtrace/funcs"
 	"reflect"
 	"regexp"
 	"strings"
@@ -25,8 +26,8 @@ type FilterIContains string
 type FilterNot string
 type Terminator string
 
-var _ ast.ValueExpression = ast.ConstantExpression("")
-var _ ast.ValueExpression = ast.EntryExpression("")
+var _ ast.ValueExpression[any] = ast.ConstantExpression[any]("")
+var _ ast.ValueExpression[any] = ast.EntryExpression[any]("")
 
 func FilterIdentify(s string) (any, error) {
 	ss := strings.SplitN(s, ".", 2)
@@ -89,12 +90,12 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 
 var fere = regexp.MustCompile("^(f|func)\\.([^[]+)(\\[([^]]+)\\])?$")
 
-type FunctionExpression struct {
+type FunctionExpression[T any] struct {
 	Function string
-	Args     []ast.ValueExpression
+	Args     []ast.ValueExpression[T]
 }
 
-func (f *FunctionExpression) ColumnName() string {
+func (f *FunctionExpression[T]) ColumnName() string {
 	elems := []string{f.Function}
 	for _, arg := range f.Args {
 		elems = append(elems, arg.ColumnName())
@@ -102,35 +103,30 @@ func (f *FunctionExpression) ColumnName() string {
 	return strings.Join(elems, "-")
 }
 
-var _ ast.ValueExpression = (*FunctionExpression)(nil)
+var _ ast.ValueExpression[any] = (*FunctionExpression[any])(nil)
 
-type FunctionDef func(d pimtrace.Entry) (pimtrace.Value, error)
+type FunctionDef[T any] func(d pimtrace.Entry[T]) (pimtrace.Value, error)
 
-func RegisterFunction(name string, def FunctionDef) {
-	functions[name] = def
-}
-
-var functions = map[string]FunctionDef{}
-
-func (f *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+func (f *FunctionExpression[T]) Execute(d pimtrace.Entry[T]) (pimtrace.Value, error) {
+	functions := funcs.Functions[T]()
 	if f, ok := functions[f.Function]; ok {
 		return f(d)
 	}
 	return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, f.Function)
 }
 
-func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, error) {
+func ParseFunctionExpression[T any](args []string) (ast.ValueExpression[T], []string, error) {
 	m := fere.FindStringSubmatch(args[0])
 	if len(m) == 5 {
-		var params []ast.ValueExpression
+		var params []ast.ValueExpression[T]
 		if len(m[3]) > 0 {
 			var err error
-			params, err = ParseExpressions(m[4])
+			params, err = ParseExpressions[T](m[4])
 			if err != nil {
 				return nil, nil, fmt.Errorf("parameter parse error: %w", err)
 			}
 		}
-		return &FunctionExpression{
+		return &FunctionExpression[T]{
 			Function: m[2],
 			Args:     params,
 		}, args[1:], nil
@@ -138,9 +134,9 @@ func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, erro
 	return nil, nil, fmt.Errorf("%w: %s", ErrInvalidFunctionExpression, args[0])
 }
 
-func ParseExpressions(s string) ([]ast.ValueExpression, error) {
+func ParseExpressions[T any](s string) ([]ast.ValueExpression[T], error) {
 	css := strings.SplitN(s, ",", 2)
-	var results []ast.ValueExpression
+	var results []ast.ValueExpression[T]
 	for len(css) > 0 {
 		var err error
 		var v any
@@ -149,7 +145,7 @@ func ParseExpressions(s string) ([]ast.ValueExpression, error) {
 			return nil, err
 		}
 		switch v := v.(type) {
-		case ast.ValueExpression:
+		case ast.ValueExpression[T]:
 			results = append(results, v)
 		default:
 			return nil, fmt.Errorf("%w: %s", ErrParserUnknownToken, css[0])
@@ -195,18 +191,18 @@ done:
 	return r, args, nil
 }
 
-func ParseFilter(args []string, statements []ast.Operation) (ast.BooleanExpression, []string, error) {
+func ParseFilter[T any](args []string, statements []ast.Operation[T]) (ast.BooleanExpression[T], []string, error) {
 	tks, remain, err := FilterTokenizerScanN(args, 3)
 	if err != nil {
 		return nil, nil, err
 	}
 	if TokenMatcher(tks, FilterNot("")) != nil {
-		var op ast.BooleanExpression
-		op, remain, err = ParseFilter(args[1:], []ast.Operation{})
+		var op ast.BooleanExpression[T]
+		op, remain, err = ParseFilter(args[1:], []ast.Operation[T]{})
 		if err != nil {
 			return nil, nil, err
 		}
-		return &ast.NotOp{
+		return &ast.NotOp[T]{
 			Not: op,
 		}, remain, nil
 	}
@@ -224,42 +220,42 @@ func ParseFilter(args []string, statements []ast.Operation) (ast.BooleanExpressi
 		case FilterIContains:
 			op = ast.IContainsOp
 		}
-		return &ast.Op{
+		return &ast.Op[T]{
 			Op:  op,
-			LHS: tks[0].(ast.ValueExpression),
-			RHS: tks[2].(ast.ValueExpression),
+			LHS: tks[0].(ast.ValueExpression[T]),
+			RHS: tks[2].(ast.ValueExpression[T]),
 		}, remain, nil
 	}
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
 }
 
-type ColumnExpression struct {
+type ColumnExpression[T any] struct {
 	Name      string
-	Operation ast.ValueExpression
+	Operation ast.ValueExpression[T]
 }
 
-type TableTransformer struct {
-	Columns []*ColumnExpression
+type TableTransformer[T any] struct {
+	Columns []*ColumnExpression[T]
 }
 
-func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (t *TableTransformer[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func ParseIntoSummary(args []string) (ast.Operation, []string, error) {
-	results, remain, err := ParseIntoTable(args)
+func ParseIntoSummary[T any](args []string) (ast.Operation[T], []string, error) {
+	results, remain, err := ParseIntoTable[T](args)
 	if err != nil {
 		return nil, nil, fmt.Errorf("summary table: %w", err)
 	}
-	table := results.(*TableTransformer)
+	table := results.(*TableTransformer[T])
 	if len(remain) > 0 {
 		switch remain[0] {
 		case "calculate":
 			remain = remain[1:]
 		}
-		c := &ast.CompoundStatement{
-			Statements: []ast.Operation{
+		c := &ast.CompoundStatement[T]{
+			Statements: []ast.Operation[T]{
 				results,
 			},
 		}
@@ -268,18 +264,18 @@ func ParseIntoSummary(args []string) (ast.Operation, []string, error) {
 		if err != nil {
 			return nil, nil, fmt.Errorf("summary table: %w", err)
 		}
-		t := &TableTransformer{}
+		t := &TableTransformer[T]{}
 		for _, origC := range table.Columns {
-			t.Columns = append(t.Columns, &ColumnExpression{
+			t.Columns = append(t.Columns, &ColumnExpression[T]{
 				Name:      origC.Name,
-				Operation: ast.EntryExpression("c." + origC.Name),
+				Operation: ast.EntryExpression[T]("c." + origC.Name),
 			})
 		}
 	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
-			case ast.ValueExpression:
-				t.Columns = append(t.Columns, &ColumnExpression{
+			case ast.ValueExpression[T]:
+				t.Columns = append(t.Columns, &ColumnExpression[T]{
 					Name:      tkn.ColumnName(),
 					Operation: tkn,
 				})
@@ -297,18 +293,18 @@ func ParseIntoSummary(args []string) (ast.Operation, []string, error) {
 	return results, remain, nil
 }
 
-func ParseIntoTable(args []string) (ast.Operation, []string, error) {
+func ParseIntoTable[T any](args []string) (ast.Operation[T], []string, error) {
 	tks, remain, err := IntoTokenizerScan(args)
 	if err != nil {
 		return nil, nil, fmt.Errorf("table: %w", err)
 	}
 	if len(tks) > 0 {
-		var expressions []*ColumnExpression
+		var expressions []*ColumnExpression[T]
 	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
-			case ast.ValueExpression:
-				expressions = append(expressions, &ColumnExpression{
+			case ast.ValueExpression[T]:
+				expressions = append(expressions, &ColumnExpression[T]{
 					Name:      tkn.ColumnName(),
 					Operation: tkn,
 				})
@@ -318,7 +314,7 @@ func ParseIntoTable(args []string) (ast.Operation, []string, error) {
 				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
 			}
 		}
-		result := &TableTransformer{
+		result := &TableTransformer[T]{
 			Columns: expressions,
 		}
 		return result, remain, nil
@@ -326,26 +322,26 @@ func ParseIntoTable(args []string) (ast.Operation, []string, error) {
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
 }
 
-type SortTransformer struct {
-	Expression []ast.ValueExpression
+type SortTransformer[T any] struct {
+	Expression []ast.ValueExpression[T]
 }
 
-func (s SortTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (s SortTransformer[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func ParseSort(args []string) (ast.Operation, []string, error) {
+func ParseSort[T any](args []string) (ast.Operation[T], []string, error) {
 	tks, remain, err := IntoTokenizerScan(args)
 	if err != nil {
 		return nil, nil, err
 	}
 	if len(tks) > 0 {
-		var expressions []ast.ValueExpression
+		var expressions []ast.ValueExpression[T]
 	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
-			case ast.ValueExpression:
+			case ast.ValueExpression[T]:
 				expressions = append(expressions, tkn)
 			case Terminator:
 				break done
@@ -353,7 +349,7 @@ func ParseSort(args []string) (ast.Operation, []string, error) {
 				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
 			}
 		}
-		result := &SortTransformer{
+		result := &SortTransformer[T]{
 			Expression: expressions,
 		}
 		return result, remain, nil
@@ -394,8 +390,8 @@ func TokenMatcher(inputTokens []any, matchTokens ...any) []any {
 	return result
 }
 
-func ParseFilters(args []string) (ast.Operation, []string, error) {
-	result := &ast.CompoundStatement{}
+func ParseFilters[T any](args []string) (ast.Operation[T], []string, error) {
+	result := &ast.CompoundStatement[T]{}
 	p := args
 	for len(p) > 0 {
 		switch p[0] {
@@ -410,7 +406,7 @@ func ParseFilters(args []string) (ast.Operation, []string, error) {
 				return nil, nil, err
 			}
 			p = remain
-			statement := &ast.FilterStatement{
+			statement := &ast.FilterStatement[T]{
 				Expression: boolExp,
 			}
 			result.Statements = append(result.Statements, statement)
@@ -419,7 +415,7 @@ func ParseFilters(args []string) (ast.Operation, []string, error) {
 	return result.Simplify(), p, nil
 }
 
-func ParseInto(args []string) (ast.Operation, []string, error) {
+func ParseInto[T any](args []string) (ast.Operation[T], []string, error) {
 	p := args
 	if len(p) > 0 {
 		switch p[0] {
@@ -430,24 +426,25 @@ func ParseInto(args []string) (ast.Operation, []string, error) {
 	if len(p) > 0 {
 		switch p[0] {
 		case "mbox":
-			return &ast.MBoxOutput{}, p[1:], nil
+			//return &maildata.MBoxOutput[T]{}, p[1:], nil
+			panic("todo implement generic way of inserting these")
 		case "summary":
-			return ParseIntoSummary(p[1:])
+			return ParseIntoSummary[T](p[1:])
 		case "table":
-			return ParseIntoTable(p[1:])
+			return ParseIntoTable[T](p[1:])
 		}
 	}
 	return nil, nil, ErrUnknownIntoStatement
 }
 
-func ParseOperations(args []string) (ast.Operation, error) {
-	result := &ast.CompoundStatement{}
+func ParseOperations[T any](args []string) (ast.Operation[T], error) {
+	result := &ast.CompoundStatement[T]{}
 	p := args
 	for len(p) > 0 {
 		l := len(p)
 		switch p[0] {
 		case "filter":
-			op, remain, err := ParseFilters(p[1:])
+			op, remain, err := ParseFilters[T](p[1:])
 			if err != nil {
 				return nil, fmt.Errorf("parse filters: %w", err)
 			}
@@ -456,7 +453,7 @@ func ParseOperations(args []string) (ast.Operation, error) {
 				result.Statements = append(result.Statements, op)
 			}
 		case "into":
-			op, remain, err := ParseInto(p[1:])
+			op, remain, err := ParseInto[T](p[1:])
 			if err != nil {
 				return nil, fmt.Errorf("parse into: %w", err)
 			}
@@ -465,7 +462,7 @@ func ParseOperations(args []string) (ast.Operation, error) {
 				result.Statements = append(result.Statements, op)
 			}
 		case "sort":
-			op, remain, err := ParseSort(p[1:])
+			op, remain, err := ParseSort[T](p[1:])
 			if err != nil {
 				return nil, fmt.Errorf("parse sort: %w", err)
 			}

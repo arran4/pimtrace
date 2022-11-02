@@ -1,11 +1,10 @@
-package util
+package ast
 
 import (
 	"pimtrace"
-	"pimtrace/ast"
 )
 
-func Filter[T any](d pimtrace.Data[T], expression ast.BooleanExpression[T]) (pimtrace.Data[T], error) {
+func Filter[T any](d pimtrace.Data[T], expression BooleanExpression[T]) (pimtrace.Data[T], error) {
 	i, o := 0, 0
 	for i+o < d.Len() {
 		e := d.Entry(i + o)

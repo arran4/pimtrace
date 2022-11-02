@@ -3,6 +3,7 @@ package basic
 import (
 	"github.com/google/go-cmp/cmp"
 	"pimtrace/ast"
+	"pimtrace/internal/maildata"
 	"reflect"
 	"strings"
 	"testing"
@@ -291,7 +292,7 @@ func TestParseOperations(t *testing.T) {
 							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&ast.MBoxOutput{},
+					&maildata.MBoxOutput{},
 				},
 			},
 		},
@@ -326,7 +327,7 @@ func TestParseOperations(t *testing.T) {
 							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&ast.MBoxOutput{},
+					&maildata.MBoxOutput{},
 					&SortTransformer{
 						Expression: []ast.ValueExpression{
 							ast.EntryExpression("h.date"),

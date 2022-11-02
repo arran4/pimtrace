@@ -6,19 +6,21 @@ import (
 	"testing"
 )
 
+type TestData struct{}
+
 func TestCompoundStatement_Execute(t *testing.T) {
 	tests := []struct {
 		name       string
-		Statements []Operation
-		data       pimtrace.Data
-		want       pimtrace.Data
+		Statements []Operation[*TestData]
+		data       pimtrace.Data[*TestData]
+		want       pimtrace.Data[*TestData]
 		wantErr    bool
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := &CompoundStatement{
+			o := &CompoundStatement[*TestData]{
 				Statements: tt.Statements,
 			}
 			got, err := o.Execute(tt.data)

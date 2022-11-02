@@ -3,20 +3,19 @@ package ast
 import (
 	"fmt"
 	"pimtrace"
-	"pimtrace/util"
 	"strings"
 	"unicode"
 )
 
-type Operation interface {
+type Operation[T any] interface {
 	Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error)
 }
 
-type CompoundStatement struct {
-	Statements []Operation
+type CompoundStatement[T any] struct {
+	Statements []Operation[T]
 }
 
-func (o *CompoundStatement) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+func (o *CompoundStatement[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
 	for _, op := range o.Statements {
 		var err error
 		d, err = op.Execute(d)
@@ -27,19 +26,19 @@ func (o *CompoundStatement) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error
 	return d, nil
 }
 
-func (o *CompoundStatement) Simplify() Operation {
+func (o *CompoundStatement[T]) Simplify() Operation[T] {
 	if len(o.Statements) == 0 {
 		return nil
 	}
 	if len(o.Statements) == 1 {
 		return o.Statements[0]
 	}
-	var result []Operation
+	var result []Operation[T]
 	for i, statement := range o.Statements {
 		switch statement := statement.(type) {
-		case *CompoundStatement:
+		case *CompoundStatement[T]:
 			if result == nil {
-				result = append([]Operation{}, o.Statements[:i]...)
+				result = append([]Operation[T]{}, o.Statements[:i]...)
 			}
 			result = append(result, statement.Statements...)
 		default:
@@ -55,7 +54,7 @@ func (o *CompoundStatement) Simplify() Operation {
 	return o
 }
 
-var _ Operation = (*CompoundStatement)(nil)
+var _ Operation[any] = (*CompoundStatement[any])(nil)
 
 type BooleanExpression[T any] interface {
 	Execute(d pimtrace.Entry[T]) (bool, error)
@@ -164,16 +163,7 @@ type FilterStatement[T any] struct {
 }
 
 func (f FilterStatement[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
-	return util.Filter(d, f.Expression)
+	return Filter(d, f.Expression)
 }
 
-var _ Operation = (*FilterStatement)(nil)
-
-type MBoxOutput struct{}
-
-func (M *MBoxOutput) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-var _ Operation = (*MBoxOutput)(nil)
+var _ Operation[any] = (*FilterStatement[any])(nil)
