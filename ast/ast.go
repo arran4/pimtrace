@@ -3,19 +3,20 @@ package ast
 import (
 	"fmt"
 	"pimtrace"
+	"pimtrace/util"
 	"strings"
 	"unicode"
 )
 
 type Operation interface {
-	Execute(d pimtrace.Data) (pimtrace.Data, error)
+	Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error)
 }
 
 type CompoundStatement struct {
 	Statements []Operation
 }
 
-func (o *CompoundStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (o *CompoundStatement) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
 	for _, op := range o.Statements {
 		var err error
 		d, err = op.Execute(d)
@@ -56,29 +57,29 @@ func (o *CompoundStatement) Simplify() Operation {
 
 var _ Operation = (*CompoundStatement)(nil)
 
-type BooleanExpression interface {
-	Execute(d pimtrace.Entry) (bool, error)
+type BooleanExpression[T any] interface {
+	Execute(d pimtrace.Entry[T]) (bool, error)
 }
 
-type NotOp struct {
-	Not BooleanExpression
+type NotOp[T any] struct {
+	Not BooleanExpression[T]
 }
 
-func (n *NotOp) Execute(d pimtrace.Entry) (bool, error) {
+func (n *NotOp[T]) Execute(d pimtrace.Entry[T]) (bool, error) {
 	v, err := n.Not.Execute(d)
 	return !v, err
 }
 
-var _ BooleanExpression = (*NotOp)(nil)
+var _ BooleanExpression[any] = (*NotOp[any])(nil)
 
-type ValueExpression interface {
-	Execute(d pimtrace.Entry) (pimtrace.Value, error)
+type ValueExpression[T any] interface {
+	Execute(d pimtrace.Entry[T]) (pimtrace.Value, error)
 	ColumnName() string
 }
 
-type ConstantExpression string
+type ConstantExpression[T any] string
 
-func (ve ConstantExpression) ColumnName() string {
+func (ve ConstantExpression[T]) ColumnName() string {
 	return strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) {
 			return r
@@ -87,13 +88,13 @@ func (ve ConstantExpression) ColumnName() string {
 	}, string(ve))
 }
 
-func (ve ConstantExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+func (ve ConstantExpression[T]) Execute(d pimtrace.Entry[T]) (pimtrace.Value, error) {
 	return pimtrace.SimpleStringValue(ve), nil
 }
 
-type EntryExpression string
+type EntryExpression[T any] string
 
-func (ve EntryExpression) ColumnName() string {
+func (ve EntryExpression[T]) ColumnName() string {
 	ss := strings.SplitN(string(ve), ".", 2)
 	s := ""
 	if len(ss) > 1 {
@@ -107,7 +108,7 @@ func (ve EntryExpression) ColumnName() string {
 	}, s)
 }
 
-func (ve EntryExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+func (ve EntryExpression[T]) Execute(d pimtrace.Entry[T]) (pimtrace.Value, error) {
 	return d.Get(string(ve)), nil
 }
 
@@ -131,13 +132,13 @@ func IContainsOp(rhsv pimtrace.Value, lhsv pimtrace.Value) (bool, error) {
 
 var _ OpFunc = IContainsOp
 
-type Op struct {
+type Op[T any] struct {
 	Op  OpFunc
-	LHS ValueExpression
-	RHS ValueExpression
+	LHS ValueExpression[T]
+	RHS ValueExpression[T]
 }
 
-func (e *Op) Execute(d pimtrace.Entry) (bool, error) {
+func (e *Op[T]) Execute(d pimtrace.Entry[T]) (bool, error) {
 	if e.LHS == nil {
 		return false, fmt.Errorf("LHS invalid issue with Op")
 	}
@@ -158,19 +159,19 @@ func (e *Op) Execute(d pimtrace.Entry) (bool, error) {
 	return e.Op(rhsv, lhsv)
 }
 
-type FilterStatement struct {
-	Expression BooleanExpression
+type FilterStatement[T any] struct {
+	Expression BooleanExpression[T]
 }
 
-func (f FilterStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
-	return pimtrace.Filter(d, f.Expression)
+func (f FilterStatement[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+	return util.Filter(d, f.Expression)
 }
 
 var _ Operation = (*FilterStatement)(nil)
 
 type MBoxOutput struct{}
 
-func (M *MBoxOutput) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (M *MBoxOutput) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
 	//TODO implement me
 	panic("implement me")
 }
