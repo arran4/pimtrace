@@ -3,10 +3,29 @@ package pimtrace
 import (
 	mail2 "net/mail"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type SimpleStringValue string
+
+func (s SimpleStringValue) Less(jv Value) bool {
+	switch jv := jv.(type) {
+	case SimpleStringValue:
+		return strings.Compare(string(s), string(jv)) < 0
+	default:
+		return s == jv
+	}
+}
+
+func (s SimpleStringValue) Equal(jv Value) bool {
+	switch jv := jv.(type) {
+	case SimpleStringValue:
+		return string(s) == string(jv)
+	default:
+		return s == jv
+	}
+}
 
 func (s SimpleStringValue) Time() *time.Time {
 	t, err := mail2.ParseDate(string(s))
@@ -46,6 +65,8 @@ type Value interface {
 	String() string
 	Time() *time.Time
 	Integer() *int
+	Equal(jv Value) bool
+	Less(jv Value) bool
 }
 
 type Entry interface {

@@ -5,6 +5,7 @@ import (
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
 	"pimtrace/funcs"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -236,7 +237,40 @@ type SortTransformer struct {
 	Expression []ValueExpression
 }
 
-func (s SortTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
-	//TODO implement me
-	panic("implement me")
+type SortTransformerSorter struct {
+	SortTransformer *SortTransformer
+	Data            pimtrace.Data
+}
+
+func (s *SortTransformerSorter) Len() int {
+	return s.Data.Len()
+}
+
+func (s *SortTransformerSorter) Less(i, j int) bool {
+	for _, e := range s.SortTransformer.Expression {
+		io, jo := s.Data.Entry(i), s.Data.Entry(j)
+		iv, _ := e.Execute(io)
+		jv, _ := e.Execute(jo)
+		if iv != nil && jv != nil {
+			if iv.Equal(jv) {
+				continue
+			}
+			return iv.Less(jv)
+		}
+	}
+	return i < j
+}
+
+func (s *SortTransformerSorter) Swap(i, j int) {
+	io, jo := s.Data.Entry(i), s.Data.Entry(j)
+	s.Data.SetEntry(j, io)
+	s.Data.SetEntry(i, jo)
+}
+
+func (s *SortTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+	sort.Sort(&SortTransformerSorter{
+		SortTransformer: s,
+		Data:            d,
+	})
+	return d, nil
 }

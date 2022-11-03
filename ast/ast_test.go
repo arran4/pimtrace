@@ -76,6 +76,31 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Simple Table column filter and sort",
+			Statements: &CompoundStatement{Statements: []Operation{
+				&TableTransformer{
+					Columns: []*ColumnExpression{
+						{Name: "Name", Operation: EntryExpression("h.name")},
+					},
+				},
+				&SortTransformer{[]ValueExpression{EntryExpression("c.Name")}},
+			}},
+			data: LoadData1("testdata/data10.csv"),
+			want: tabledata.Data{
+				{Headers: header2, Row: []string{"Adria Herring"}},
+				{Headers: header2, Row: []string{"Colorado Sandoval"}},
+				{Headers: header2, Row: []string{"Felix Sutton"}},
+				{Headers: header2, Row: []string{"Jane Bender"}},
+				{Headers: header2, Row: []string{"Jasper Joseph"}},
+				{Headers: header2, Row: []string{"Laurel Gonzalez"}},
+				{Headers: header2, Row: []string{"Maite Weaver"}},
+				{Headers: header2, Row: []string{"Melinda Barton"}},
+				{Headers: header2, Row: []string{"Rogan Hopkins"}},
+				{Headers: header2, Row: []string{"Shay Cleveland"}},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
