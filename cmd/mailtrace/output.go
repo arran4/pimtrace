@@ -37,12 +37,12 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	case "mbox":
-		if p, ok := p.(MBoxOutputCapable); ok {
+		if np, ok := p.(MBoxOutputCapable); ok {
 			switch outputPath {
 			case "-":
-				return p.WriteMBoxStream(os.Stdin, outputPath)
+				return np.WriteMBoxStream(os.Stdin, outputPath)
 			default:
-				return p.WriteMBoxFile(outputPath)
+				return np.WriteMBoxFile(outputPath)
 			}
 		} else {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
