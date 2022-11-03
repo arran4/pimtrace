@@ -85,7 +85,7 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 	return nil, nil, fmt.Errorf("function param tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
 }
 
-var fere = regexp.MustCompile("^(f|func)\\.([^[]+)(\\[([^]]+)\\])?$")
+var fere = regexp.MustCompile(`^(f|func)\.([^[]+)(\[([^]]+)\])?$`)
 
 func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, error) {
 	m := fere.FindStringSubmatch(args[0])
