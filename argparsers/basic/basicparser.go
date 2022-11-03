@@ -206,7 +206,9 @@ func ParseIntoSummary(args []string) (ast.Operation, []string, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("summary table: %w", err)
 	}
-	table := results.(*ast.TableTransformer)
+	table := &ast.GroupTransformer{
+		Columns: results.(*ast.TableTransformer).Columns,
+	}
 	if len(remain) > 0 {
 		switch remain[0] {
 		case "calculate":
@@ -214,7 +216,7 @@ func ParseIntoSummary(args []string) (ast.Operation, []string, error) {
 		}
 		c := &ast.CompoundStatement{
 			Statements: []ast.Operation{
-				results,
+				table,
 			},
 		}
 		var tks []any
