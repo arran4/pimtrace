@@ -48,13 +48,13 @@ type Value interface {
 	Integer() *int
 }
 
-type Entry[T any] interface {
+type Entry interface {
 	Get(string) Value
 }
 
-type Data[T any] interface {
+type Data interface {
 	Len() int
-	Entry(n int) Entry[T]
-	Truncate(n int) Data[T]
-	SetEntry(n int, entry Entry[T])
+	Entry(n int) Entry
+	Truncate(n int) Data
+	SetEntry(n int, entry Entry)
 }

@@ -17,7 +17,7 @@ import (
 	"pimtrace/dataformats/maildata"
 )
 
-func InputHandler(inputType string, inputFile string) (pimtrace.Data[*maildata.MailWithSource], error) {
+func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 	mails := []*maildata.MailWithSource{}
 	switch inputType {
 	case "mailfile":

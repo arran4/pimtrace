@@ -100,12 +100,12 @@ func (s *MailWithSource) Time() time.Time {
 
 type MailDataType []*MailWithSource
 
-func (p MailDataType) Truncate(n int) pimtrace.Data[*MailWithSource] {
+func (p MailDataType) Truncate(n int) pimtrace.Data {
 	p = (([]*MailWithSource)(p))[:n]
 	return p
 }
 
-func (p MailDataType) SetEntry(n int, entry pimtrace.Entry[*MailWithSource]) {
+func (p MailDataType) SetEntry(n int, entry pimtrace.Entry) {
 	cast := ([]*MailWithSource)(p)
 	cast[n] = entry.(*MailWithSource)
 }
@@ -114,7 +114,7 @@ func (p MailDataType) Len() int {
 	return len([]*MailWithSource(p))
 }
 
-func (p MailDataType) Entry(n int) pimtrace.Entry[*MailWithSource] {
+func (p MailDataType) Entry(n int) pimtrace.Entry {
 	if n >= len([]*MailWithSource(p)) || n < 0 {
 		return nil
 	}
@@ -125,7 +125,7 @@ func (p MailDataType) Self() []*MailWithSource {
 	return []*MailWithSource(p)
 }
 
-var _ pimtrace.Data[*MailWithSource] = MailDataType(nil)
+var _ pimtrace.Data = MailDataType(nil)
 
 type MailBody interface {
 	Reader() io.Reader

@@ -23,7 +23,7 @@ type CSVOutputCapable interface {
 	WriteCSVStream(f io.Writer, fName string) error
 }
 
-func OutputHandler[T any](p pimtrace.Data[T], mode, outputPath string) error {
+func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 	switch mode {
 	case "mailfile":
 		if p, ok := p.(MailFileOutputCapable); ok {

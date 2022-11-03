@@ -4,6 +4,6 @@ import (
 	"pimtrace"
 )
 
-func Count[T any](d pimtrace.Entry[T]) (pimtrace.Value, error) {
+func Count(d pimtrace.Entry) (pimtrace.Value, error) {
 	panic("not implemented") // TODO
 }

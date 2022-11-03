@@ -12,15 +12,15 @@ var (
 	ErrUnknownFunction = fmt.Errorf("unknown function")
 )
 
-type Operation[T any] interface {
-	Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error)
+type Operation interface {
+	Execute(d pimtrace.Data) (pimtrace.Data, error)
 }
 
-type CompoundStatement[T any] struct {
-	Statements []Operation[T]
+type CompoundStatement struct {
+	Statements []Operation
 }
 
-func (o *CompoundStatement[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+func (o *CompoundStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	for _, op := range o.Statements {
 		var err error
 		d, err = op.Execute(d)
@@ -31,19 +31,19 @@ func (o *CompoundStatement[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], er
 	return d, nil
 }
 
-func (o *CompoundStatement[T]) Simplify() Operation[T] {
+func (o *CompoundStatement) Simplify() Operation {
 	if len(o.Statements) == 0 {
 		return nil
 	}
 	if len(o.Statements) == 1 {
 		return o.Statements[0]
 	}
-	var result []Operation[T]
+	var result []Operation
 	for i, statement := range o.Statements {
 		switch statement := statement.(type) {
-		case *CompoundStatement[T]:
+		case *CompoundStatement:
 			if result == nil {
-				result = append([]Operation[T]{}, o.Statements[:i]...)
+				result = append([]Operation{}, o.Statements[:i]...)
 			}
 			result = append(result, statement.Statements...)
 		default:
@@ -59,31 +59,31 @@ func (o *CompoundStatement[T]) Simplify() Operation[T] {
 	return o
 }
 
-var _ Operation[any] = (*CompoundStatement[any])(nil)
+var _ Operation = (*CompoundStatement)(nil)
 
-type BooleanExpression[T any] interface {
-	Execute(d pimtrace.Entry[T]) (bool, error)
+type BooleanExpression interface {
+	Execute(d pimtrace.Entry) (bool, error)
 }
 
-type NotOp[T any] struct {
-	Not BooleanExpression[T]
+type NotOp struct {
+	Not BooleanExpression
 }
 
-func (n *NotOp[T]) Execute(d pimtrace.Entry[T]) (bool, error) {
+func (n *NotOp) Execute(d pimtrace.Entry) (bool, error) {
 	v, err := n.Not.Execute(d)
 	return !v, err
 }
 
-var _ BooleanExpression[any] = (*NotOp[any])(nil)
+var _ BooleanExpression = (*NotOp)(nil)
 
-type ValueExpression[T any] interface {
-	Execute(d pimtrace.Entry[T]) (pimtrace.Value, error)
+type ValueExpression interface {
+	Execute(d pimtrace.Entry) (pimtrace.Value, error)
 	ColumnName() string
 }
 
-type ConstantExpression[T any] string
+type ConstantExpression string
 
-func (ve ConstantExpression[T]) ColumnName() string {
+func (ve ConstantExpression) ColumnName() string {
 	return strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) {
 			return r
@@ -92,13 +92,13 @@ func (ve ConstantExpression[T]) ColumnName() string {
 	}, string(ve))
 }
 
-func (ve ConstantExpression[T]) Execute(d pimtrace.Entry[T]) (pimtrace.Value, error) {
+func (ve ConstantExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
 	return pimtrace.SimpleStringValue(ve), nil
 }
 
-type EntryExpression[T any] string
+type EntryExpression string
 
-func (ve EntryExpression[T]) ColumnName() string {
+func (ve EntryExpression) ColumnName() string {
 	ss := strings.SplitN(string(ve), ".", 2)
 	s := ""
 	if len(ss) > 1 {
@@ -112,7 +112,7 @@ func (ve EntryExpression[T]) ColumnName() string {
 	}, s)
 }
 
-func (ve EntryExpression[T]) Execute(d pimtrace.Entry[T]) (pimtrace.Value, error) {
+func (ve EntryExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
 	return d.Get(string(ve)), nil
 }
 
@@ -136,13 +136,13 @@ func IContainsOp(rhsv pimtrace.Value, lhsv pimtrace.Value) (bool, error) {
 
 var _ OpFunc = IContainsOp
 
-type Op[T any] struct {
+type Op struct {
 	Op  OpFunc
-	LHS ValueExpression[T]
-	RHS ValueExpression[T]
+	LHS ValueExpression
+	RHS ValueExpression
 }
 
-func (e *Op[T]) Execute(d pimtrace.Entry[T]) (bool, error) {
+func (e *Op) Execute(d pimtrace.Entry) (bool, error) {
 	if e.LHS == nil {
 		return false, fmt.Errorf("LHS invalid issue with Op")
 	}
@@ -163,22 +163,22 @@ func (e *Op[T]) Execute(d pimtrace.Entry[T]) (bool, error) {
 	return e.Op(rhsv, lhsv)
 }
 
-type FilterStatement[T any] struct {
-	Expression BooleanExpression[T]
+type FilterStatement struct {
+	Expression BooleanExpression
 }
 
-func (f FilterStatement[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+func (f FilterStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	return Filter(d, f.Expression)
 }
 
-var _ Operation[any] = (*FilterStatement[any])(nil)
+var _ Operation = (*FilterStatement)(nil)
 
-type FunctionExpression[T any] struct {
+type FunctionExpression struct {
 	Function string
-	Args     []ValueExpression[T]
+	Args     []ValueExpression
 }
 
-func (f *FunctionExpression[T]) ColumnName() string {
+func (f *FunctionExpression) ColumnName() string {
 	elems := []string{f.Function}
 	for _, arg := range f.Args {
 		elems = append(elems, arg.ColumnName())
@@ -186,37 +186,37 @@ func (f *FunctionExpression[T]) ColumnName() string {
 	return strings.Join(elems, "-")
 }
 
-func (f *FunctionExpression[T]) Execute(d pimtrace.Entry[T]) (pimtrace.Value, error) {
-	functions := funcs.Functions[T]()
+func (f *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+	functions := funcs.Functions()
 	if f, ok := functions[f.Function]; ok {
 		return f(d)
 	}
 	return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, f.Function)
 }
 
-var _ ValueExpression[any] = (*FunctionExpression[any])(nil)
+var _ ValueExpression = (*FunctionExpression)(nil)
 
-type FunctionDef[T any] func(d pimtrace.Entry[T]) (pimtrace.Value, error)
+type FunctionDef func(d pimtrace.Entry) (pimtrace.Value, error)
 
-type ColumnExpression[T any] struct {
+type ColumnExpression struct {
 	Name      string
-	Operation ValueExpression[T]
+	Operation ValueExpression
 }
 
-type TableTransformer[T any] struct {
-	Columns []*ColumnExpression[T]
+type TableTransformer struct {
+	Columns []*ColumnExpression
 }
 
-func (t *TableTransformer[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-type SortTransformer[T any] struct {
-	Expression []ValueExpression[T]
+type SortTransformer struct {
+	Expression []ValueExpression
 }
 
-func (s SortTransformer[T]) Execute(d pimtrace.Data[T]) (pimtrace.Data[T], error) {
+func (s SortTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	//TODO implement me
 	panic("implement me")
 }

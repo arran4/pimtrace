@@ -4,7 +4,7 @@ import (
 	"pimtrace"
 )
 
-func Filter[T any](d pimtrace.Data[T], expression BooleanExpression[T]) (pimtrace.Data[T], error) {
+func Filter(d pimtrace.Data, expression BooleanExpression) (pimtrace.Data, error) {
 	i, o := 0, 0
 	for i+o < d.Len() {
 		e := d.Entry(i + o)

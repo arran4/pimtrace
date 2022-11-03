@@ -7,9 +7,9 @@ import (
 
 type MBoxOutput struct{}
 
-func (M *MBoxOutput) Execute(d pimtrace.Data[*MailWithSource]) (pimtrace.Data[*MailWithSource], error) {
+func (M *MBoxOutput) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-var _ ast.Operation[*MailWithSource] = (*MBoxOutput)(nil)
+var _ ast.Operation = (*MBoxOutput)(nil)

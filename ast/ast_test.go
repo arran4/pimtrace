@@ -14,7 +14,7 @@ var (
 	testdata embed.FS
 )
 
-func LoadData1(fn string) pimtrace.Data[*tabledata.Row] {
+func LoadData1(fn string) pimtrace.Data {
 	f, err := testdata.Open(fn)
 	if err != nil {
 		panic(err)
@@ -31,15 +31,15 @@ func TestCompoundStatement_Execute(t *testing.T) {
 	header1 := map[string]int{"address": 3, "currency": 4, "email": 2, "name": 0, "numberrange": 5, "phone": 1}
 	tests := []struct {
 		name       string
-		Statements Operation[*tabledata.Row]
-		data       pimtrace.Data[*tabledata.Row]
-		want       pimtrace.Data[*tabledata.Row]
+		Statements Operation
+		data       pimtrace.Data
+		want       pimtrace.Data
 		wantErr    bool
 	}{
 		{
 			name: "Simple filter",
-			Statements: &FilterStatement[*tabledata.Row]{
-				Expression: &Op[*tabledata.Row]{Op: EqualOp, LHS: EntryExpression[*tabledata.Row]("h.numberrange"), RHS: ConstantExpression[*tabledata.Row]("4")},
+			Statements: &FilterStatement{
+				Expression: &Op{Op: EqualOp, LHS: EntryExpression("h.numberrange"), RHS: ConstantExpression("4")},
 			},
 			data: LoadData1("testdata/data10.csv"),
 			want: tabledata.Data{
@@ -55,9 +55,9 @@ func TestCompoundStatement_Execute(t *testing.T) {
 		},
 		{
 			name: "Table column filter",
-			Statements: &TableTransformer[*tabledata.Row]{
-				Columns: []*ColumnExpression[*tabledata.Row]{
-					{Name: "Name", Operation: EntryExpression[*tabledata.Row]("h.name")},
+			Statements: &TableTransformer{
+				Columns: []*ColumnExpression{
+					{Name: "Name", Operation: EntryExpression("h.name")},
 				},
 			},
 			data: LoadData1("testdata/data10.csv"),
