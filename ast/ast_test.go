@@ -101,6 +101,21 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Summary Table with all the functions and group by number",
+			Statements: &CompoundStatement{Statements: []Operation{
+				&TableTransformer{
+					Columns: []*ColumnExpression{
+						{Name: "Number", Operation: EntryExpression("h.numberrange")},
+						{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ValueExpression{EntryExpression("h.numberrange")}}},
+						{Name: "count", Operation: &FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
+					},
+				},
+			}},
+			data:    LoadData1("testdata/data10.csv"),
+			want:    tabledata.Data{},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

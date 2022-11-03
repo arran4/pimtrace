@@ -378,6 +378,7 @@ func TestParseOperations(t *testing.T) {
 							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
+					&ast.GroupTransformer{},
 					&ast.TableTransformer{
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("c.user-agent")},
