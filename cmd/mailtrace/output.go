@@ -26,12 +26,12 @@ type CSVOutputCapable interface {
 func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 	switch mode {
 	case "mailfile":
-		if p, ok := p.(MailFileOutputCapable); ok {
+		if np, ok := p.(MailFileOutputCapable); ok {
 			switch outputPath {
 			case "-":
-				return p.WriteMailStream(os.Stdin, outputPath)
+				return np.WriteMailStream(os.Stdin, outputPath)
 			default:
-				return p.WriteMailFile(outputPath)
+				return np.WriteMailFile(outputPath)
 			}
 		} else {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
