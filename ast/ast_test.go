@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"github.com/google/go-cmp/cmp"
 	"pimtrace"
-	"pimtrace/internal/tabledata"
+	"pimtrace/dataformats/tabledata"
 	"testing"
 )
 

@@ -10,20 +10,19 @@ import (
 	"mime"
 	"mime/multipart"
 	"os"
-	"pimtrace"
 )
 
-func WriteCSVStream(d pimtrace.Data[*MailWithSource], stdin *os.File, s string) error {
+func (p MailDataType) WriteCSVStream(stdin *os.File, s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func WriteCSVFile(d pimtrace.Data[*MailWithSource], s string) error {
+func (p MailDataType) WriteCSVFile(s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func WriteMBoxFile(d pimtrace.Data[*MailWithSource], fName string) error {
+func (p MailDataType) WriteMBoxFile(fName string) error {
 	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("creating Mbox %s: %w", fName, err)
@@ -33,25 +32,24 @@ func WriteMBoxFile(d pimtrace.Data[*MailWithSource], fName string) error {
 			log.Printf("Error closing file: %s: %s", fName, err)
 		}
 	}()
-	return WriteMBoxStream(d, f, fName)
+	return p.WriteMBoxStream(f, fName)
 }
 
-func WriteMBoxStream(d pimtrace.Data[*MailWithSource], f io.Writer, fName string) error {
-	ms := d.Self()
+func (p MailDataType) WriteMBoxStream(f io.Writer, fName string) error {
 	mbw := mbox.NewWriter(f)
-	for mi, m := range ms {
+	for mi, m := range p {
 		mw, err := mbw.CreateMessage(m.From(), m.Time())
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("creating message %d to Mbox %s: %w", mi+1, fName, err)
 		}
-		if err := WriteMailStream(MailDataType(ms[mi:mi+1]), mw, fName); err != nil {
+		if err := p.WriteMailStream(mw, fName); err != nil {
 			return fmt.Errorf("writing message %d to Mbox %s: %w", mi+1, fName, err)
 		}
 	}
 	return nil
 }
 
-func WriteMailFile(d pimtrace.Data[*MailWithSource], fName string) error {
+func (p MailDataType) WriteMailFile(fName string) error {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("writing mail file %s: %w", fName, err)
@@ -61,11 +59,11 @@ func WriteMailFile(d pimtrace.Data[*MailWithSource], fName string) error {
 			log.Printf("Error closing file: %s: %s", fName, err)
 		}
 	}()
-	return WriteMailStream(d, f, fName)
+	return p.WriteMailStream(f, fName)
 }
 
-func WriteMailStream(d pimtrace.Data[*MailWithSource], f io.Writer, fName string) error {
-	for mi, m := range d.Self() {
+func (p MailDataType) WriteMailStream(f io.Writer, fName string) error {
+	for mi, m := range p {
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
 			return fmt.Errorf("writing message %d header %s: %w", mi+1, fName, err)
 		}

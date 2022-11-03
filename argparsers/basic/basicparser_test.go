@@ -3,7 +3,7 @@ package basic
 import (
 	"github.com/google/go-cmp/cmp"
 	"pimtrace/ast"
-	"pimtrace/internal/maildata"
+	"pimtrace/dataformats/maildata"
 	"reflect"
 	"strings"
 	"testing"

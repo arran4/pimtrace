@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 	"pimtrace/argparsers/basic"
+	"pimtrace/dataformats/maildata"
 	_ "pimtrace/funcs"
-	"pimtrace/internal/maildata"
 )
 
 func main() {

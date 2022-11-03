@@ -14,7 +14,7 @@ import (
 	"mime/multipart"
 	"os"
 	"pimtrace"
-	"pimtrace/internal/maildata"
+	"pimtrace/dataformats/maildata"
 )
 
 func InputHandler(inputType string, inputFile string) (pimtrace.Data[*maildata.MailWithSource], error) {
