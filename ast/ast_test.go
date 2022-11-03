@@ -53,6 +53,25 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Table column filter",
+			Statements: &TableTransformer[*csvdata.CSVRow]{
+				Columns: []*ColumnExpression[*csvdata.CSVRow]{
+					{Name: "Name", Operation: EntryExpression[*csvdata.CSVRow]("h.name")},
+				},
+			},
+			data: LoadData1("testdata/data10.csv"),
+			want: csvdata.CSVDataType{
+				{
+					Headers: header1,
+					Row: []string{
+						"Jasper Joseph", "(125) 832-4826", "mauris.vestibulum@protonmail.edu",
+						"Ap #783-8034 Nunc Street", "$73.44", "4",
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
