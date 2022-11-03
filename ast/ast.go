@@ -3,6 +3,7 @@ package ast
 import (
 	"fmt"
 	"pimtrace"
+	"pimtrace/dataformats/tabledata"
 	"pimtrace/funcs"
 	"strings"
 	"unicode"
@@ -208,8 +209,27 @@ type TableTransformer struct {
 }
 
 func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
-	//TODO implement me
-	panic("implement me")
+	headers := map[string]int{}
+	for i, c := range t.Columns {
+		headers[c.Name] = i
+	}
+	td := make([]*tabledata.Row, d.Len(), d.Len())
+	for i := 0; i < d.Len(); i++ {
+		r := make([]string, len(t.Columns), len(t.Columns))
+		e := d.Entry(i)
+		for i, c := range t.Columns {
+			v, err := c.Operation.Execute(e)
+			if err != nil {
+				return nil, err
+			}
+			r[i] = v.String()
+		}
+		td[i] = &tabledata.Row{
+			Headers: headers,
+			Row:     r,
+		}
+	}
+	return tabledata.Data(td), nil
 }
 
 type SortTransformer struct {

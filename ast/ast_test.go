@@ -29,6 +29,7 @@ func LoadData1(fn string) pimtrace.Data {
 
 func TestCompoundStatement_Execute(t *testing.T) {
 	header1 := map[string]int{"address": 3, "currency": 4, "email": 2, "name": 0, "numberrange": 5, "phone": 1}
+	header2 := map[string]int{"Name": 0}
 	tests := []struct {
 		name       string
 		Statements Operation
@@ -54,7 +55,7 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Table column filter",
+			name: "Simple Table column filter",
 			Statements: &TableTransformer{
 				Columns: []*ColumnExpression{
 					{Name: "Name", Operation: EntryExpression("h.name")},
@@ -62,12 +63,16 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			},
 			data: LoadData1("testdata/data10.csv"),
 			want: tabledata.Data{
-				{
-					Headers: header1,
-					Row: []string{
-						"Jasper Joseph",
-					},
-				},
+				{Headers: header2, Row: []string{"Jasper Joseph"}},
+				{Headers: header2, Row: []string{"Rogan Hopkins"}},
+				{Headers: header2, Row: []string{"Shay Cleveland"}},
+				{Headers: header2, Row: []string{"Maite Weaver"}},
+				{Headers: header2, Row: []string{"Adria Herring"}},
+				{Headers: header2, Row: []string{"Laurel Gonzalez"}},
+				{Headers: header2, Row: []string{"Jane Bender"}},
+				{Headers: header2, Row: []string{"Melinda Barton"}},
+				{Headers: header2, Row: []string{"Colorado Sandoval"}},
+				{Headers: header2, Row: []string{"Felix Sutton"}},
 			},
 			wantErr: false,
 		},
