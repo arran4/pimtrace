@@ -48,13 +48,8 @@ type Value interface {
 	Integer() *int
 }
 
-type Header interface {
-	Get(string) string
-}
-
 type Entry[T any] interface {
 	Get(string) Value
-	Header() Header
 	Self() T
 }
 
