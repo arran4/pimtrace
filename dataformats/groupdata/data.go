@@ -1,4 +1,4 @@
-package tabledata
+package groupdata
 
 import (
 	"pimtrace"
@@ -6,8 +6,9 @@ import (
 )
 
 type Row struct {
-	Headers map[string]int
-	Row     []pimtrace.Value
+	Headers  map[string]int
+	Row      []pimtrace.Value
+	Contents pimtrace.Data
 }
 
 type Header interface {
@@ -30,15 +31,19 @@ func (s *Row) Get(key string) pimtrace.Value {
 		if ok && len(ks) > 1 {
 			return s.Row[n]
 		}
-		return nil
+		var r []pimtrace.Value
+		for i := 0; i < s.Contents.Len(); i++ {
+			sr := s.Contents.Entry(i)
+			if sr == nil {
+				continue
+			}
+			r = append(r, sr.Get(key))
+		}
+		return pimtrace.SimpleArrayValue(r)
 	}
 }
 
 type Data []*Row
-
-func (d Data) NewSelf() pimtrace.Data {
-	return Data(make([]*Row, 0))
-}
 
 func (d Data) Truncate(n int) pimtrace.Data {
 	d = (([]*Row)(d))[:n]
@@ -70,6 +75,10 @@ func (d Data) Entry(n int) pimtrace.Entry {
 
 func (d Data) Self() []*Row {
 	return []*Row(d)
+}
+
+func (d Data) NewSelf() pimtrace.Data {
+	return Data(make([]*Row, 0))
 }
 
 var _ pimtrace.Data = Data(nil)

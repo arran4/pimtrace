@@ -27,9 +27,26 @@ func LoadData1(fn string) pimtrace.Data {
 	return r
 }
 
+func Valueify(ss ...any) (result []pimtrace.Value) {
+	for _, s := range ss {
+		switch s := s.(type) {
+		case string:
+			result = append(result, pimtrace.SimpleStringValue(s))
+			continue
+		case int:
+			result = append(result, pimtrace.SimpleIntegerValue(s))
+			continue
+		default:
+			panic("unsupported type")
+		}
+	}
+	return
+}
+
 func TestCompoundStatement_Execute(t *testing.T) {
 	header1 := map[string]int{"address": 3, "currency": 4, "email": 2, "name": 0, "numberrange": 5, "phone": 1}
 	header2 := map[string]int{"Name": 0}
+	header3 := map[string]int{"Number": 0, "count": 1, "sum-size": 2}
 	tests := []struct {
 		name       string
 		Statements Operation
@@ -46,10 +63,10 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			want: tabledata.Data{
 				{
 					Headers: header1,
-					Row: []string{
+					Row: Valueify(
 						"Jasper Joseph", "(125) 832-4826", "mauris.vestibulum@protonmail.edu",
 						"Ap #783-8034 Nunc Street", "$73.44", "4",
-					},
+					),
 				},
 			},
 			wantErr: false,
@@ -63,16 +80,16 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			},
 			data: LoadData1("testdata/data10.csv"),
 			want: tabledata.Data{
-				{Headers: header2, Row: []string{"Jasper Joseph"}},
-				{Headers: header2, Row: []string{"Rogan Hopkins"}},
-				{Headers: header2, Row: []string{"Shay Cleveland"}},
-				{Headers: header2, Row: []string{"Maite Weaver"}},
-				{Headers: header2, Row: []string{"Adria Herring"}},
-				{Headers: header2, Row: []string{"Laurel Gonzalez"}},
-				{Headers: header2, Row: []string{"Jane Bender"}},
-				{Headers: header2, Row: []string{"Melinda Barton"}},
-				{Headers: header2, Row: []string{"Colorado Sandoval"}},
-				{Headers: header2, Row: []string{"Felix Sutton"}},
+				{Headers: header2, Row: Valueify("Jasper Joseph")},
+				{Headers: header2, Row: Valueify("Rogan Hopkins")},
+				{Headers: header2, Row: Valueify("Shay Cleveland")},
+				{Headers: header2, Row: Valueify("Maite Weaver")},
+				{Headers: header2, Row: Valueify("Adria Herring")},
+				{Headers: header2, Row: Valueify("Laurel Gonzalez")},
+				{Headers: header2, Row: Valueify("Jane Bender")},
+				{Headers: header2, Row: Valueify("Melinda Barton")},
+				{Headers: header2, Row: Valueify("Colorado Sandoval")},
+				{Headers: header2, Row: Valueify("Felix Sutton")},
 			},
 			wantErr: false,
 		},
@@ -88,32 +105,58 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			}},
 			data: LoadData1("testdata/data10.csv"),
 			want: tabledata.Data{
-				{Headers: header2, Row: []string{"Adria Herring"}},
-				{Headers: header2, Row: []string{"Colorado Sandoval"}},
-				{Headers: header2, Row: []string{"Felix Sutton"}},
-				{Headers: header2, Row: []string{"Jane Bender"}},
-				{Headers: header2, Row: []string{"Jasper Joseph"}},
-				{Headers: header2, Row: []string{"Laurel Gonzalez"}},
-				{Headers: header2, Row: []string{"Maite Weaver"}},
-				{Headers: header2, Row: []string{"Melinda Barton"}},
-				{Headers: header2, Row: []string{"Rogan Hopkins"}},
-				{Headers: header2, Row: []string{"Shay Cleveland"}},
+				{Headers: header2, Row: Valueify("Adria Herring")},
+				{Headers: header2, Row: Valueify("Colorado Sandoval")},
+				{Headers: header2, Row: Valueify("Felix Sutton")},
+				{Headers: header2, Row: Valueify("Jane Bender")},
+				{Headers: header2, Row: Valueify("Jasper Joseph")},
+				{Headers: header2, Row: Valueify("Laurel Gonzalez")},
+				{Headers: header2, Row: Valueify("Maite Weaver")},
+				{Headers: header2, Row: Valueify("Melinda Barton")},
+				{Headers: header2, Row: Valueify("Rogan Hopkins")},
+				{Headers: header2, Row: Valueify("Shay Cleveland")},
 			},
 			wantErr: false,
 		},
 		{
 			name: "Summary Table with all the functions and group by number",
 			Statements: &CompoundStatement{Statements: []Operation{
+				&GroupTransformer{
+					Columns: []*ColumnExpression{
+						{Name: "numberrange", Operation: EntryExpression("h.numberrange")},
+					},
+				},
 				&TableTransformer{
 					Columns: []*ColumnExpression{
 						{Name: "Number", Operation: EntryExpression("h.numberrange")},
-						{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ValueExpression{EntryExpression("h.numberrange")}}},
 						{Name: "count", Operation: &FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
+						{Name: "sum-size", Operation: &FunctionExpression{Function: "sum", Args: []ValueExpression{EntryExpression("h.numberrange")}}},
 					},
 				},
 			}},
-			data:    LoadData1("testdata/data10.csv"),
-			want:    tabledata.Data{},
+			data: LoadData1("testdata/data10.csv"),
+			want: tabledata.Data{
+				{
+					Headers: header3,
+					Row:     Valueify("4", 1, 4*1),
+				},
+				{
+					Headers: header3,
+					Row:     Valueify("9", 6, 6*9),
+				},
+				{
+					Headers: header3,
+					Row:     Valueify("7", 1, 1*7),
+				},
+				{
+					Headers: header3,
+					Row:     Valueify("6", 1, 1*6),
+				},
+				{
+					Headers: header3,
+					Row:     Valueify("1", 1, 1*1),
+				},
+			},
 			wantErr: false,
 		},
 	}

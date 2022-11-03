@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"pimtrace"
 )
 
 func ReadCSV(r io.Reader) (Data, error) {
@@ -27,9 +28,13 @@ func ReadCSV(r io.Reader) (Data, error) {
 			}
 			continue
 		}
+		rv := make([]pimtrace.Value, len(r), len(r))
+		for i, e := range r {
+			rv[i] = pimtrace.SimpleStringValue(e)
+		}
 		result = append(result, &Row{
 			Headers: header,
-			Row:     r,
+			Row:     rv,
 		})
 	}
 	return Data(result), nil

@@ -4,13 +4,17 @@ import (
 	"pimtrace"
 )
 
-type FunctionDef func(d pimtrace.Entry) (pimtrace.Value, error)
+type ValueExpression interface {
+	Execute(d pimtrace.Entry) (pimtrace.Value, error)
+}
 
-func Functions() map[string]FunctionDef {
-	return map[string]FunctionDef{
-		"count": Count,
-		"sum":   Sum,
-		"month": Month,
-		"year":  Year,
+type FunctionDef[T ValueExpression] func(d pimtrace.Entry, args []T) (pimtrace.Value, error)
+
+func Functions[T ValueExpression]() map[string]FunctionDef[T] {
+	return map[string]FunctionDef[T]{
+		"count": Count[T],
+		"sum":   Sum[T],
+		"month": Month[T],
+		"year":  Year[T],
 	}
 }

@@ -12,17 +12,17 @@ import (
 	"os"
 )
 
-func (p MailDataType) WriteCSVStream(stdin *os.File, s string) error {
+func (mdt Data) WriteCSVStream(stdin *os.File, s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (p MailDataType) WriteCSVFile(s string) error {
+func (mdt Data) WriteCSVFile(s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (p MailDataType) WriteMBoxFile(fName string) error {
+func (mdt Data) WriteMBoxFile(fName string) error {
 	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("creating Mbox %s: %w", fName, err)
@@ -32,24 +32,24 @@ func (p MailDataType) WriteMBoxFile(fName string) error {
 			log.Printf("Error closing file: %s: %s", fName, err)
 		}
 	}()
-	return p.WriteMBoxStream(f, fName)
+	return mdt.WriteMBoxStream(f, fName)
 }
 
-func (p MailDataType) WriteMBoxStream(f io.Writer, fName string) error {
+func (mdt Data) WriteMBoxStream(f io.Writer, fName string) error {
 	mbw := mbox.NewWriter(f)
-	for mi, m := range p {
+	for mi, m := range mdt {
 		mw, err := mbw.CreateMessage(m.From(), m.Time())
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("creating message %d to Mbox %s: %w", mi+1, fName, err)
 		}
-		if err := p.WriteMailStream(mw, fName); err != nil {
+		if err := mdt.WriteMailStream(mw, fName); err != nil {
 			return fmt.Errorf("writing message %d to Mbox %s: %w", mi+1, fName, err)
 		}
 	}
 	return nil
 }
 
-func (p MailDataType) WriteMailFile(fName string) error {
+func (mdt Data) WriteMailFile(fName string) error {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("writing mail file %s: %w", fName, err)
@@ -59,11 +59,11 @@ func (p MailDataType) WriteMailFile(fName string) error {
 			log.Printf("Error closing file: %s: %s", fName, err)
 		}
 	}()
-	return p.WriteMailStream(f, fName)
+	return mdt.WriteMailStream(f, fName)
 }
 
-func (p MailDataType) WriteMailStream(f io.Writer, fName string) error {
-	for mi, m := range p {
+func (mdt Data) WriteMailStream(f io.Writer, fName string) error {
+	for mi, m := range mdt {
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
 			return fmt.Errorf("writing message %d header %s: %w", mi+1, fName, err)
 		}

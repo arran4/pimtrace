@@ -60,7 +60,7 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 		fmt.Println("Please specify a -input-type")
 		fmt.Println()
 	}
-	return maildata.MailDataType(mails), nil
+	return maildata.Data(mails), nil
 }
 
 func ReadMBoxFile(fType, fName string) ([]*maildata.MailWithSource, error) {

@@ -4,7 +4,7 @@ import (
 	"pimtrace"
 )
 
-func Year(d pimtrace.Entry) (pimtrace.Value, error) {
+func Year[T ValueExpression](d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	panic("not implemented") // TODO
 
 }

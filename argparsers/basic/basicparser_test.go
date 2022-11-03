@@ -370,7 +370,7 @@ func TestParseOperations(t *testing.T) {
 							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
-					&ast.TableTransformer{
+					&ast.GroupTransformer{
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
@@ -378,7 +378,6 @@ func TestParseOperations(t *testing.T) {
 							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
-					&ast.GroupTransformer{},
 					&ast.TableTransformer{
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("c.user-agent")},

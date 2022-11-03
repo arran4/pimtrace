@@ -2,7 +2,9 @@ package ast
 
 import (
 	"fmt"
+	"log"
 	"pimtrace"
+	"pimtrace/dataformats/groupdata"
 	"pimtrace/dataformats/tabledata"
 	"pimtrace/funcs"
 	"sort"
@@ -79,7 +81,7 @@ func (n *NotOp) Execute(d pimtrace.Entry) (bool, error) {
 var _ BooleanExpression = (*NotOp)(nil)
 
 type ValueExpression interface {
-	Execute(d pimtrace.Entry) (pimtrace.Value, error)
+	funcs.ValueExpression
 	ColumnName() string
 }
 
@@ -180,20 +182,20 @@ type FunctionExpression struct {
 	Args     []ValueExpression
 }
 
-func (f *FunctionExpression) ColumnName() string {
-	elems := []string{f.Function}
-	for _, arg := range f.Args {
+func (fe *FunctionExpression) ColumnName() string {
+	elems := []string{fe.Function}
+	for _, arg := range fe.Args {
 		elems = append(elems, arg.ColumnName())
 	}
 	return strings.Join(elems, "-")
 }
 
-func (f *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
-	functions := funcs.Functions()
-	if f, ok := functions[f.Function]; ok {
-		return f(d)
+func (fe *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+	functions := funcs.Functions[ValueExpression]()
+	if f, ok := functions[fe.Function]; ok {
+		return f(d, fe.Args)
 	}
-	return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, f.Function)
+	return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, fe.Function)
 }
 
 var _ ValueExpression = (*FunctionExpression)(nil)
@@ -216,14 +218,14 @@ func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	}
 	td := make([]*tabledata.Row, d.Len(), d.Len())
 	for i := 0; i < d.Len(); i++ {
-		r := make([]string, len(t.Columns), len(t.Columns))
+		r := make([]pimtrace.Value, len(t.Columns), len(t.Columns))
 		e := d.Entry(i)
 		for i, c := range t.Columns {
 			v, err := c.Operation.Execute(e)
 			if err != nil {
 				return nil, err
 			}
-			r[i] = v.String()
+			r[i] = v
 		}
 		td[i] = &tabledata.Row{
 			Headers: headers,
@@ -232,6 +234,8 @@ func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	}
 	return tabledata.Data(td), nil
 }
+
+var _ Operation = (*TableTransformer)(nil)
 
 type SortTransformer struct {
 	Expression []ValueExpression
@@ -274,3 +278,46 @@ func (s *SortTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	})
 	return d, nil
 }
+
+var _ Operation = (*SortTransformer)(nil)
+
+type GroupTransformer struct {
+	Columns []*ColumnExpression
+}
+
+func (g *GroupTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+	headers := map[string]int{}
+	for i, c := range g.Columns {
+		headers[c.Name] = i
+	}
+	td := make([]*groupdata.Row, 0)
+	pos := map[string]int{}
+	for i := 0; i < d.Len(); i++ {
+		r := make([]pimtrace.Value, len(g.Columns), len(g.Columns))
+		e := d.Entry(i)
+		for i, c := range g.Columns {
+			v, err := c.Operation.Execute(e)
+			if err != nil {
+				return nil, err
+			}
+			r[i] = v
+		}
+		key := pimtrace.SimpleArrayValue(r).String()
+		log.Printf("Key: %s", key)
+		if p, ok := pos[key]; ok {
+			td[p].Contents = td[p].Contents.SetEntry(td[p].Contents.Len(), e)
+		} else {
+			pos[key] = len(td)
+			self := d.NewSelf()
+			self = self.SetEntry(self.Len(), e)
+			td = append(td, &groupdata.Row{
+				Headers:  headers,
+				Row:      pimtrace.SimpleArrayValue(r),
+				Contents: self,
+			})
+		}
+	}
+	return groupdata.Data(td), nil
+}
+
+var _ Operation = (*GroupTransformer)(nil)
