@@ -216,9 +216,9 @@ func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	for i, c := range t.Columns {
 		headers[c.Name] = i
 	}
-	td := make([]*tabledata.Row, d.Len(), d.Len())
+	td := make([]*tabledata.Row, d.Len())
 	for i := 0; i < d.Len(); i++ {
-		r := make([]pimtrace.Value, len(t.Columns), len(t.Columns))
+		r := make([]pimtrace.Value, len(t.Columns))
 		e := d.Entry(i)
 		for i, c := range t.Columns {
 			v, err := c.Operation.Execute(e)
@@ -293,7 +293,7 @@ func (g *GroupTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 	td := make([]*groupdata.Row, 0)
 	pos := map[string]int{}
 	for i := 0; i < d.Len(); i++ {
-		r := make([]pimtrace.Value, len(g.Columns), len(g.Columns))
+		r := make([]pimtrace.Value, len(g.Columns))
 		e := d.Entry(i)
 		for i, c := range g.Columns {
 			v, err := c.Operation.Execute(e)

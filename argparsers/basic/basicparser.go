@@ -378,7 +378,7 @@ func ParseInto(args []string) (ast.Operation, []string, error) {
 		switch p[0] {
 		case "mbox":
 			//return &maildata.MBoxOutput{}, p[1:], nil
-			panic("todo implement generic way of inserting these")
+			panic("todo implement me: generic way of inserting these")
 		case "summary":
 			return ParseIntoSummary(p[1:])
 		case "table":

@@ -28,7 +28,7 @@ func ReadCSV(r io.Reader) (Data, error) {
 			}
 			continue
 		}
-		rv := make([]pimtrace.Value, len(r), len(r))
+		rv := make([]pimtrace.Value, len(r))
 		for i, e := range r {
 			rv[i] = pimtrace.SimpleStringValue(e)
 		}
