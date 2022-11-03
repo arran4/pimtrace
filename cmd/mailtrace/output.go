@@ -48,12 +48,12 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	case "csv":
-		if p, ok := p.(CSVOutputCapable); ok {
+		if np, ok := p.(CSVOutputCapable); ok {
 			switch outputPath {
 			case "-":
-				return p.WriteCSVStream(os.Stdin, outputPath)
+				return np.WriteCSVStream(os.Stdin, outputPath)
 			default:
-				return p.WriteCSVFile(outputPath)
+				return np.WriteCSVFile(outputPath)
 			}
 		} else {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
