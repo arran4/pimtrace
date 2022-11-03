@@ -6,6 +6,7 @@ import (
 	"os"
 	"pimtrace/argparsers/basic"
 	_ "pimtrace/funcs"
+	"pimtrace/internal/maildata"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	ops, err := basic.ParseOperations(flag.Args())
+	ops, err := basic.ParseOperations[*maildata.MailWithSource](flag.Args())
 	if err != nil {
 		log.Printf("Parse Error: %s", err)
 		os.Exit(-1)
