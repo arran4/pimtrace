@@ -60,7 +60,7 @@ type MailWithSource struct {
 	SourceFile string
 }
 
-func (s *MailWithSource) Origin() *MailWithSource {
+func (s *MailWithSource) Self() *MailWithSource {
 	return s
 }
 
@@ -106,7 +106,7 @@ func (p MailDataType) Truncate(n int) pimtrace.Data[*MailWithSource] {
 }
 
 func (p MailDataType) SetEntry(n int, entry pimtrace.Entry[*MailWithSource]) {
-	(([]*MailWithSource)(p))[n] = entry.Origin()
+	(([]*MailWithSource)(p))[n] = entry.Self()
 }
 
 func (p MailDataType) Len() int {
@@ -120,7 +120,7 @@ func (p MailDataType) Entry(n int) pimtrace.Entry[*MailWithSource] {
 	return ([]*MailWithSource(p))[n]
 }
 
-func (p MailDataType) Origin() []*MailWithSource {
+func (p MailDataType) Self() []*MailWithSource {
 	return []*MailWithSource(p)
 }
 

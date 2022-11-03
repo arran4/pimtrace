@@ -96,7 +96,7 @@ func WriteMBoxFile(d pimtrace.Data[*maildata.MailWithSource], fName string) erro
 }
 
 func WriteMBoxStream(d pimtrace.Data[*maildata.MailWithSource], f io.Writer, fName string) error {
-	ms := d.Origin()
+	ms := d.Self()
 	mbw := mbox.NewWriter(f)
 	for mi, m := range ms {
 		mw, err := mbw.CreateMessage(m.From(), m.Time())
@@ -124,7 +124,7 @@ func WriteMailFile(d pimtrace.Data[*maildata.MailWithSource], fName string) erro
 }
 
 func WriteMailStream(d pimtrace.Data[*maildata.MailWithSource], f io.Writer, fName string) error {
-	for mi, m := range d.Origin() {
+	for mi, m := range d.Self() {
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
 			return fmt.Errorf("writing message %d header %s: %w", mi+1, fName, err)
 		}

@@ -55,7 +55,7 @@ type Header interface {
 type Entry[T any] interface {
 	Get(string) Value
 	Header() Header
-	Origin() T
+	Self() T
 }
 
 type Data[T any] interface {
@@ -63,5 +63,5 @@ type Data[T any] interface {
 	Entry(n int) Entry[T]
 	Truncate(n int) Data[T]
 	SetEntry(n int, entry Entry[T])
-	Origin() []T
+	Self() []T
 }
