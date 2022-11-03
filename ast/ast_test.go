@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"github.com/google/go-cmp/cmp"
 	"pimtrace"
-	"pimtrace/internal/csvdata"
+	"pimtrace/internal/tabledata"
 	"testing"
 )
 
@@ -14,13 +14,13 @@ var (
 	testdata embed.FS
 )
 
-func LoadData1(fn string) pimtrace.Data[*csvdata.CSVRow] {
+func LoadData1(fn string) pimtrace.Data[*tabledata.Row] {
 	f, err := testdata.Open(fn)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
-	r, err := csvdata.ReadCSV(f)
+	r, err := tabledata.ReadCSV(f)
 	if err != nil {
 		panic(err)
 	}
@@ -31,18 +31,18 @@ func TestCompoundStatement_Execute(t *testing.T) {
 	header1 := map[string]int{"address": 3, "currency": 4, "email": 2, "name": 0, "numberrange": 5, "phone": 1}
 	tests := []struct {
 		name       string
-		Statements Operation[*csvdata.CSVRow]
-		data       pimtrace.Data[*csvdata.CSVRow]
-		want       pimtrace.Data[*csvdata.CSVRow]
+		Statements Operation[*tabledata.Row]
+		data       pimtrace.Data[*tabledata.Row]
+		want       pimtrace.Data[*tabledata.Row]
 		wantErr    bool
 	}{
 		{
 			name: "Simple filter",
-			Statements: &FilterStatement[*csvdata.CSVRow]{
-				Expression: &Op[*csvdata.CSVRow]{Op: EqualOp, LHS: EntryExpression[*csvdata.CSVRow]("h.numberrange"), RHS: ConstantExpression[*csvdata.CSVRow]("4")},
+			Statements: &FilterStatement[*tabledata.Row]{
+				Expression: &Op[*tabledata.Row]{Op: EqualOp, LHS: EntryExpression[*tabledata.Row]("h.numberrange"), RHS: ConstantExpression[*tabledata.Row]("4")},
 			},
 			data: LoadData1("testdata/data10.csv"),
-			want: csvdata.CSVDataType{
+			want: tabledata.Data{
 				{
 					Headers: header1,
 					Row: []string{
@@ -55,18 +55,17 @@ func TestCompoundStatement_Execute(t *testing.T) {
 		},
 		{
 			name: "Table column filter",
-			Statements: &TableTransformer[*csvdata.CSVRow]{
-				Columns: []*ColumnExpression[*csvdata.CSVRow]{
-					{Name: "Name", Operation: EntryExpression[*csvdata.CSVRow]("h.name")},
+			Statements: &TableTransformer[*tabledata.Row]{
+				Columns: []*ColumnExpression[*tabledata.Row]{
+					{Name: "Name", Operation: EntryExpression[*tabledata.Row]("h.name")},
 				},
 			},
 			data: LoadData1("testdata/data10.csv"),
-			want: csvdata.CSVDataType{
+			want: tabledata.Data{
 				{
 					Headers: header1,
 					Row: []string{
-						"Jasper Joseph", "(125) 832-4826", "mauris.vestibulum@protonmail.edu",
-						"Ap #783-8034 Nunc Street", "$73.44", "4",
+						"Jasper Joseph",
 					},
 				},
 			},

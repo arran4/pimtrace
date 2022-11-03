@@ -59,4 +59,5 @@ type Data[T any] interface {
 	Truncate(n int) Data[T]
 	SetEntry(n int, entry Entry[T])
 	Self() []T
+	Output(mode, outputPath string) error
 }

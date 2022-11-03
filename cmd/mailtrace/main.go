@@ -37,8 +37,7 @@ func main() {
 			os.Exit(-1)
 		}
 	}
-
-	if err := OutputHandler(data, outputType, outputFile); err != nil {
+	if err := data.Output(*outputType, *outputFile); err != nil {
 		log.Printf("Write Error: %s", err)
 		os.Exit(-1)
 	}

@@ -1,4 +1,4 @@
-package main
+package maildata
 
 import (
 	"errors"
@@ -11,78 +11,19 @@ import (
 	"mime/multipart"
 	"os"
 	"pimtrace"
-	"pimtrace/internal/maildata"
 )
 
-func OutputHandler(d pimtrace.Data[*maildata.MailWithSource], outputType *string, outputFile *string) error {
-	switch *outputType {
-	case "mailfile":
-		switch *outputFile {
-		case "-":
-			err := WriteMailStream(d, os.Stdin, *outputFile)
-			if err != nil {
-				return err
-			}
-		default:
-			err := WriteMailFile(d, *outputFile)
-			if err != nil {
-				return err
-			}
-		}
-	case "mbox":
-		switch *outputFile {
-		case "-":
-			err := WriteMBoxStream(d, os.Stdin, *outputFile)
-			if err != nil {
-				return err
-			}
-		default:
-			err := WriteMBoxFile(d, *outputFile)
-			if err != nil {
-				return err
-			}
-		}
-	case "csv":
-		switch *outputFile {
-		case "-":
-			err := WriteCSVStream(d, os.Stdin, *outputFile)
-			if err != nil {
-				return err
-			}
-		default:
-			err := WriteCSVFile(d, *outputFile)
-			if err != nil {
-				return err
-			}
-		}
-	case "count":
-		fmt.Println(d.Len())
-	case "list":
-		fmt.Println("`--output-type`s: ")
-		fmt.Printf(" =%-20s - %s\n", "mailfile", "A single mail file")
-		fmt.Printf(" =%-20s - %s\n", "mbox", "Mbox file")
-		fmt.Printf(" =%-20s - %s\n", "list", "This help text")
-		fmt.Printf(" =%-20s - %s\n", "count", "Just a count")
-		fmt.Printf(" =%-20s - %s\n", "csv", "Data in csv format")
-		fmt.Println()
-	default:
-		fmt.Println("Please specify a -input-type")
-		fmt.Println()
-	}
-	return nil
-}
-
-func WriteCSVStream(d pimtrace.Data[*maildata.MailWithSource], stdin *os.File, s string) error {
+func WriteCSVStream(d pimtrace.Data[*MailWithSource], stdin *os.File, s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func WriteCSVFile(d pimtrace.Data[*maildata.MailWithSource], s string) error {
+func WriteCSVFile(d pimtrace.Data[*MailWithSource], s string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func WriteMBoxFile(d pimtrace.Data[*maildata.MailWithSource], fName string) error {
+func WriteMBoxFile(d pimtrace.Data[*MailWithSource], fName string) error {
 	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("creating Mbox %s: %w", fName, err)
@@ -95,7 +36,7 @@ func WriteMBoxFile(d pimtrace.Data[*maildata.MailWithSource], fName string) erro
 	return WriteMBoxStream(d, f, fName)
 }
 
-func WriteMBoxStream(d pimtrace.Data[*maildata.MailWithSource], f io.Writer, fName string) error {
+func WriteMBoxStream(d pimtrace.Data[*MailWithSource], f io.Writer, fName string) error {
 	ms := d.Self()
 	mbw := mbox.NewWriter(f)
 	for mi, m := range ms {
@@ -103,14 +44,14 @@ func WriteMBoxStream(d pimtrace.Data[*maildata.MailWithSource], f io.Writer, fNa
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("creating message %d to Mbox %s: %w", mi+1, fName, err)
 		}
-		if err := WriteMailStream(maildata.MailDataType(ms[mi:mi+1]), mw, fName); err != nil {
+		if err := WriteMailStream(MailDataType(ms[mi:mi+1]), mw, fName); err != nil {
 			return fmt.Errorf("writing message %d to Mbox %s: %w", mi+1, fName, err)
 		}
 	}
 	return nil
 }
 
-func WriteMailFile(d pimtrace.Data[*maildata.MailWithSource], fName string) error {
+func WriteMailFile(d pimtrace.Data[*MailWithSource], fName string) error {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("writing mail file %s: %w", fName, err)
@@ -123,7 +64,7 @@ func WriteMailFile(d pimtrace.Data[*maildata.MailWithSource], fName string) erro
 	return WriteMailStream(d, f, fName)
 }
 
-func WriteMailStream(d pimtrace.Data[*maildata.MailWithSource], f io.Writer, fName string) error {
+func WriteMailStream(d pimtrace.Data[*MailWithSource], f io.Writer, fName string) error {
 	for mi, m := range d.Self() {
 		if err := textproto.WriteHeader(f, textproto.HeaderFromMap(m.MailHeader.Map())); err != nil {
 			return fmt.Errorf("writing message %d header %s: %w", mi+1, fName, err)

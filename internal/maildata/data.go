@@ -2,10 +2,12 @@ package maildata
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/emersion/go-message/mail"
 	"io"
 	"mime/multipart"
 	"net/textproto"
+	"os"
 	"pimtrace"
 	"strings"
 	"time"
@@ -79,7 +81,7 @@ func (s *MailWithSource) Get(key string) pimtrace.Value {
 	}
 }
 
-func (s *MailWithSource) Header() pimtrace.Header {
+func (s *MailWithSource) Header() *mail.Header {
 	return &s.MailHeader
 }
 
@@ -99,6 +101,48 @@ func (s *MailWithSource) Time() time.Time {
 }
 
 type MailDataType []*MailWithSource
+
+func (p MailDataType) Output(mode, outputPath string) error {
+	switch mode {
+	case "mailfile":
+		switch outputPath {
+		case "-":
+			return WriteMailStream(p, os.Stdin, outputPath)
+		default:
+			return WriteMailFile(p, outputPath)
+		}
+	case "mbox":
+		switch outputPath {
+		case "-":
+			return WriteMBoxStream(p, os.Stdin, outputPath)
+		default:
+			return WriteMBoxFile(p, outputPath)
+		}
+	case "csv":
+		switch outputPath {
+		case "-":
+			return WriteCSVStream(p, os.Stdin, outputPath)
+		default:
+			return WriteCSVFile(p, outputPath)
+		}
+	case "count":
+		fmt.Println(p.Len())
+		return nil
+	case "list":
+		fmt.Println("`--output-type`s: ")
+		fmt.Printf(" =%-20s - %s\n", "mailfile", "A single mail file")
+		fmt.Printf(" =%-20s - %s\n", "mbox", "Mbox file")
+		fmt.Printf(" =%-20s - %s\n", "list", "This help text")
+		fmt.Printf(" =%-20s - %s\n", "count", "Just a count")
+		fmt.Printf(" =%-20s - %s\n", "csv", "Data in csv format")
+		fmt.Println()
+		return nil
+	default:
+		//fmt.Println("Please specify a -input-type")
+		//fmt.Println()
+		return nil
+	}
+}
 
 func (p MailDataType) Truncate(n int) pimtrace.Data[*MailWithSource] {
 	p = (([]*MailWithSource)(p))[:n]

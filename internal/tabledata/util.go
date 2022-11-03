@@ -1,4 +1,4 @@
-package csvdata
+package tabledata
 
 import (
 	"encoding/csv"
@@ -6,9 +6,9 @@ import (
 	"io"
 )
 
-func ReadCSV(r io.Reader) (CSVDataType, error) {
+func ReadCSV(r io.Reader) (Data, error) {
 	header := map[string]int{}
-	result := []*CSVRow{}
+	result := []*Row{}
 	cr := csv.NewReader(r)
 	for l := 0; ; l++ {
 		r, err := cr.Read()
@@ -27,10 +27,10 @@ func ReadCSV(r io.Reader) (CSVDataType, error) {
 			}
 			continue
 		}
-		result = append(result, &CSVRow{
+		result = append(result, &Row{
 			Headers: header,
 			Row:     r,
 		})
 	}
-	return CSVDataType(result), nil
+	return Data(result), nil
 }
