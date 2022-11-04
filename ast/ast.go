@@ -2,7 +2,6 @@ package ast
 
 import (
 	"fmt"
-	"log"
 	"pimtrace"
 	"pimtrace/dataformats/groupdata"
 	"pimtrace/dataformats/tabledata"
@@ -303,7 +302,6 @@ func (g *GroupTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 			r[i] = v
 		}
 		key := pimtrace.SimpleArrayValue(r).String()
-		log.Printf("Key: %s", key)
 		if p, ok := pos[key]; ok {
 			td[p].Contents = td[p].Contents.SetEntry(td[p].Contents.Len(), e)
 		} else {
