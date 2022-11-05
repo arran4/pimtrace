@@ -2,21 +2,38 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"pimtrace/argparsers/basic"
 	_ "pimtrace/funcs"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
+	f := flag.FlagSet{}
 	var (
-		inputType  = flag.String("input-type", "list", "The input type")
-		inputFile  = flag.String("input", "-", "Input file or - for stdin")
-		outputType = flag.String("output-type", "list", "The input type")
-		outputFile = flag.String("output", "-", "Output file or - for stdin")
+		inputType   = f.String("input-type", "list", "The input type")
+		inputFile   = f.String("input", "-", "Input file or - for stdin")
+		outputType  = f.String("output-type", "list", "The input type")
+		outputFile  = f.String("output", "-", "Output file or - for stdin")
+		versionFlag = f.Bool("version", false, "Prints the version")
 	)
 
-	flag.Parse()
+	if *versionFlag {
+		fmt.Println(version)
+		return
+	}
+
+	if err := f.Parse(os.Args); err != nil {
+		log.Printf("Error parsing flags: %s", err)
+		os.Exit(-1)
+	}
 
 	data, err := InputHandler(*inputType, *inputFile)
 	if err != nil {
@@ -24,7 +41,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	ops, err := basic.ParseOperations(flag.Args())
+	ops, err := basic.ParseOperations(f.Args())
 	if err != nil {
 		log.Printf("Parse Error: %s", err)
 		os.Exit(-1)
