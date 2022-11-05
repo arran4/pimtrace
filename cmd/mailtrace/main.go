@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"pimtrace/argparsers/basic"
+	"pimtrace/ast"
 	_ "pimtrace/funcs"
 )
 
@@ -27,6 +28,7 @@ func main() {
 		inputFile   = f.String("input", "-", "Input file or - for stdin")
 		outputType  = f.String("output-type", "list", "The input type")
 		outputFile  = f.String("output", "-", "Output file or - for stdin")
+		parser      = f.String("parser", "", "Just use `basic`")
 		versionFlag = f.Bool("version", false, "Prints the version")
 		helpFlag    = f.Bool("help", false, "Prints help")
 	)
@@ -52,11 +54,19 @@ func main() {
 		os.Exit(-1)
 	}
 
-	ops, err := basic.ParseOperations(f.Args())
-	if err != nil {
-		log.Printf("Parse Error: %s", err)
+	var ops ast.Operation
+	switch *parser {
+	case "basic":
+		ops, err = basic.ParseOperations(f.Args())
+		if err != nil {
+			log.Printf("Parse Error: %s", err)
+			os.Exit(-1)
+		}
+	default:
+		log.Printf("Please use -parser=basic parameter, as maybe one day a more advanced parser will be created")
 		os.Exit(-1)
 	}
+
 	if ops != nil {
 		data, err = ops.Execute(data)
 		if err != nil {
