@@ -18,11 +18,6 @@ var (
 
 func main() {
 	f := flag.FlagSet{}
-	f.Usage = func() {
-		fmt.Println("Usage: ", os.Args[0], "[Flags]", "[Query]")
-		f.PrintDefaults()
-		PrintQueryHelp()
-	}
 	var (
 		inputType   = f.String("input-type", "list", "The input type")
 		inputFile   = f.String("input", "-", "Input file or - for stdin")
@@ -32,6 +27,11 @@ func main() {
 		versionFlag = f.Bool("version", false, "Prints the version")
 		helpFlag    = f.Bool("help", false, "Prints help")
 	)
+	f.Usage = func() {
+		fmt.Println("Usage: ", os.Args[0], "[Flags]", "[Query]")
+		f.PrintDefaults()
+		PrintQueryHelp(*parser)
+	}
 
 	if *versionFlag {
 		fmt.Println(version, commit, date)
@@ -80,7 +80,10 @@ func main() {
 	}
 }
 
-func PrintQueryHelp() {
+func PrintQueryHelp(parser string) {
 	//TODO implement me
 	panic("implement me")
+	switch parser {
+	case "basic":
+	}
 }
