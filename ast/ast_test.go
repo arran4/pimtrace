@@ -159,6 +159,27 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Summary Table with all the functions and group by formatted columns",
+			Statements: &CompoundStatement{Statements: []Operation{
+				&GroupTransformer{
+					Columns: []*ColumnExpression{
+						{Name: "year", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
+						{Name: "month", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
+					},
+				},
+				&TableTransformer{
+					Columns: []*ColumnExpression{
+						{Name: "Year", Operation: EntryExpression("c.year")},
+						{Name: "Month", Operation: EntryExpression("c.month")},
+						{Name: "Count", Operation: &FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
+					},
+				},
+			}},
+			data:    LoadData1("testdata/data10.csv"),
+			want:    tabledata.Data{},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

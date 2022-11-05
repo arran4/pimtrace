@@ -9,10 +9,11 @@ var (
 	ErrExpecting1ArgumentOfTypeStringIntOrDate = errors.New("expecting 1 argument, of type string, int or date")
 	ErrNumberError                             = errors.New("unknown number")
 	ErrUnsupportedType                         = errors.New("unsupported type")
+	ErrEmptyType                               = errors.New("empty type")
 )
 
 func Month[T ValueExpression](d pimtrace.Entry, args []T) (pimtrace.Value, error) {
-	t, err := Arg1OnlyToTime(d, args)
+	t, err := Arg1OnlyToTime("month", d, args)
 	if err != nil {
 		return nil, err
 	}
