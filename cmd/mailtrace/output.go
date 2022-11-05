@@ -63,11 +63,11 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 		return nil
 	case "list":
 		fmt.Println("`--output-type`s: ")
-		fmt.Printf(" -%-20s - %s\n", "mailfile", "A single mail file")
-		fmt.Printf(" -%-20s - %s\n", "mbox", "Mbox file")
-		fmt.Printf(" -%-20s - %s\n", "list", "This help text")
-		fmt.Printf(" -%-20s - %s\n", "count", "Just a count")
-		fmt.Printf(" -%-20s - %s\n", "csv", "Data in csv format")
+		fmt.Printf(" %-30s %s\n", "mailfile", "A single mail file")
+		fmt.Printf(" %-30s %s\n", "mbox", "Mbox file")
+		fmt.Printf(" %-30s %s\n", "list", "This help text")
+		fmt.Printf(" %-30s %s\n", "count", "Just a count")
+		fmt.Printf(" %-30s %s\n", "csv", "Data in csv format")
 		fmt.Println()
 		return nil
 	default:

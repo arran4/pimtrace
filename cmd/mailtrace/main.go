@@ -16,10 +16,11 @@ var (
 )
 
 func main() {
-	f := flag.FlagSet{
-		Usage: func() {
-			log.Printf("Usage")
-		},
+	f := flag.FlagSet{}
+	f.Usage = func() {
+		fmt.Println("Usage: ", os.Args[0], "[Flags]", "[Query]")
+		f.PrintDefaults()
+		PrintQueryHelp()
 	}
 	var (
 		inputType   = f.String("input-type", "list", "The input type")
@@ -27,15 +28,21 @@ func main() {
 		outputType  = f.String("output-type", "list", "The input type")
 		outputFile  = f.String("output", "-", "Output file or - for stdin")
 		versionFlag = f.Bool("version", false, "Prints the version")
+		helpFlag    = f.Bool("help", false, "Prints help")
 	)
 
 	if *versionFlag {
-		fmt.Println(version)
+		fmt.Println(version, commit, date)
 		return
 	}
 
 	if err := f.Parse(os.Args); err != nil {
 		log.Printf("Error parsing flags: %s", err)
+		os.Exit(-1)
+	}
+
+	if f.NArg() <= 1 || *helpFlag {
+		f.Usage()
 		os.Exit(-1)
 	}
 
@@ -61,4 +68,9 @@ func main() {
 		log.Printf("Write Error: %s", err)
 		os.Exit(-1)
 	}
+}
+
+func PrintQueryHelp() {
+	//TODO implement me
+	panic("implement me")
 }
