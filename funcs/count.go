@@ -5,7 +5,27 @@ import (
 	"pimtrace/dataformats/groupdata"
 )
 
-func Count[T ValueExpression](d pimtrace.Entry, args []T) (pimtrace.Value, error) {
+type Count[T ValueExpression] struct{}
+
+var _ Function[ValueExpression] = Count[ValueExpression]{}
+
+func (c Count[T]) Name() string {
+	return "count"
+}
+
+func (c Count[T]) Arguments() []ArgumentList {
+	return []ArgumentList{
+		{
+			Description: "Returns a count of lines represented by this",
+		},
+		{
+			Args:        []Argument{Any},
+			Description: "Returns the number of truthy elements returned",
+		},
+	}
+}
+
+func (c Count[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	dd, ok := d.(*groupdata.Row)
 	if !ok {
 		return pimtrace.SimpleIntegerValue(1), nil

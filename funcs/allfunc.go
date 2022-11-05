@@ -10,11 +10,35 @@ type ValueExpression interface {
 
 type FunctionDef[T ValueExpression] func(d pimtrace.Entry, args []T) (pimtrace.Value, error)
 
-func Functions[T ValueExpression]() map[string]FunctionDef[T] {
-	return map[string]FunctionDef[T]{
-		"count": Count[T],
-		"sum":   Sum[T],
-		"month": Month[T],
-		"year":  Year[T],
+type Argument int
+
+const (
+	String Argument = iota
+	Integer
+	Array
+	Any
+)
+
+type ArgumentList struct {
+	Args        []Argument
+	Description string
+}
+
+type Function[T ValueExpression] interface {
+	Name() string
+	Arguments() []ArgumentList
+	Run(d pimtrace.Entry, args []T) (pimtrace.Value, error)
+}
+
+func Functions[T ValueExpression]() map[string]Function[T] {
+	m := map[string]Function[T]{}
+	for _, f := range []Function[T]{
+		Count[T]{},
+		Sum[T]{},
+		Month[T]{},
+		Year[T]{},
+	} {
+		m[f.Name()] = f
 	}
+	return m
 }

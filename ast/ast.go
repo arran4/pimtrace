@@ -192,7 +192,7 @@ func (fe *FunctionExpression) ColumnName() string {
 func (fe *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
 	functions := funcs.Functions[ValueExpression]()
 	if f, ok := functions[fe.Function]; ok {
-		return f(d, fe.Args)
+		return f.Run(d, fe.Args)
 	}
 	return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, fe.Function)
 }

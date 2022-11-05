@@ -12,7 +12,28 @@ var (
 	ErrEmptyType                               = errors.New("empty type")
 )
 
-func Month[T ValueExpression](d pimtrace.Entry, args []T) (pimtrace.Value, error) {
+type Month[T ValueExpression] struct{}
+
+var _ Function[ValueExpression] = Month[ValueExpression]{}
+
+func (c Month[T]) Name() string {
+	return "month"
+}
+
+func (c Month[T]) Arguments() []ArgumentList {
+	return []ArgumentList{
+		{
+			Args:        []Argument{String},
+			Description: "Converts time string to a date and returns the month number of that date",
+		},
+		{
+			Args:        []Argument{Integer},
+			Description: "Converts Unix time to a date and returns the month number of that date",
+		},
+	}
+}
+
+func (c Month[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	t, err := Arg1OnlyToTime("month", d, args)
 	if err != nil {
 		return nil, err

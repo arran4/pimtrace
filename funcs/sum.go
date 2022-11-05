@@ -5,7 +5,27 @@ import (
 	"pimtrace/dataformats/groupdata"
 )
 
-func Sum[T ValueExpression](d pimtrace.Entry, args []T) (pimtrace.Value, error) {
+type Sum[T ValueExpression] struct{}
+
+var _ Function[ValueExpression] = Sum[ValueExpression]{}
+
+func (c Sum[T]) Name() string {
+	return "sum"
+}
+
+func (c Sum[T]) Arguments() []ArgumentList {
+	return []ArgumentList{
+		{
+			Description: "Returns a sum of lines represented by this",
+		},
+		{
+			Args:        []Argument{Any},
+			Description: "Returns the number of truthy elements returned",
+		},
+	}
+}
+
+func (c Sum[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	if len(args) == 0 {
 		return pimtrace.SimpleIntegerValue(1), nil
 	}

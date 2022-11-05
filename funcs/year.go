@@ -7,7 +7,28 @@ import (
 	"time"
 )
 
-func Year[T ValueExpression](d pimtrace.Entry, args []T) (pimtrace.Value, error) {
+type Year[T ValueExpression] struct{}
+
+var _ Function[ValueExpression] = Year[ValueExpression]{}
+
+func (c Year[T]) Name() string {
+	return "year"
+}
+
+func (c Year[T]) Arguments() []ArgumentList {
+	return []ArgumentList{
+		{
+			Args:        []Argument{String},
+			Description: "Converts time string to a date and returns the year number of that date",
+		},
+		{
+			Args:        []Argument{Integer},
+			Description: "Converts Unix time to a date and returns the year number of that date",
+		},
+	}
+}
+
+func (c Year[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	t, err := Arg1OnlyToTime("year", d, args)
 	if err != nil {
 		return nil, err
