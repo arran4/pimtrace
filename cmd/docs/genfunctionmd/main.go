@@ -24,14 +24,14 @@ func main() {
 	fmt.Fprintln(f, "")
 	fmt.Fprintln(f, "| Function Def | Description |")
 	fmt.Fprintln(f, "| --- | --- |")
-	funcs := funcs.Functions[ast.ValueExpression]()
-	funNames := make([]string, 0, len(funcs))
-	for funName := range funcs {
+	functions := funcs.Functions[ast.ValueExpression]()
+	funNames := make([]string, 0, len(functions))
+	for funName := range functions {
 		funNames = append(funNames, funName)
 	}
 	sort.Strings(funNames)
 	for _, funName := range funNames {
-		fun := funcs[funName]
+		fun := functions[funName]
 		for _, af := range fun.Arguments() {
 			args := make([]string, 0, len(af.Args))
 			for _, aff := range af.Args {
