@@ -7,7 +7,9 @@ import (
 	"os"
 	"pimtrace/argparsers/basic"
 	"pimtrace/ast"
+	"pimtrace/funcs"
 	_ "pimtrace/funcs"
+	"strings"
 )
 
 var (
@@ -81,6 +83,17 @@ func main() {
 }
 
 func PrintQueryHelp(parser string) {
+	fmt.Println("Functions: ")
+	for _, f := range funcs.Functions[ast.ValueExpression]() {
+		for _, af := range f.Arguments() {
+			args := make([]string, 0, len(af.Args))
+			for _, aff := range af.Args {
+				args = append(args, aff.String())
+			}
+			fn := fmt.Sprintf("f.%s[%s]", f.Name(), strings.Join(args, ","))
+			fmt.Printf("%-40s%40s\n", fn, af.Description)
+		}
+	}
 	//TODO implement me
 	panic("implement me")
 	switch parser {

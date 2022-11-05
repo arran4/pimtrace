@@ -12,6 +12,20 @@ type FunctionDef[T ValueExpression] func(d pimtrace.Entry, args []T) (pimtrace.V
 
 type Argument int
 
+func (a Argument) String() string {
+	switch a {
+	case String:
+		return "String"
+	case Integer:
+		return "Integer"
+	case Array:
+		return "Array"
+	case Any:
+		return "Any"
+	}
+	return "unknown"
+}
+
 const (
 	String Argument = iota
 	Integer
