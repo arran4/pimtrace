@@ -1,15 +1,30 @@
 package tabledata
 
 import (
-	"os"
+	"io"
+	"pimtrace"
 )
 
-func (d Data) WriteCSVStream(stdin *os.File, s string) error {
+var _ pimtrace.CSVOutputCapable = (*Data)(nil)
+
+func (d Data) WriteCSVFile(fName string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (d Data) WriteCSVFile(s string) error {
+func (d Data) WriteCSVStream(f io.Writer, fName string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+var _ pimtrace.TableOutputCapable = (*Data)(nil)
+
+func (d Data) WriteTableFile(fName string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d Data) WriteTableStream(f io.Writer, fName string) error {
 	//TODO implement me
 	panic("implement me")
 }

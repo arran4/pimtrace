@@ -10,14 +10,19 @@ import (
 	"mime"
 	"mime/multipart"
 	"os"
+	"pimtrace"
 )
 
-func (mdt Data) WriteCSVStream(stdin *os.File, s string) error {
+var _ pimtrace.MailFileOutputCapable = (*Data)(nil)
+var _ pimtrace.MBoxOutputCapable = (*Data)(nil)
+var _ pimtrace.CSVOutputCapable = (*Data)(nil)
+
+func (mdt Data) WriteCSVFile(fName string) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (mdt Data) WriteCSVFile(s string) error {
+func (mdt Data) WriteCSVStream(f io.Writer, fName string) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -96,4 +101,16 @@ func (mdt Data) WriteMailStream(f io.Writer, fName string) error {
 		}
 	}
 	return nil
+}
+
+var _ pimtrace.TableOutputCapable = (*Data)(nil)
+
+func (d Data) WriteTableFile(fName string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d Data) WriteTableStream(f io.Writer, fName string) error {
+	//TODO implement me
+	panic("implement me")
 }

@@ -2,31 +2,15 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"pimtrace"
 	"reflect"
 )
 
-type MailFileOutputCapable interface {
-	WriteMailFile(fName string) error
-	WriteMailStream(f io.Writer, fName string) error
-}
-
-type MBoxOutputCapable interface {
-	WriteMBoxFile(fName string) error
-	WriteMBoxStream(f io.Writer, fName string) error
-}
-
-type CSVOutputCapable interface {
-	WriteCSVFile(fName string) error
-	WriteCSVStream(f io.Writer, fName string) error
-}
-
 func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 	switch mode {
 	case "mailfile":
-		if np, ok := p.(MailFileOutputCapable); ok {
+		if np, ok := p.(pimtrace.MailFileOutputCapable); ok {
 			switch outputPath {
 			case "-":
 				return np.WriteMailStream(os.Stdin, outputPath)
@@ -37,7 +21,7 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	case "mbox":
-		if np, ok := p.(MBoxOutputCapable); ok {
+		if np, ok := p.(pimtrace.MBoxOutputCapable); ok {
 			switch outputPath {
 			case "-":
 				return np.WriteMBoxStream(os.Stdin, outputPath)
@@ -48,12 +32,23 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	case "csv":
-		if np, ok := p.(CSVOutputCapable); ok {
+		if np, ok := p.(pimtrace.CSVOutputCapable); ok {
 			switch outputPath {
 			case "-":
 				return np.WriteCSVStream(os.Stdin, outputPath)
 			default:
 				return np.WriteCSVFile(outputPath)
+			}
+		} else {
+			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
+		}
+	case "table":
+		if np, ok := p.(pimtrace.TableOutputCapable); ok {
+			switch outputPath {
+			case "-":
+				return np.WriteTableStream(os.Stdin, outputPath)
+			default:
+				return np.WriteTableFile(outputPath)
 			}
 		} else {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
