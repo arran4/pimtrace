@@ -16,7 +16,11 @@ var (
 )
 
 func main() {
-	f := flag.FlagSet{}
+	f := flag.FlagSet{
+		Usage: func() {
+			log.Printf("Usage")
+		},
+	}
 	var (
 		inputType   = f.String("input-type", "list", "The input type")
 		inputFile   = f.String("input", "-", "Input file or - for stdin")

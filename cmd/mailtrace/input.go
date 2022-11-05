@@ -51,10 +51,10 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 			mails = append(mails, nm...)
 		}
 	case "list":
-		fmt.Println("`--input-type`s: ")
-		fmt.Printf(" =%-20s - %s\n", "mailfile", "A single mail file")
-		fmt.Printf(" =%-20s - %s\n", "mbox", "Mbox file")
-		fmt.Printf(" =%-20s - %s\n", "list", "This help text")
+		fmt.Println("`input-type`s available: ")
+		fmt.Printf(" -%-20s - %s\n", "mailfile", "A single mail file")
+		fmt.Printf(" -%-20s - %s\n", "mbox", "Mbox file")
+		fmt.Printf(" -%-20s - %s\n", "list", "This help text")
 		fmt.Println()
 	default:
 		fmt.Println("Please specify a -input-type")
