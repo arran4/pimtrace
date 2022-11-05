@@ -47,6 +47,7 @@ func TestCompoundStatement_Execute(t *testing.T) {
 	header1 := map[string]int{"address": 3, "currency": 4, "email": 2, "name": 0, "numberrange": 5, "phone": 1}
 	header2 := map[string]int{"Name": 0}
 	header3 := map[string]int{"Number": 0, "count": 1, "sum-size": 2}
+	header4 := map[string]int{"Count": 2, "Month": 1, "Year": 0}
 	tests := []struct {
 		name       string
 		Statements Operation
@@ -164,8 +165,8 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			Statements: &CompoundStatement{Statements: []Operation{
 				&GroupTransformer{
 					Columns: []*ColumnExpression{
-						{Name: "year", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("h.date")}}},
-						{Name: "month", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("h.date")}}},
+						{Name: "year", Operation: &FunctionExpression{Function: "year", Args: []ValueExpression{EntryExpression("c.date")}}},
+						{Name: "month", Operation: &FunctionExpression{Function: "month", Args: []ValueExpression{EntryExpression("c.date")}}},
 					},
 				},
 				&TableTransformer{
@@ -175,9 +176,69 @@ func TestCompoundStatement_Execute(t *testing.T) {
 						{Name: "Count", Operation: &FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
 					},
 				},
+				&SortTransformer{
+					Expression: []ValueExpression{
+						EntryExpression("c.Year"),
+						EntryExpression("c.Month"),
+						EntryExpression("c.Count"),
+					},
+				},
 			}},
-			data:    LoadData1("testdata/data10.csv"),
-			want:    tabledata.Data{},
+			data: LoadData1("testdata/tdata1000.csv"),
+			want: tabledata.Data{
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2021), pimtrace.SimpleIntegerValue(11), pimtrace.SimpleIntegerValue(74)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2021), pimtrace.SimpleIntegerValue(12), pimtrace.SimpleIntegerValue(70)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(1), pimtrace.SimpleIntegerValue(86)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(2), pimtrace.SimpleIntegerValue(82)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(3), pimtrace.SimpleIntegerValue(89)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(4), pimtrace.SimpleIntegerValue(95)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(5), pimtrace.SimpleIntegerValue(76)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(6), pimtrace.SimpleIntegerValue(81)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(7), pimtrace.SimpleIntegerValue(100)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(8), pimtrace.SimpleIntegerValue(74)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(9), pimtrace.SimpleIntegerValue(78)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(10), pimtrace.SimpleIntegerValue(84)},
+				},
+				{
+					Headers: header4,
+					Row:     []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(11), pimtrace.SimpleIntegerValue(11)},
+				},
+			},
 			wantErr: false,
 		},
 	}

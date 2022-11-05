@@ -116,7 +116,7 @@ func (ve EntryExpression) ColumnName() string {
 }
 
 func (ve EntryExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
-	return d.Get(string(ve)), nil
+	return d.Get(string(ve))
 }
 
 type OpFunc func(pimtrace.Value, pimtrace.Value) (bool, error)

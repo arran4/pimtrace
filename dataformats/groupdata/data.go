@@ -1,8 +1,14 @@
 package groupdata
 
 import (
+	"errors"
+	"fmt"
 	"pimtrace"
 	"strings"
+)
+
+var (
+	ErrKeyNotFound = errors.New("key not found")
 )
 
 type Row struct {
@@ -19,7 +25,7 @@ func (s *Row) Self() *Row {
 	return s
 }
 
-func (s *Row) Get(key string) pimtrace.Value {
+func (s *Row) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {
 	//case "sz", "sized": TODO
@@ -29,7 +35,7 @@ func (s *Row) Get(key string) pimtrace.Value {
 	default:
 		n, ok := s.Headers[ks[1]]
 		if ok && len(ks) > 1 {
-			return s.Row[n]
+			return s.Row[n], nil
 		}
 		var r []pimtrace.Value
 		for i := 0; i < s.Contents.Len(); i++ {
@@ -37,9 +43,13 @@ func (s *Row) Get(key string) pimtrace.Value {
 			if sr == nil {
 				continue
 			}
-			r = append(r, sr.Get(key))
+			g, err := sr.Get(key)
+			if err != nil {
+				return nil, fmt.Errorf("group row %w: %s", ErrKeyNotFound, key)
+			}
+			r = append(r, g)
 		}
-		return pimtrace.SimpleArrayValue(r)
+		return pimtrace.SimpleArrayValue(r), nil
 	}
 }
 

@@ -2,6 +2,8 @@ package maildata
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"github.com/emersion/go-message/mail"
 	"io"
 	"mime/multipart"
@@ -9,6 +11,10 @@ import (
 	"pimtrace"
 	"strings"
 	"time"
+)
+
+var (
+	ErrKeyNotFound = errors.New("key not found")
 )
 
 type MailBodyFromPart struct {
@@ -64,7 +70,7 @@ func (s *MailWithSource) Self() *MailWithSource {
 	return s
 }
 
-func (s *MailWithSource) Get(key string) pimtrace.Value {
+func (s *MailWithSource) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {
 	//case "sz", "sized": TODO
@@ -73,9 +79,9 @@ func (s *MailWithSource) Get(key string) pimtrace.Value {
 		fallthrough
 	default:
 		if len(ks) > 1 {
-			return pimtrace.SimpleStringValue(s.MailHeader.Get(ks[1]))
+			return pimtrace.SimpleStringValue(s.MailHeader.Get(ks[1])), nil
 		}
-		return nil
+		return nil, fmt.Errorf("mail get %w, %s", ErrKeyNotFound, key)
 	}
 }
 

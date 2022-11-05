@@ -237,7 +237,7 @@ type Value interface {
 }
 
 type Entry interface {
-	Get(string) Value
+	Get(string) (Value, error)
 }
 
 type Data interface {

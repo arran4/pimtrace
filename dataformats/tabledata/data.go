@@ -1,8 +1,14 @@
 package tabledata
 
 import (
+	"errors"
+	"fmt"
 	"pimtrace"
 	"strings"
+)
+
+var (
+	ErrKeyNotFound = errors.New("key not found")
 )
 
 type Row struct {
@@ -18,7 +24,7 @@ func (s *Row) Self() *Row {
 	return s
 }
 
-func (s *Row) Get(key string) pimtrace.Value {
+func (s *Row) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {
 	//case "sz", "sized": TODO
@@ -28,9 +34,9 @@ func (s *Row) Get(key string) pimtrace.Value {
 	default:
 		n, ok := s.Headers[ks[1]]
 		if ok && len(ks) > 1 {
-			return s.Row[n]
+			return s.Row[n], nil
 		}
-		return nil
+		return nil, fmt.Errorf("table row %w: %s", ErrKeyNotFound, key)
 	}
 }
 
