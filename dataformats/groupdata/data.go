@@ -25,6 +25,21 @@ func (s *Row) Self() *Row {
 	return s
 }
 
+func (s *Row) HeadersStringArray() (result []string) {
+	result = make([]string, len(s.Headers))
+	for h, i := range s.Headers {
+		result[i] = h
+	}
+	return
+}
+
+func (s *Row) StringArray(header []string) (result []string) {
+	for _, v := range s.Row {
+		result = append(result, v.String())
+	}
+	return
+}
+
 func (s *Row) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {

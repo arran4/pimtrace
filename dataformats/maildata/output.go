@@ -6,38 +6,36 @@ import (
 	"github.com/emersion/go-mbox"
 	"github.com/emersion/go-message/textproto"
 	"io"
-	"log"
 	"mime"
 	"mime/multipart"
-	"os"
 	"pimtrace"
+	"pimtrace/dataformats/tabledata"
 )
 
 var _ pimtrace.MailFileOutputCapable = (*Data)(nil)
 var _ pimtrace.MBoxOutputCapable = (*Data)(nil)
 var _ pimtrace.CSVOutputCapable = (*Data)(nil)
+var _ pimtrace.TableOutputCapable = (*Data)(nil)
 
-func (mdt Data) WriteCSVFile(fName string) error {
-	//TODO implement me
-	panic("implement me")
+func (d Data) WriteCSVFile(fName string) error {
+	return pimtrace.WriteFileWrapper("CSV", fName, d.WriteCSVStream)
 }
 
-func (mdt Data) WriteCSVStream(f io.Writer, fName string) error {
-	//TODO implement me
-	panic("implement me")
+func (d Data) WriteCSVStream(f io.Writer, fName string) error {
+	return tabledata.WriteCsv(d, f)
+}
+
+func (d Data) WriteTableFile(fName string) error {
+	return pimtrace.WriteFileWrapper("Table", fName, d.WriteTableStream)
+}
+
+func (d Data) WriteTableStream(f io.Writer, fName string) error {
+	tabledata.WriteTable(d, f)
+	return nil
 }
 
 func (mdt Data) WriteMBoxFile(fName string) error {
-	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		return fmt.Errorf("creating Mbox %s: %w", fName, err)
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			log.Printf("Error closing file: %s: %s", fName, err)
-		}
-	}()
-	return mdt.WriteMBoxStream(f, fName)
+	return pimtrace.WriteFileWrapper("MBox", fName, mdt.WriteMBoxStream)
 }
 
 func (mdt Data) WriteMBoxStream(f io.Writer, fName string) error {
@@ -55,16 +53,7 @@ func (mdt Data) WriteMBoxStream(f io.Writer, fName string) error {
 }
 
 func (mdt Data) WriteMailFile(fName string) error {
-	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("writing mail file %s: %w", fName, err)
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			log.Printf("Error closing file: %s: %s", fName, err)
-		}
-	}()
-	return mdt.WriteMailStream(f, fName)
+	return pimtrace.WriteFileWrapper("MailFile", fName, mdt.WriteMailStream)
 }
 
 func (mdt Data) WriteMailStream(f io.Writer, fName string) error {
@@ -101,16 +90,4 @@ func (mdt Data) WriteMailStream(f io.Writer, fName string) error {
 		}
 	}
 	return nil
-}
-
-var _ pimtrace.TableOutputCapable = (*Data)(nil)
-
-func (d Data) WriteTableFile(fName string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (d Data) WriteTableStream(f io.Writer, fName string) error {
-	//TODO implement me
-	panic("implement me")
 }

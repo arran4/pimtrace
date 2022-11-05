@@ -11,13 +11,13 @@ var (
 	ErrKeyNotFound = errors.New("key not found")
 )
 
+type Header interface {
+	Get(key string) string
+}
+
 type Row struct {
 	Headers map[string]int
 	Row     []pimtrace.Value
-}
-
-type Header interface {
-	Get(key string) string
 }
 
 func (s *Row) Self() *Row {
@@ -38,6 +38,21 @@ func (s *Row) Get(key string) (pimtrace.Value, error) {
 		}
 		return nil, fmt.Errorf("table row %w: %s", ErrKeyNotFound, key)
 	}
+}
+
+func (s *Row) HeadersStringArray() (result []string) {
+	result = make([]string, len(s.Headers))
+	for h, i := range s.Headers {
+		result[i] = h
+	}
+	return
+}
+
+func (s *Row) StringArray(header []string) (result []string) {
+	for _, v := range s.Row {
+		result = append(result, v.String())
+	}
+	return
 }
 
 type Data []*Row

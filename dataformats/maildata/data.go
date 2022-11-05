@@ -70,6 +70,21 @@ func (s *MailWithSource) Self() *MailWithSource {
 	return s
 }
 
+func (s *MailWithSource) HeadersStringArray() (result []string) {
+	result = make([]string, 0, s.MailHeader.Len())
+	for h := range s.MailHeader.Map() {
+		result = append(result, h)
+	}
+	return
+}
+
+func (s *MailWithSource) StringArray(header []string) (result []string) {
+	for _, v := range header {
+		result = append(result, s.MailHeader.Get(v))
+	}
+	return
+}
+
 func (s *MailWithSource) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {

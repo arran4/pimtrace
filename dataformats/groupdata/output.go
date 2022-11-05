@@ -3,28 +3,22 @@ package groupdata
 import (
 	"io"
 	"pimtrace"
+	"pimtrace/dataformats/tabledata"
 )
 
-var _ pimtrace.CSVOutputCapable = (*Data)(nil)
-
 func (d Data) WriteCSVFile(fName string) error {
-	//TODO implement me
-	panic("implement me")
+	return pimtrace.WriteFileWrapper("CSV", fName, d.WriteCSVStream)
 }
 
 func (d Data) WriteCSVStream(f io.Writer, fName string) error {
-	//TODO implement me
-	panic("implement me")
+	return tabledata.WriteCsv(d, f)
 }
 
-var _ pimtrace.TableOutputCapable = (*Data)(nil)
-
 func (d Data) WriteTableFile(fName string) error {
-	//TODO implement me
-	panic("implement me")
+	return pimtrace.WriteFileWrapper("Table", fName, d.WriteTableStream)
 }
 
 func (d Data) WriteTableStream(f io.Writer, fName string) error {
-	//TODO implement me
-	panic("implement me")
+	tabledata.WriteTable(d, f)
+	return nil
 }
