@@ -46,6 +46,7 @@ type Function[T ValueExpression] interface {
 
 func Functions[T ValueExpression]() map[string]Function[T] {
 	m := map[string]Function[T]{}
+	// Don't forget to run: cmd/docs/genfunctionmd every time you update anything in this package.
 	for _, f := range []Function[T]{
 		Count[T]{},
 		Sum[T]{},
