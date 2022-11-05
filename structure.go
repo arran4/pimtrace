@@ -211,6 +211,18 @@ const (
 	Array
 )
 
+func (t Type) String() string {
+	switch t {
+	case String:
+		return "String"
+	case Integer:
+		return "Integer"
+	case Array:
+		return "Array"
+	}
+	return "unknown"
+}
+
 type Value interface {
 	Type() Type
 	String() string
