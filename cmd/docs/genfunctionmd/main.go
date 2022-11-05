@@ -6,6 +6,7 @@ import (
 	"os"
 	"pimtrace/ast"
 	"pimtrace/funcs"
+	"sort"
 	"strings"
 )
 
@@ -23,7 +24,14 @@ func main() {
 	fmt.Fprintln(f, "")
 	fmt.Fprintln(f, "| Function Def | Description |")
 	fmt.Fprintln(f, "| --- | --- |")
-	for _, fun := range funcs.Functions[ast.ValueExpression]() {
+	funcs := funcs.Functions[ast.ValueExpression]()
+	funNames := make([]string, 0, len(funcs))
+	for funName := range funcs {
+		funNames = append(funNames, funName)
+	}
+	sort.Strings(funNames)
+	for _, funName := range funNames {
+		fun := funcs[funName]
 		for _, af := range fun.Arguments() {
 			args := make([]string, 0, len(af.Args))
 			for _, aff := range af.Args {
