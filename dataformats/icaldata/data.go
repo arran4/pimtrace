@@ -49,7 +49,7 @@ func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 	switch ks[0] {
 	//case "sz", "sized": TODO
 	//	return SimpleNumberValue(s.
-	case "c", "component":
+	case "p", "property":
 		fallthrough
 	default:
 		if len(ks) > 1 {

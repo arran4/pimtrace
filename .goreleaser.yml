@@ -5,10 +5,9 @@ builds:
     binary: "mailtrace"
     dir: cmd/mailtrace
   -
-    id: "caltrace"
-    binary: "caltrace"
-    dir: cmd/caltrace
-    skip: true # TODO
+    id: "icaltrace"
+    binary: "icaltrace"
+    dir: cmd/icaltrace
   -
     id: "csvtrace"
     binary: "csvtrace"
