@@ -13,7 +13,6 @@ builds:
     id: "csvtrace"
     binary: "csvtrace"
     dir: cmd/csvtrace
-    skip: true # TODO
 archives:
   -
     format_overrides:
