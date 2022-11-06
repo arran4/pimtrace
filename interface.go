@@ -7,6 +7,11 @@ type MailFileOutputCapable interface {
 	WriteMailStream(f io.Writer, fName string) error
 }
 
+type ICalFileOutputCapable interface {
+	WriteICalFile(fName string) error
+	WriteICalStream(f io.Writer, fName string) error
+}
+
 type MBoxOutputCapable interface {
 	WriteMBoxFile(fName string) error
 	WriteMBoxStream(f io.Writer, fName string) error
