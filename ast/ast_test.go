@@ -20,7 +20,7 @@ func LoadData1(fn string) pimtrace.Data {
 		panic(err)
 	}
 	defer f.Close()
-	r, err := tabledata.ReadCSV(f)
+	r, err := tabledata.ReadCSV(f, fn)
 	if err != nil {
 		panic(err)
 	}

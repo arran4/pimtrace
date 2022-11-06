@@ -7,7 +7,10 @@ import (
 	"pimtrace"
 )
 
-func ReadCSV(r io.Reader) (Data, error) {
+func ReadCSVFile(fType string, fName string) (Data, error) {
+	return pimtrace.ReadFileWrapper(fType, fName, ReadCSV)
+}
+func ReadCSV(r io.Reader, fName string) (Data, error) {
 	header := map[string]int{}
 	result := []*Row{}
 	cr := csv.NewReader(r)
