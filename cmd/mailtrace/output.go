@@ -57,17 +57,21 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 		fmt.Println(p.Len())
 		return nil
 	case "list":
-		fmt.Println("`--output-type`s: ")
-		fmt.Printf(" %-30s %s\n", "mailfile", "A single mail file")
-		fmt.Printf(" %-30s %s\n", "mbox", "Mbox file")
-		fmt.Printf(" %-30s %s\n", "list", "This help text")
-		fmt.Printf(" %-30s %s\n", "count", "Just a count")
-		fmt.Printf(" %-30s %s\n", "csv", "Data in csv format")
-		fmt.Println()
+		PrintOutputHelp()
 		return nil
 	default:
 		//fmt.Println("Please specify a -input-type")
 		//fmt.Println()
 		return nil
 	}
+}
+
+func PrintOutputHelp() {
+	fmt.Println("`--output-type`s: ")
+	fmt.Printf(" %-30s %s\n", "mailfile", "A single mail file (do not use see https://groups.google.com/g/golang-nuts/c/T1xoNVr6ask/m/gdtdRUShCwAJ)")
+	fmt.Printf(" %-30s %s\n", "mbox", "Mbox file (do not use see https://groups.google.com/g/golang-nuts/c/T1xoNVr6ask/m/gdtdRUShCwAJ)")
+	fmt.Printf(" %-30s %s\n", "list", "This help text")
+	fmt.Printf(" %-30s %s\n", "csv", "Data in csv format")
+	fmt.Printf(" %-30s %s\n", "count", "Just a count of rows")
+	fmt.Println()
 }

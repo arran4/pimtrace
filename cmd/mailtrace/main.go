@@ -83,6 +83,57 @@ func main() {
 }
 
 func PrintQueryHelp(parser string) {
+	fmt.Println("This tool is for helping you filter, query and summarize mail files in a comprehensible way")
+	fmt.Println("The usage is as follows:")
+	fmt.Println("\tmailtrace -parser basic -input mail.mbox -input-type mbox -output table $QUERY")
+	fmt.Println("In this example it selects the basic parser (there is only one I intend to extend it if I get time")
+	fmt.Println("but to avoid issues when I change it I am requiring specification.")
+	fmt.Println("")
+	switch parser {
+	case "basic":
+		fmt.Println("Basic Parser")
+		fmt.Println("")
+		fmt.Println("Queries can do the following:")
+		fmt.Println("- Filtering out data")
+		fmt.Println("- Selecting components of the data to view")
+		fmt.Println("- Grouping and summarizing data")
+		fmt.Println("")
+		fmt.Println("The Queries can be build up like this:")
+		fmt.Println("Simple filter query")
+		fmt.Println("\tfilter not h.user-agent icontains .Kmail")
+		fmt.Println("Which filters all emails sent with a user agen that does not contain `kmail` ")
+		fmt.Println("Then you can convert the emails to tabular form using:")
+		fmt.Println("\tinto table h.user-agent h.subject f.year[h.date] f.month[h.date]")
+		fmt.Println("Which creates table of user agent, subject, and the year and month.")
+		fmt.Println("If you wanted a summary / count of the lines you can use the summary converter:")
+		fmt.Println("\tinto summary h.user-agent h.subject f.year[h.date] f.month[h.date] calculate f.sum[c.size] f.count")
+		fmt.Println("Which groups the mail based on user-agent, subject, year, month, then creates a sum and a cont")
+		fmt.Println("If you want to sort you can use:")
+		fmt.Println("\tsort f.year[h.date] f.month[h.date]")
+		fmt.Println("These can be used in any combination and repeated for the desired effect:")
+		fmt.Println("\tfilter h.user-agent icontains .Kmail into summary h.user-agent f.year[h.date] calculate f.count filter c.year-date eq 2022 sort h.user-agent")
+		fmt.Println("And so forth")
+		fmt.Println("")
+		fmt.Println("Notes:")
+		fmt.Println("- Single word string literals begin with a `.`")
+		fmt.Println("- Headers are referred to with `h.` once in table form it becomes a column referred to by `c.`")
+		fmt.Println("- I haven't implemented any body parsing components yet")
+		fmt.Println("- Extension PRs are welcome and intended")
+		fmt.Println("- All functions are preceded by `f.`")
+		fmt.Println("- Once converted to table form, it can not be converted back to mailfile or mbox")
+	}
+	fmt.Println("A complete list of functions supported:")
+	PrintFunctionList()
+	fmt.Println("")
+	fmt.Println("List of supported input types:")
+	PrintInputHelp()
+	fmt.Println("")
+	fmt.Println("List of supported output types: (Must be supported based on query.)")
+	PrintOutputHelp()
+	fmt.Println("")
+}
+
+func PrintFunctionList() {
 	fmt.Println("Functions: ")
 	for _, f := range funcs.Functions[ast.ValueExpression]() {
 		for _, af := range f.Arguments() {
@@ -93,10 +144,5 @@ func PrintQueryHelp(parser string) {
 			fn := fmt.Sprintf("f.%s[%s]", f.Name(), strings.Join(args, ","))
 			fmt.Printf("%-40s%40s\n", fn, af.Description)
 		}
-	}
-	//TODO implement me
-	panic("implement me")
-	switch parser {
-	case "basic":
 	}
 }
