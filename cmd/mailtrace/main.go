@@ -40,12 +40,13 @@ func main() {
 		return
 	}
 
-	if err := f.Parse(os.Args); err != nil {
+	if err := f.Parse(os.Args[1:]); err != nil {
 		log.Printf("Error parsing flags: %s", err)
 		os.Exit(-1)
 	}
 
-	if f.NArg() <= 1 || *helpFlag {
+	if *helpFlag {
+		fmt.Println("No query found")
 		f.Usage()
 		os.Exit(-1)
 	}

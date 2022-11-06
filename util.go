@@ -25,10 +25,11 @@ func WriteFileWrapper(fType string, fName string, fun func(f io.Writer, fName st
 	return fun(f, fName)
 }
 
-func ReadFileWrapper[T any](fType string, fName string, fun func(f io.Reader, fName string) (T, error)) (T, error) {
+func ReadFileWrapper[T Data](fType string, fName string, fun func(f io.Reader, fName string) (T, error)) (T, error) {
+	var result T
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("reading %s %s: %w", fType, fName, err)
+		return result, fmt.Errorf("reading %s %s: %w", fType, fName, err)
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
