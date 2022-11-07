@@ -179,12 +179,12 @@ var _ Operation = (*FilterStatement)(nil)
 type FunctionExpression struct {
 	Function string
 	Args     []ValueExpression
-	f        funcs.Function[ValueExpression]
+	F        funcs.Function[ValueExpression]
 }
 
 func (fe *FunctionExpression) ColumnName() string {
 	fe.LoadFunction()
-	switch f := fe.f.(type) {
+	switch f := fe.F.(type) {
 	case funcs.ColumnNamer[ValueExpression]:
 		v := f.ColumnName(fe.Args)
 		if len(v) > 0 {
@@ -200,17 +200,17 @@ func (fe *FunctionExpression) ColumnName() string {
 
 func (fe *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
 	fe.LoadFunction()
-	if fe.f == nil {
+	if fe.F == nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, fe.Function)
 	}
-	return fe.f.Run(d, fe.Args)
+	return fe.F.Run(d, fe.Args)
 }
 
 func (fe *FunctionExpression) LoadFunction() {
-	if fe.f == nil {
+	if fe.F == nil {
 		functions := funcs.Functions[ValueExpression]()
 		if f, ok := functions[fe.Function]; ok {
-			fe.f = f
+			fe.F = f
 		}
 	}
 }
