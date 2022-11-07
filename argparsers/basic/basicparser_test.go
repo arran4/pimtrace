@@ -3,6 +3,7 @@ package basic
 import (
 	"github.com/google/go-cmp/cmp"
 	"pimtrace/ast"
+	"pimtrace/funcs"
 	"reflect"
 	"strings"
 	"testing"
@@ -308,8 +309,8 @@ func TestParseOperations(t *testing.T) {
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", F: funcs.Year[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", F: funcs.Month[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
 				},
@@ -348,8 +349,8 @@ func TestParseOperations(t *testing.T) {
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", F: funcs.Year[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", F: funcs.Month[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
 					&ast.SortTransformer{
@@ -374,8 +375,8 @@ func TestParseOperations(t *testing.T) {
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
-							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", F: funcs.Year[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", F: funcs.Month[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
 					&ast.TableTransformer{
@@ -384,8 +385,8 @@ func TestParseOperations(t *testing.T) {
 							{Name: "subject", Operation: ast.EntryExpression("c.subject")},
 							{Name: "year-date", Operation: ast.EntryExpression("c.year-date")},
 							{Name: "month-date", Operation: ast.EntryExpression("c.month-date")},
-							{Name: "sum-size", Operation: &ast.FunctionExpression{Function: "sum", Args: []ast.ValueExpression{ast.EntryExpression("h.size")}}},
-							{Name: "count", Operation: &ast.FunctionExpression{Function: "count"}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
+							{Name: "sum-size", Operation: &ast.FunctionExpression{Function: "sum", F: funcs.Sum[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.size")}}},
+							{Name: "count", Operation: &ast.FunctionExpression{Function: "count", F: funcs.Count[ast.ValueExpression]{}}}, //Args: []ValueExpression{EntryExpression("t.contents")}}},
 						},
 					},
 				},
