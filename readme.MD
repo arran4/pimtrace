@@ -15,6 +15,11 @@ This is a work in progress (I need it for something else) however I will develop
 it to meet my itches. I am happy to accept PRs of reasonable addition and changes.
 I am a "batteries included" person so additions are appreciated.
 
+## Uses?
+
+* Filtering and sorting CSV files
+* Querying ical and mail files for specific or statistical information
+
 # Usage
 
 Currently, there are 3 main tools provided by this:
@@ -25,6 +30,36 @@ Currently, there are 3 main tools provided by this:
 # Query Language
 
 ## Basic
+
+There are a couple of things you can do:
+* Filter out entries
+* Sort the entries
+* Output it in
+  * The original format
+  * A new format, such as
+    * Tabular (csv)
+* Group by columns
+* Convert columns using a function
+
+The ways you do it are with the following constructs:
+* `sort ...`
+* `filter ...` <-- Filters out rows
+* `into table ...` <-- Converts to tabular data and/or filters out columns and/or transforms columns using functions 
+* `into summary ...` <-- All of `into table` but must also group records
+
+See the syntax section for a better guide but works mostly as you would expect from a SQL like query such as:
+* `sort h.numberrange`
+* `filter h.numberrange eq .1`
+* `into table h.numberrange f.year[h.date] f.month[h.date]`
+* `into summary h.numberrange calculate f.count`
+
+You can repeat elements for interesting effects:
+```
+filter h.email icontains .gmail into summary h.numberrange calculate f.count filter c.count eq .1
+```
+Which is similar to the sql `HAVING` after a `GROUP BY`
+
+### Syntax
 
 The query language supports any combination of the following "syntax".
 
