@@ -1,4 +1,4 @@
-project_name: golang-wordwrap
+project_name: pimtrace
 builds:
   -
     id: "mailtrace"
