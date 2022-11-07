@@ -45,7 +45,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	if *helpFlag {
+	if *helpFlag || len(os.Args) <= 1 {
 		fmt.Println("No query found")
 		f.Usage()
 		os.Exit(-1)
@@ -86,9 +86,9 @@ func main() {
 func PrintQueryHelp(parser string) {
 	fmt.Println("This tool is for helping you filter, query and summarize ical files in a comprehensible way")
 	fmt.Println("The usage is as follows:")
-	fmt.Println("\ticaltrace -parser basic -input events.ical -input-type mbox -output table $QUERY")
-	fmt.Println("In this example it selects the basic parser (there is only one I intend to extend it if I get time")
-	fmt.Println("but to avoid issues when I change it I am requiring specification.")
+	fmt.Println("\ticaltrace -parser basic -input events.ical -input-type ical -output table $QUERY")
+	fmt.Println("In this example it selects the basic parser, reads from events.ical, of the type ical. Outputs a table")
+	fmt.Println("and runs query $QUERY. You are required to specify all of these arguments.")
 	fmt.Println("")
 	switch parser {
 	case "basic":
