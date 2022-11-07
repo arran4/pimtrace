@@ -66,7 +66,7 @@ func (s SimpleStringValue) Integer() *int {
 }
 
 func (s SimpleStringValue) Float64() *float64 {
-	i, err := strconv.ParseFloat(string(s), 10)
+	i, err := strconv.ParseFloat(string(s), 64)
 	if err != nil {
 		return nil
 	}
