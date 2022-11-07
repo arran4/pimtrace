@@ -9,7 +9,6 @@ import (
 	"pimtrace/ast"
 	"pimtrace/funcs"
 	_ "pimtrace/funcs"
-	"strings"
 )
 
 var (
@@ -124,7 +123,7 @@ func PrintQueryHelp(parser string) {
 		fmt.Println("- Once converted to table form, it can not be converted back to ical / ics")
 	}
 	fmt.Println("A complete list of functions supported:")
-	PrintFunctionList()
+	funcs.PrintFunctionList()
 	fmt.Println("")
 	fmt.Println("List of supported input types:")
 	PrintInputHelp()
@@ -132,18 +131,4 @@ func PrintQueryHelp(parser string) {
 	fmt.Println("List of supported output types: (Must be supported based on query.)")
 	PrintOutputHelp()
 	fmt.Println("")
-}
-
-func PrintFunctionList() {
-	fmt.Println("Functions: ")
-	for _, f := range funcs.Functions[ast.ValueExpression]() {
-		for _, af := range f.Arguments() {
-			args := make([]string, 0, len(af.Args))
-			for _, aff := range af.Args {
-				args = append(args, aff.String())
-			}
-			fn := fmt.Sprintf("f.%s[%s]", f.Name(), strings.Join(args, ","))
-			fmt.Printf("%-40s%40s\n", fn, af.Description)
-		}
-	}
 }

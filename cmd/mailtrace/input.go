@@ -44,8 +44,7 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 	case "list":
 		PrintInputHelp()
 	default:
-		fmt.Println("Please specify a -input-type")
-		fmt.Println()
+		return nil, fmt.Errorf("please specify an -input-type. got %s", inputType)
 	}
 	return maildata.Data(mails), nil
 }

@@ -20,6 +20,9 @@ type Row struct {
 	Row     []pimtrace.Value
 }
 
+var _ pimtrace.Entry = (*Row)(nil)
+var _ pimtrace.HasStringArray = (*Row)(nil)
+
 func (s *Row) Self() *Row {
 	return s
 }
@@ -30,10 +33,11 @@ func (s *Row) Get(key string) (pimtrace.Value, error) {
 	//case "sz", "sized": TODO
 	//	return SimpleNumberValue(s.
 	case "h", "header", "c", "column":
+		ks = ks[1:]
 		fallthrough
 	default:
-		n, ok := s.Headers[ks[1]]
-		if ok && len(ks) > 1 {
+		n, ok := s.Headers[ks[0]]
+		if ok && len(ks) > 0 {
 			return s.Row[n], nil
 		}
 		return nil, fmt.Errorf("table row %w: %s", ErrKeyNotFound, key)

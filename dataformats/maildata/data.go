@@ -66,6 +66,9 @@ type MailWithSource struct {
 	SourceFile string
 }
 
+var _ pimtrace.Entry = (*MailWithSource)(nil)
+var _ pimtrace.HasStringArray = (*MailWithSource)(nil)
+
 func (s *MailWithSource) Self() *MailWithSource {
 	return s
 }
@@ -91,10 +94,11 @@ func (s *MailWithSource) Get(key string) (pimtrace.Value, error) {
 	//case "sz", "sized": TODO
 	//	return SimpleNumberValue(s.
 	case "h", "header":
+		ks = ks[1:]
 		fallthrough
 	default:
-		if len(ks) > 1 {
-			return pimtrace.SimpleStringValue(s.MailHeader.Get(ks[1])), nil
+		if len(ks) > 0 {
+			return pimtrace.SimpleStringValue(s.MailHeader.Get(ks[0])), nil
 		}
 		return nil, fmt.Errorf("mail get %w, %s", ErrKeyNotFound, key)
 	}

@@ -21,6 +21,9 @@ type ICalWithSource struct {
 	Header        map[string]int
 }
 
+var _ pimtrace.Entry = (*ICalWithSource)(nil)
+var _ pimtrace.HasStringArray = (*ICalWithSource)(nil)
+
 func (s *ICalWithSource) Self() *ICalWithSource {
 	return s
 }
@@ -50,10 +53,11 @@ func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 	//case "sz", "sized": TODO
 	//	return SimpleNumberValue(s.
 	case "p", "property":
+		ks = ks[1:]
 		fallthrough
 	default:
 		if len(ks) > 1 {
-			i, ok := s.Header[key]
+			i, ok := s.Header[ks[0]]
 			if !ok {
 				return nil, fmt.Errorf("iCal get %w, %s", ErrHeaderError, key)
 			}

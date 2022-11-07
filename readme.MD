@@ -150,6 +150,37 @@ GolandProjects/pimtrace 1700 % go run ./cmd/csvtrace -input ast/testdata/data10.
 
 ```
 
+# Output types
+
+## Tabular: CSV and Table
+
+Most input formats can be converted to CSV and Table with different conditions
+
+## Plot
+
+Any tabular data can be converted into a bar provided the format is correct.
+
+### Bar
+
+The data:
+```csv
+country,number1,number2,number3
+PH,3,6,4
+SE,7,1,6
+```
+
+Can be converted into a plot like:
+
+![](barplot.png)
+
+Given the following input:
+```bash
+% go run ./cmd/csvtrace -input ast/testdata/countrynums.csv -input-type csv -output barplot.png -output-type plot.bar -parser=basic
+```
+
+With this output type you ***must*** specify an output filename and the first column must be 
+a string, and all subsequent columns must contain a number on each row.
+
 # FAQ
 
 ## Why

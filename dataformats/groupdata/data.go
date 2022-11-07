@@ -17,6 +17,9 @@ type Row struct {
 	Contents pimtrace.Data
 }
 
+var _ pimtrace.Entry = (*Row)(nil)
+var _ pimtrace.HasStringArray = (*Row)(nil)
+
 type Header interface {
 	Get(key string) string
 }
@@ -46,10 +49,11 @@ func (s *Row) Get(key string) (pimtrace.Value, error) {
 	//case "sz", "sized": TODO
 	//	return SimpleNumberValue(s.
 	case "h", "header", "c", "column":
+		ks = ks[1:]
 		fallthrough
 	default:
-		n, ok := s.Headers[ks[1]]
-		if ok && len(ks) > 1 {
+		n, ok := s.Headers[ks[0]]
+		if ok && len(ks) > 0 {
 			return s.Row[n], nil
 		}
 		var r []pimtrace.Value

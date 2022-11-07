@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"pimtrace"
+	"pimtrace/dataformats/plotoutput"
 	"reflect"
 )
 
@@ -37,10 +38,13 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 	case "list":
 		PrintOutputHelp()
 		return nil
+	case "plot.bar":
+		if outputPath == "-" {
+			return fmt.Errorf("plot requires an -output file name rather than: `-output=%s`", outputPath)
+		}
+		return plotoutput.BarPlot(p, outputPath)
 	default:
-		//fmt.Println("Please specify a -input-type")
-		//fmt.Println()
-		return nil
+		return fmt.Errorf("please specify an -output-type")
 	}
 }
 
@@ -48,6 +52,8 @@ func PrintOutputHelp() {
 	fmt.Println("`--output-type`s: ")
 	fmt.Printf(" %-30s %s\n", "list", "This help text")
 	fmt.Printf(" %-30s %s\n", "csv", "Data in csv format")
+	fmt.Printf(" %-30s %s\n", "table", "Data in a ascii table")
 	fmt.Printf(" %-30s %s\n", "count", "Just a count of rows")
+	fmt.Printf(" %-30s %s\n", "plot.bar", "Writes a plot of the data out, the data must be tabular and columns must be in the form of: string, number*")
 	fmt.Println()
 }

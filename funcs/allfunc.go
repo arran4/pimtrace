@@ -8,6 +8,10 @@ type ValueExpression interface {
 	Execute(d pimtrace.Entry) (pimtrace.Value, error)
 }
 
+type ColumnNamer[T ValueExpression] interface {
+	ColumnName(args []T) string
+}
+
 type FunctionDef[T ValueExpression] func(d pimtrace.Entry, args []T) (pimtrace.Value, error)
 
 type Argument int
@@ -52,6 +56,7 @@ func Functions[T ValueExpression]() map[string]Function[T] {
 		Sum[T]{},
 		Month[T]{},
 		Year[T]{},
+		As[T]{},
 	} {
 		m[f.Name()] = f
 	}

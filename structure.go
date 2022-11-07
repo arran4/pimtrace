@@ -65,6 +65,15 @@ func (s SimpleStringValue) Integer() *int {
 	return &ii
 }
 
+func (s SimpleStringValue) Float64() *float64 {
+	i, err := strconv.ParseFloat(string(s), 10)
+	if err != nil {
+		return nil
+	}
+	ii := float64(i)
+	return &ii
+}
+
 func (s SimpleStringValue) Type() Type {
 	return String
 }
@@ -74,6 +83,68 @@ func (s SimpleStringValue) String() string {
 }
 
 var _ Value = SimpleStringValue("")
+
+type SimpleNilValue struct{}
+
+func (s *SimpleNilValue) Truthy() bool {
+	return false
+}
+
+func (s *SimpleNilValue) Elements() int {
+	return 0
+}
+
+func (s *SimpleNilValue) Length() int {
+	return 0
+}
+
+func (s *SimpleNilValue) Array() []Value {
+	return []Value{s}
+}
+
+func (s *SimpleNilValue) StringArray() []string {
+	return []string{}
+}
+
+func (s *SimpleNilValue) Less(jv Value) bool {
+	switch jv.(type) {
+	case *SimpleNilValue:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *SimpleNilValue) Equal(jv Value) bool {
+	switch jv.(type) {
+	case *SimpleNilValue:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *SimpleNilValue) Time() *time.Time {
+	return nil
+}
+
+func (s *SimpleNilValue) Integer() *int {
+	return nil
+}
+
+func (s *SimpleNilValue) Float64() *float64 {
+	return nil
+}
+
+func (s *SimpleNilValue) Type() Type {
+	return Nil
+}
+
+func (s *SimpleNilValue) String() string {
+	return ""
+}
+
+var _ Value = (*SimpleNilValue)(nil)
 
 type SimpleIntegerValue int
 
@@ -117,6 +188,11 @@ func (s SimpleIntegerValue) Time() *time.Time {
 
 func (s SimpleIntegerValue) Integer() *int {
 	si := int(s)
+	return &si
+}
+
+func (s SimpleIntegerValue) Float64() *float64 {
+	si := float64(s)
 	return &si
 }
 
@@ -193,6 +269,10 @@ func (s SimpleArrayValue) Integer() *int {
 	return nil
 }
 
+func (s SimpleArrayValue) Float64() *float64 {
+	return nil
+}
+
 func (s SimpleArrayValue) Type() Type {
 	return Array
 }
@@ -209,6 +289,7 @@ const (
 	String Type = iota
 	Integer
 	Array
+	Nil
 )
 
 func (t Type) String() string {
@@ -234,6 +315,7 @@ type Value interface {
 	Elements() int
 	Length() int
 	Truthy() bool
+	Float64() *float64
 }
 
 type Entry interface {

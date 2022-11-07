@@ -60,9 +60,7 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 		PrintOutputHelp()
 		return nil
 	default:
-		//fmt.Println("Please specify a -input-type")
-		//fmt.Println()
-		return nil
+		return fmt.Errorf("please specify an -output-type")
 	}
 }
 
@@ -72,6 +70,7 @@ func PrintOutputHelp() {
 	fmt.Printf(" %-30s %s\n", "mbox", "Mbox file (do not use see https://groups.google.com/g/golang-nuts/c/T1xoNVr6ask/m/gdtdRUShCwAJ)")
 	fmt.Printf(" %-30s %s\n", "list", "This help text")
 	fmt.Printf(" %-30s %s\n", "csv", "Data in csv format")
+	fmt.Printf(" %-30s %s\n", "table", "Data in a ascii table")
 	fmt.Printf(" %-30s %s\n", "count", "Just a count of rows")
 	fmt.Println()
 }

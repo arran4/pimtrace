@@ -65,6 +65,10 @@ func IntoIdentify(args []string) (any, []string, error) {
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "f", "func":
 		return ParseFunctionExpression(args)
+	case "":
+		if strings.HasPrefix(args[0], ".") {
+			return ast.ConstantExpression(ss[1]), args[1:], nil
+		}
 	}
 	return nil, nil, fmt.Errorf("into tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
 }
@@ -81,6 +85,10 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "f", "func":
 		return ParseFunctionExpression(args)
+	case "":
+		if strings.HasPrefix(args[0], ".") {
+			return ast.ConstantExpression(ss[1]), args[1:], nil
+		}
 	}
 	return nil, nil, fmt.Errorf("function param tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
 }

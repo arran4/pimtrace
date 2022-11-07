@@ -179,9 +179,18 @@ var _ Operation = (*FilterStatement)(nil)
 type FunctionExpression struct {
 	Function string
 	Args     []ValueExpression
+	f        funcs.Function[ValueExpression]
 }
 
 func (fe *FunctionExpression) ColumnName() string {
+	fe.LoadFunction()
+	switch f := fe.f.(type) {
+	case funcs.ColumnNamer[ValueExpression]:
+		v := f.ColumnName(fe.Args)
+		if len(v) > 0 {
+			return v
+		}
+	}
 	elems := []string{fe.Function}
 	for _, arg := range fe.Args {
 		elems = append(elems, arg.ColumnName())
@@ -190,11 +199,20 @@ func (fe *FunctionExpression) ColumnName() string {
 }
 
 func (fe *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
-	functions := funcs.Functions[ValueExpression]()
-	if f, ok := functions[fe.Function]; ok {
-		return f.Run(d, fe.Args)
+	fe.LoadFunction()
+	if fe.f == nil {
+		return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, fe.Function)
 	}
-	return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, fe.Function)
+	return fe.f.Run(d, fe.Args)
+}
+
+func (fe *FunctionExpression) LoadFunction() {
+	if fe.f == nil {
+		functions := funcs.Functions[ValueExpression]()
+		if f, ok := functions[fe.Function]; ok {
+			fe.f = f
+		}
+	}
 }
 
 var _ ValueExpression = (*FunctionExpression)(nil)
