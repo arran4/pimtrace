@@ -7,6 +7,7 @@ import (
 	"os"
 	"pimtrace/argparsers/basic"
 	"pimtrace/ast"
+	"pimtrace/dataformats"
 	"pimtrace/funcs"
 	_ "pimtrace/funcs"
 )
@@ -129,6 +130,6 @@ func PrintQueryHelp(parser string) {
 	PrintInputHelp()
 	fmt.Println("")
 	fmt.Println("List of supported output types: (Must be supported based on query.)")
-	PrintOutputHelp()
+	dataformats.PrintOutputHelp(customOutputs)
 	fmt.Println("")
 }

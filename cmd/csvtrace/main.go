@@ -7,14 +7,16 @@ import (
 	"os"
 	"pimtrace/argparsers/basic"
 	"pimtrace/ast"
+	"pimtrace/dataformats"
 	"pimtrace/funcs"
 	_ "pimtrace/funcs"
 )
 
 var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
+	version       = "dev"
+	commit        = "none"
+	date          = "unknown"
+	customOutputs = [][2]string{}
 )
 
 func main() {
@@ -76,7 +78,7 @@ func main() {
 			os.Exit(-1)
 		}
 	}
-	if err := OutputHandler(data, *outputType, *outputFile); err != nil {
+	if err := dataformats.OutputHandler(data, *outputType, *outputFile, customOutputs); err != nil {
 		log.Printf("Write Error: %s", err)
 		os.Exit(-1)
 	}
@@ -126,6 +128,6 @@ func PrintQueryHelp(parser string) {
 	PrintInputHelp()
 	fmt.Println("")
 	fmt.Println("List of supported output types: (Must be supported based on query.)")
-	PrintOutputHelp()
+	dataformats.PrintOutputHelp(customOutputs)
 	fmt.Println("")
 }

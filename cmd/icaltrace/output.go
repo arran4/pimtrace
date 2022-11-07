@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"os"
 	"pimtrace"
+	"pimtrace/dataformats"
 	"reflect"
+)
+
+var (
+	customOutputs = [][2]string{
+		{"ical", "iCal file as per: https://github.com/arran4/golang-ical"},
+	}
 )
 
 func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
@@ -20,45 +27,6 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 		} else {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
-	case "csv":
-		if np, ok := p.(pimtrace.CSVOutputCapable); ok {
-			switch outputPath {
-			case "-":
-				return np.WriteCSVStream(os.Stdin, outputPath)
-			default:
-				return np.WriteCSVFile(outputPath)
-			}
-		} else {
-			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
-		}
-	case "table":
-		if np, ok := p.(pimtrace.TableOutputCapable); ok {
-			switch outputPath {
-			case "-":
-				return np.WriteTableStream(os.Stdin, outputPath)
-			default:
-				return np.WriteTableFile(outputPath)
-			}
-		} else {
-			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
-		}
-	case "count":
-		fmt.Println(p.Len())
-		return nil
-	case "list":
-		PrintOutputHelp()
-		return nil
-	default:
-		return fmt.Errorf("please specify an -output-type")
 	}
-}
-
-func PrintOutputHelp() {
-	fmt.Println("`--output-type`s: ")
-	fmt.Printf(" %-30s %s\n", "ical", "iCal file as per: https://github.com/arran4/golang-ical")
-	fmt.Printf(" %-30s %s\n", "list", "This help text")
-	fmt.Printf(" %-30s %s\n", "csv", "Data in csv format")
-	fmt.Printf(" %-30s %s\n", "table", "Data in a ascii table")
-	fmt.Printf(" %-30s %s\n", "count", "Just a count of rows")
-	fmt.Println()
+	return dataformats.OutputHandler(p, mode, outputPath, customOutputs)
 }

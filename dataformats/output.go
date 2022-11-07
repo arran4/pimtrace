@@ -1,4 +1,4 @@
-package main
+package dataformats
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 
-func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
+func OutputHandler(p pimtrace.Data, mode, outputPath string, customOutputs [][2]string) error {
 	switch mode {
 	case "csv":
 		if np, ok := p.(pimtrace.CSVOutputCapable); ok {
@@ -36,7 +36,7 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 		fmt.Println(p.Len())
 		return nil
 	case "list":
-		PrintOutputHelp()
+		PrintOutputHelp(customOutputs)
 		return nil
 	case "plot.bar":
 		if outputPath == "-" {
@@ -48,12 +48,17 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 	}
 }
 
-func PrintOutputHelp() {
+func PrintOutputHelp(custom [][2]string) {
 	fmt.Println("`--output-type`s: ")
-	fmt.Printf(" %-30s %s\n", "list", "This help text")
-	fmt.Printf(" %-30s %s\n", "csv", "Data in csv format")
-	fmt.Printf(" %-30s %s\n", "table", "Data in a ascii table")
-	fmt.Printf(" %-30s %s\n", "count", "Just a count of rows")
-	fmt.Printf(" %-30s %s\n", "plot.bar", "Writes a plot of the data out, the data must be tabular and columns must be in the form of: string, number*")
+	each := [][2]string{
+		{"list", "This help text"},
+		{"csv", "Data in csv format"},
+		{"table", "Data in a ascii table"},
+		{"count", "Just a count of rows"},
+		{"plot.bar", "Writes a plot of the data out, the data must be tabular and columns must be in the form of: string, number*"},
+	}
+	for _, e := range append(each, custom...) {
+		fmt.Printf(" %-30s %s\n", e[0], e[1])
+	}
 	fmt.Println()
 }
