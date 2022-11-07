@@ -59,6 +59,29 @@ filter h.email icontains .gmail into summary h.numberrange calculate f.count fil
 ```
 Which is similar to the sql `HAVING` after a `GROUP BY`
 
+### Functions
+
+See [functions](functions.md) for a complete list of functions. They include both scalar and aggregate
+functions. A sample: 
+
+| Function Def       | Description                                                              |
+|--------------------|--------------------------------------------------------------------------|
+| `f.as[Any,String]` | Renames the column to a specific name                                    |
+| `f.count[]`        | Returns a count of lines represented by this                             |
+| `f.count[Any]`     | Returns the number of truthy elements returned                           |
+| `f.month[String]`  | Converts time string to a date and returns the month number of that date |
+| `f.month[Integer]` | Converts Unix time to a date and returns the month number of that date   |
+| `f.sum[]`          | Returns a sum of lines represented by this                               |
+| `f.sum[Any]`       | Returns the number of truthy elements returned                           |
+| `f.year[String]`   | Converts time string to a date and returns the year number of that date  |
+| `f.year[Integer]`  | Converts Unix time to a date and returns the year number of that date    |
+
+When specifying multiple arguments currently white space isn't supported, so the `as` function
+looks like this when used:
+```bash
+% go run ./cmd/csvtrace -input ast/testdata/data10.csv -input-type csv -output plot.png -output-type plot.bar -parser=basic into table h.name h.numberrange f.as\[h.numberrange,.nr2\]
+```
+
 ### Syntax
 
 The query language supports any combination of the following "syntax".
