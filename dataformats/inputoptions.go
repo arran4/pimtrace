@@ -73,11 +73,12 @@ func NewProgressor() ReaderStreamMapper {
 				return nil
 			},
 			NewRead: func(p []byte) (n int, err error) {
+				n, err = reader.Read(p)
 				if !ok {
-					return reader.Read(p)
+					return
 				}
 				position += n
-				pct := position * 100 / end
+				pct := (position * 100) / end
 				if pct != progress {
 					progress = pct
 					now := time.Now()
@@ -89,7 +90,7 @@ func NewProgressor() ReaderStreamMapper {
 					}
 					log.Printf("%d%% bytes: %d/%d duration: %s / %s", progress, position, end, duration, estimate)
 				}
-				return reader.Read(p)
+				return
 			},
 		}, nil
 	}
