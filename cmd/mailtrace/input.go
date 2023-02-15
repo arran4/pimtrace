@@ -41,6 +41,21 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 			}
 			mails = append(mails, nm...)
 		}
+	case "mboxgz":
+		switch inputFile {
+		case "-":
+			nm, err := maildata.ReadMBoxStream(os.Stdin, inputType, inputFile, maildata.Gzip)
+			if err != nil {
+				return nil, err
+			}
+			mails = append(mails, nm...)
+		default:
+			nm, err := maildata.ReadMBoxFile(inputType, inputFile, maildata.Gzip)
+			if err != nil {
+				return nil, err
+			}
+			mails = append(mails, nm...)
+		}
 	case "list":
 		PrintInputHelp()
 	default:
@@ -53,6 +68,7 @@ func PrintInputHelp() {
 	fmt.Println("input-type`s available: ")
 	fmt.Printf(" %-30s %s\n", "mailfile", "A single mail file")
 	fmt.Printf(" %-30s %s\n", "mbox", "Mbox file")
+	fmt.Printf(" %-30s %s\n", "mboxgz", "Gzipped Mbox file")
 	fmt.Printf(" %-30s %s\n", "list", "This help text")
 	fmt.Println()
 }

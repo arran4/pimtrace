@@ -2,6 +2,7 @@ package maildata
 
 import (
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"github.com/emersion/go-mbox"
@@ -14,7 +15,15 @@ import (
 	"os"
 )
 
-func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
+type ReaderStreamMapper func(io.Reader) (io.Reader, error)
+
+var _ ReaderStreamMapper = Gzip
+
+func Gzip(reader io.Reader) (io.Reader, error) {
+	return gzip.NewReader(reader)
+}
+
+func ReadMBoxFile(fType, fName string, ops ...any) ([]*MailWithSource, error) {
 	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
@@ -24,11 +33,47 @@ func ReadMBoxFile(fType, fName string) ([]*MailWithSource, error) {
 			log.Printf("Error closing file: %s: %s", fName, err)
 		}
 	}()
-	return ReadMBoxStream(f, fType, fName)
+	var ff io.Reader = f
+	for i, op := range ops {
+		switch op := op.(type) {
+		case ReaderStreamMapper:
+			var err error
+			ff, err = op(f)
+			if err != nil {
+				return nil, fmt.Errorf("with ReaderStreamMapper option %d: %w", i, err)
+			}
+			if fc, ok := ff.(io.Closer); ok {
+				defer func() {
+					if err := fc.Close(); err != nil {
+						log.Printf("error closing ReaderStreamMapper: %s", err)
+					}
+				}()
+			}
+		}
+	}
+	return ReadMBoxStream(ff, fType, fName)
 }
 
-func ReadMBoxStream(f io.Reader, fType string, fName string) ([]*MailWithSource, error) {
-	mbr := mbox.NewReader(f)
+func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) ([]*MailWithSource, error) {
+	var ff io.Reader = f
+	for i, op := range ops {
+		switch op := op.(type) {
+		case ReaderStreamMapper:
+			var err error
+			ff, err = op(f)
+			if err != nil {
+				return nil, fmt.Errorf("with ReaderStreamMapper option %d: %w", i, err)
+			}
+			if fc, ok := ff.(io.Closer); ok {
+				defer func() {
+					if err := fc.Close(); err != nil {
+						log.Printf("error closing ReaderStreamMapper: %s", err)
+					}
+				}()
+			}
+		}
+	}
+	mbr := mbox.NewReader(ff)
 	ms := []*MailWithSource{}
 	for {
 		mr, err := mbr.NextMessage()
