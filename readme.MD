@@ -240,3 +240,7 @@ to expand on the concept of "args" as tokens, and do more sub-arg tokenization.
 
 I am requiring the use of `-parser basic` so that future scripts don't get broken.
 As a "least I could do" approach.
+
+# License 
+
+AGPL and "custom" to request. All contributions will have to be compatible with that.
