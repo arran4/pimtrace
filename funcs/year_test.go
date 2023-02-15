@@ -32,6 +32,12 @@ func TestParseStrict(t *testing.T) {
 			Output: "2023-02-08 08:00:46 +0000 UTC",
 			Err:    nil,
 		},
+		{
+			Name:   "Month out of range",
+			Input:  "FRI, 16 AUG 2013  9:39:51 +1000",
+			Output: "2013-08-15 23:39:51 +0000 UTC",
+			Err:    nil,
+		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			d, err := dateparse.ParseStrict(test.Input)
