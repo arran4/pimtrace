@@ -8,7 +8,7 @@ import (
 )
 
 func RowsToData(r ...[]*Row) (result []Data) {
-	result = make([]Data, len(r), len(r))
+	result = make([]Data, len(r))
 	for i, e := range r {
 		result[i] = e
 	}
