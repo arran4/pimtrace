@@ -21,7 +21,8 @@ func ReadFile[T any](fType string, fName string, next Next[T], ops ...any) ([]T,
 	}()
 	ff, closers, err := ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		for _, fc := range closers {
+		for i := range closers {
+			fc := closers[len(closers)-i-1]
 			if err := fc.Close(); err != nil {
 				log.Printf("error closing ReaderStreamMapper: %s", err)
 			}
