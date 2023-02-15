@@ -56,7 +56,7 @@ func ReadMailStream(f io.Reader, fType string, fName string, ops ...any) ([]*Mai
 	}
 	msg, err := enmime.ReadEnvelope(ff)
 	if err != nil {
-		return nil, fmt.Errorf("reading message from mail file %s: %w", fName, err)
+		return nil, fmt.Errorf("reading message: %w", err)
 	}
 	if msg == nil || msg.Root.Header == nil {
 		return nil, nil
