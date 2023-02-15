@@ -38,5 +38,8 @@ func (c Month[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	if err != nil {
 		return nil, err
 	}
+	if t == nil {
+		return pimtrace.Nil, nil
+	}
 	return pimtrace.SimpleIntegerValue(int(t.Month())), nil
 }

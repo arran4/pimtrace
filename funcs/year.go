@@ -33,39 +33,42 @@ func (c Year[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	if err != nil {
 		return nil, err
 	}
+	if t == nil {
+		return pimtrace.Nil, nil
+	}
 	return pimtrace.SimpleIntegerValue(int(t.Year())), nil
 }
 
-func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args []T) (time.Time, error) {
+func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args []T) (*time.Time, error) {
 	if len(args) == 0 {
-		return time.Time{}, fmt.Errorf("%w", ErrExpecting1ArgumentOfTypeStringIntOrDate)
+		return nil, fmt.Errorf("%w", ErrExpecting1ArgumentOfTypeStringIntOrDate)
 	}
 	v, err := args[0].Execute(d)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("%s: %w", funcName, err)
+		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
 	if v == nil {
-		return time.Time{}, fmt.Errorf("%s: %w", funcName, ErrEmptyType)
+		return nil, fmt.Errorf("%s: %w", funcName, ErrEmptyType)
 	}
 	var t time.Time
 	switch v.(type) {
 	case pimtrace.SimpleIntegerValue:
 		i := v.Integer()
 		if i == nil {
-			return time.Time{}, fmt.Errorf("%s parse: %w", funcName, ErrNumberError)
+			return nil, fmt.Errorf("%s parse: %w", funcName, ErrNumberError)
 		}
 		t = time.Unix(int64(*i), 0)
 	case pimtrace.SimpleStringValue:
 		s := v.String()
 		if s == "" {
-			return time.Time{}, nil
+			return nil, nil
 		}
 		t, err = dateparse.ParseStrict(s)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("%s parse: %w", funcName, err)
+			return nil, fmt.Errorf("%s parse: %w", funcName, err)
 		}
 	default:
-		return time.Time{}, fmt.Errorf("%s %w: %s", funcName, ErrUnsupportedType, v.Type())
+		return nil, fmt.Errorf("%s %w: %s", funcName, ErrUnsupportedType, v.Type())
 	}
-	return t, nil
+	return &t, nil
 }
