@@ -3,24 +3,10 @@ package icaldata
 import (
 	"fmt"
 	"github.com/arran4/golang-ical"
-	"log"
-	"os"
+	"io"
 )
 
-func ReadICalFile(fType, fName string) ([]*ICalWithSource, error) {
-	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			log.Printf("Error closing file: %s: %s", fName, err)
-		}
-	}()
-	return ReadICalStream(f, fType, fName)
-}
-
-func ReadICalStream(f *os.File, fType string, fName string) ([]*ICalWithSource, error) {
+func ReadICalStream(f io.Reader, fType string, fName string, ops ...any) ([]*ICalWithSource, error) {
 	var result []*ICalWithSource
 	cs, err := ics.ParseCalendar(f)
 	if err != nil {

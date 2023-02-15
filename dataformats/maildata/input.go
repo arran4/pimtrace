@@ -2,7 +2,6 @@ package maildata
 
 import (
 	"bytes"
-	"compress/gzip"
 	"errors"
 	"fmt"
 	"github.com/emersion/go-mbox"
@@ -12,69 +11,23 @@ import (
 	"log"
 	"mime"
 	"mime/multipart"
-	"os"
+	"pimtrace/dataformats"
 )
 
-type ReaderStreamMapper func(io.Reader) (io.Reader, error)
-
-var _ ReaderStreamMapper = Gzip
-
-func Gzip(reader io.Reader) (io.Reader, error) {
-	return gzip.NewReader(reader)
-}
-
-func ReadMBoxFile(fType, fName string, ops ...any) ([]*MailWithSource, error) {
-	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
-	}
+func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) ([]*MailWithSource, error) {
+	ff, closers, err := dataformats.ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		if err := f.Close(); err != nil {
-			log.Printf("Error closing file: %s: %s", fName, err)
+		for _, fc := range closers {
+			if err := fc.Close(); err != nil {
+				log.Printf("error closing ReaderStreamMapper: %s", err)
+			}
 		}
 	}()
-	var ff io.Reader = f
-	for i, op := range ops {
-		switch op := op.(type) {
-		case ReaderStreamMapper:
-			var err error
-			ff, err = op(f)
-			if err != nil {
-				return nil, fmt.Errorf("with ReaderStreamMapper option %d: %w", i, err)
-			}
-			if fc, ok := ff.(io.Closer); ok {
-				defer func() {
-					if err := fc.Close(); err != nil {
-						log.Printf("error closing ReaderStreamMapper: %s", err)
-					}
-				}()
-			}
-		}
-	}
-	return ReadMBoxStream(ff, fType, fName)
-}
-
-func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) ([]*MailWithSource, error) {
-	var ff io.Reader = f
-	for i, op := range ops {
-		switch op := op.(type) {
-		case ReaderStreamMapper:
-			var err error
-			ff, err = op(f)
-			if err != nil {
-				return nil, fmt.Errorf("with ReaderStreamMapper option %d: %w", i, err)
-			}
-			if fc, ok := ff.(io.Closer); ok {
-				defer func() {
-					if err := fc.Close(); err != nil {
-						log.Printf("error closing ReaderStreamMapper: %s", err)
-					}
-				}()
-			}
-		}
+	if err != nil {
+		return nil, err
 	}
 	mbr := mbox.NewReader(ff)
-	ms := []*MailWithSource{}
+	var ms []*MailWithSource
 	for {
 		mr, err := mbr.NextMessage()
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -91,23 +44,21 @@ func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) ([]*Mai
 	}
 }
 
-func ReadMailFile(fType, fName string) ([]*MailWithSource, error) {
-	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
-	}
+func ReadMailStream(f io.Reader, fType string, fName string, ops ...any) ([]*MailWithSource, error) {
+	var ms []*MailWithSource
+	ff, closers, err := dataformats.ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		if err := f.Close(); err != nil {
-			log.Printf("Error closing file: %s: %s", fName, err)
+		for _, fc := range closers {
+			if err := fc.Close(); err != nil {
+				log.Printf("error closing ReaderStreamMapper: %s", err)
+			}
 		}
 	}()
-	return ReadMailStream(f, fType, fName)
-}
-
-func ReadMailStream(f io.Reader, fType string, fName string) ([]*MailWithSource, error) {
-	ms := []*MailWithSource{}
+	if err != nil {
+		return nil, err
+	}
 	for {
-		msg, err := message.Read(f)
+		msg, err := message.Read(ff)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("reading message %d from mail file %s: %w", len(ms)+1, fName, err)
 		}

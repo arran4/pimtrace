@@ -5,11 +5,13 @@ import (
 	_ "github.com/emersion/go-message/charset"
 	"os"
 	"pimtrace"
+	"pimtrace/dataformats"
 	"pimtrace/dataformats/maildata"
 )
 
 func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
-	mails := []*maildata.MailWithSource{}
+	var mails []*maildata.MailWithSource
+	var ops []any
 	switch inputType {
 	case "mailfile":
 		switch inputFile {
@@ -20,37 +22,43 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := maildata.ReadMailFile(inputType, inputFile)
-			if err != nil {
-				return nil, err
-			}
-			mails = append(mails, nm...)
-		}
-	case "mbox":
-		switch inputFile {
-		case "-":
-			nm, err := maildata.ReadMBoxStream(os.Stdin, inputType, inputFile)
-			if err != nil {
-				return nil, err
-			}
-			mails = append(mails, nm...)
-		default:
-			nm, err := maildata.ReadMBoxFile(inputType, inputFile)
+			nm, err := dataformats.ReadFile(inputType, inputFile, maildata.ReadMailStream)
 			if err != nil {
 				return nil, err
 			}
 			mails = append(mails, nm...)
 		}
 	case "mboxgz":
+		ops = append(ops, dataformats.Gzip)
+		fallthrough
+	case "mbox":
 		switch inputFile {
 		case "-":
-			nm, err := maildata.ReadMBoxStream(os.Stdin, inputType, inputFile, maildata.Gzip)
+			nm, err := maildata.ReadMBoxStream(os.Stdin, inputType, inputFile, ops...)
 			if err != nil {
 				return nil, err
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := maildata.ReadMBoxFile(inputType, inputFile, maildata.Gzip)
+			nm, err := dataformats.ReadFile(inputType, inputFile, maildata.ReadMBoxStream, ops...)
+			if err != nil {
+				return nil, err
+			}
+			mails = append(mails, nm...)
+		}
+	case "mboxtargz":
+		ops = append(ops, dataformats.Gzip)
+		fallthrough
+	case "mboxtar":
+		switch inputFile {
+		case "-":
+			nm, err := dataformats.ReadTarStreamFile(os.Stdin, inputType, inputFile, maildata.ReadMBoxStream, []string{"*.mbox"}, ops...)
+			if err != nil {
+				return nil, err
+			}
+			mails = append(mails, nm...)
+		default:
+			nm, err := dataformats.ReadTarFile(inputType, inputFile, maildata.ReadMBoxStream, []string{"*.mbox"}, ops...)
 			if err != nil {
 				return nil, err
 			}
@@ -69,6 +77,7 @@ func PrintInputHelp() {
 	fmt.Printf(" %-30s %s\n", "mailfile", "A single mail file")
 	fmt.Printf(" %-30s %s\n", "mbox", "Mbox file")
 	fmt.Printf(" %-30s %s\n", "mboxgz", "Gzipped Mbox file")
+	fmt.Printf(" %-30s %s\n", "mboxtargz", "Gzipped Mbox file")
 	fmt.Printf(" %-30s %s\n", "list", "This help text")
 	fmt.Println()
 }

@@ -5,6 +5,7 @@ import (
 	_ "github.com/emersion/go-message/charset"
 	"os"
 	"pimtrace"
+	"pimtrace/dataformats"
 	"pimtrace/dataformats/tabledata"
 )
 
@@ -14,13 +15,13 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 	case "csv":
 		switch inputFile {
 		case "-":
-			nm, err := tabledata.ReadCSV(os.Stdin, inputFile)
+			nm, err := tabledata.ReadCSV(os.Stdin, inputType, inputFile)
 			if err != nil {
 				return nil, err
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := tabledata.ReadCSVFile(inputType, inputFile)
+			nm, err := dataformats.ReadFile(inputType, inputFile, tabledata.ReadCSV)
 			if err != nil {
 				return nil, err
 			}

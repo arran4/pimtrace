@@ -5,6 +5,7 @@ import (
 	_ "github.com/emersion/go-message/charset"
 	"os"
 	"pimtrace"
+	"pimtrace/dataformats"
 	"pimtrace/dataformats/icaldata"
 )
 
@@ -20,7 +21,7 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 			}
 			ventry = append(ventry, nm...)
 		default:
-			nm, err := icaldata.ReadICalFile(inputType, inputFile)
+			nm, err := dataformats.ReadFile(inputType, inputFile, icaldata.ReadICalStream)
 			if err != nil {
 				return nil, err
 			}
