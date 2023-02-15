@@ -81,9 +81,10 @@ func NewProgressor() ReaderStreamMapper {
 				if pct != progress {
 					progress = pct
 					now := time.Now()
-					duration := now.Sub(start)
+					var duration time.Duration
 					var estimate time.Duration
 					if progress > 0 {
+						duration = now.Sub(start)
 						estimate = (100 * duration) / time.Duration(progress)
 					}
 					log.Printf("%d%% bytes: %d/%d duration: %s / %s", progress, position, end, duration, estimate)
