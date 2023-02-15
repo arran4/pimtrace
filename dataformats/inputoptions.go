@@ -58,7 +58,7 @@ func NewProgressor() ReaderStreamMapper {
 				ok = false
 			}
 			end = int(n)
-			n, err = seeker.Seek(int64(position), io.SeekStart)
+			_, err = seeker.Seek(int64(position), io.SeekStart)
 			if err != nil {
 				log.Printf("Error with Progressor: %s", err)
 				ok = false
