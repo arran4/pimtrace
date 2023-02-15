@@ -9,9 +9,8 @@ import (
 	"pimtrace/dataformats/maildata"
 )
 
-func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
+func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
 	var mails []*maildata.MailWithSource
-	var ops []any
 	switch inputType {
 	case "mailfile":
 		switch inputFile {

@@ -26,6 +26,7 @@ func main() {
 		outputType  = f.String("output-type", "list", "The input type")
 		outputFile  = f.String("output", "-", "Output file or - for stdin")
 		parser      = f.String("parser", "", "Just use `basic`")
+		progress    = f.Bool("progress", false, "Report progress")
 		versionFlag = f.Bool("version", false, "Prints the version")
 		helpFlag    = f.Bool("help", false, "Prints help")
 	)
@@ -51,7 +52,13 @@ func main() {
 		os.Exit(-1)
 	}
 
-	data, err := InputHandler(*inputType, *inputFile)
+	var iops []any
+
+	if *progress {
+		iops = append(iops, dataformats.NewProgressor())
+	}
+
+	data, err := InputHandler(*inputType, *inputFile, iops...)
 	if err != nil {
 		log.Printf("Read Error: %s", err)
 		os.Exit(-1)
