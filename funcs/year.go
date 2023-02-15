@@ -56,7 +56,11 @@ func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args [
 		}
 		t = time.Unix(int64(*i), 0)
 	case pimtrace.SimpleStringValue:
-		t, err = dateparse.ParseStrict(v.String())
+		s := v.String()
+		if s == "" {
+			return time.Time{}, nil
+		}
+		t, err = dateparse.ParseStrict(s)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("%s parse: %w", funcName, err)
 		}
