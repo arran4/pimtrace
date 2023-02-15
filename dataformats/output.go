@@ -49,7 +49,7 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string, customOutputs [][2]
 }
 
 func PrintOutputHelp(custom [][2]string) {
-	fmt.Println("`--output-type`s: ")
+	fmt.Println("--output-types: ")
 	each := [][2]string{
 		{"list", "This help text"},
 		{"csv", "Data in csv format"},

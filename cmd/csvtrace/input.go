@@ -36,7 +36,7 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 }
 
 func PrintInputHelp() {
-	fmt.Println("`input-type`s available: ")
+	fmt.Println("input-types available: ")
 	fmt.Printf(" %-30s %s\n", "csv", "Read a CSV file")
 	fmt.Printf(" %-30s %s\n", "list", "This help text")
 	fmt.Println()
