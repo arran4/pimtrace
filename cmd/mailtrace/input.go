@@ -52,7 +52,7 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 	case "mboxtar":
 		switch inputFile {
 		case "-":
-			nm, err := dataformats.ReadTarStreamFile(os.Stdin, inputType, inputFile, maildata.ReadMBoxStream, []string{"*.mbox"}, ops...)
+			nm, err := dataformats.ReadTarStream(os.Stdin, inputType, inputFile, maildata.ReadMBoxStream, []string{"*.mbox"}, ops...)
 			if err != nil {
 				return nil, err
 			}
