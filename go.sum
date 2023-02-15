@@ -5,8 +5,8 @@ github.com/ajstarks/deck v0.0.0-20200831202436-30c9fc6549a9/go.mod h1:JynElWSGnm
 github.com/ajstarks/deck/generate v0.0.0-20210309230005-c3f852c02e19/go.mod h1:T13YZdzov6OU0A1+RfKZiZN9ca6VeKdBdyDV+BY97Tk=
 github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b h1:slYM766cy2nI3BwyRiyQj/Ud48djTMtMebDqepE95rw=
 github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b/go.mod h1:1KcenG0jGWcpt8ov532z81sp/kMMUG485J2InIOyADM=
-github.com/arran4/dateparse v0.1.1 h1:Jnto6+Jx+XAwQQUe58FpyuFifsok+HCP1kOrjrJiZG0=
-github.com/arran4/dateparse v0.1.1/go.mod h1:JgEdPusjU0OylWJ0UxRddfrbh7GGXECDGoSQ2wsp6h0=
+github.com/arran4/dateparse v0.1.2 h1:B3Cf5dYCkgSeX2R6mgzfj9zaZrYvKQ9rG1m9ZZev3mg=
+github.com/arran4/dateparse v0.1.2/go.mod h1:JgEdPusjU0OylWJ0UxRddfrbh7GGXECDGoSQ2wsp6h0=
 github.com/arran4/go-message v0.0.0-20221009061333-88d073923c5e h1:25LZzDAuFNtSpC9I4nQu0OgIwga44ai6RFdWJwnxYJU=
 github.com/arran4/go-message v0.0.0-20221009061333-88d073923c5e/go.mod h1:pDJDgf/xeUIF+eicT6B/hPX/ZbEorKkUMPOxrPVG2eQ=
 github.com/arran4/golang-ical v0.0.0-20220517104411-fd89fefb0182 h1:mUsKridvWp4dgfkO/QWtgGwuLtZYpjKgsm15JRRik3o=

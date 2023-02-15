@@ -35,4 +35,4 @@ require (
 
 replace github.com/emersion/go-message v0.16.0 => github.com/arran4/go-message v0.0.0-20221009061333-88d073923c5e
 
-replace github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de => github.com/arran4/dateparse v0.1.1
+replace github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de => github.com/arran4/dateparse v0.1.2

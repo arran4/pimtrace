@@ -42,6 +42,12 @@ func TestParseStrict(t *testing.T) {
 			Output: "2013-08-15 23:39:51 +0000 UTC",
 			Err:    nil,
 		},
+		{
+			Name:   "GMT-07:00",
+			Input:  "Mon, 1 Dec 2008 14:48:22 GMT-07:00",
+			Output: "2008-12-01 21:48:22 +0000 UTC",
+			Err:    nil,
+		},
 		//{
 		//	Name:   "Replacement character",
 		//	Input:  "Sat, 29 Jan 2011 13:54:02 \\xef\\xbf\\xbd+1000",
