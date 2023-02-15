@@ -5,6 +5,7 @@ import (
 	"github.com/araddon/dateparse"
 	"pimtrace"
 	"time"
+	"unicode"
 )
 
 type Year[T ValueExpression] struct{}
@@ -62,6 +63,13 @@ func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args [
 		s := v.String()
 		if s == "" {
 			return nil, nil
+		}
+		runes := []rune(s)
+		for i, v := range runes {
+			if unicode.IsSymbol(v) {
+				s = string(runes[:i])
+				break
+			}
 		}
 		t, err = dateparse.ParseStrict(s)
 		if err != nil {
