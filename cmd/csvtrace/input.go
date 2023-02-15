@@ -10,7 +10,7 @@ import (
 )
 
 func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
-	mails := []*tabledata.Row{}
+	var rows []*tabledata.Row
 	switch inputType {
 	case "csv":
 		switch inputFile {
@@ -19,20 +19,20 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 			if err != nil {
 				return nil, err
 			}
-			mails = append(mails, nm...)
+			rows = append(rows, nm...)
 		default:
 			nm, err := dataformats.ReadFile(inputType, inputFile, tabledata.ReadCSV)
 			if err != nil {
 				return nil, err
 			}
-			mails = append(mails, nm...)
+			rows = append(rows, nm...)
 		}
 	case "list":
 		PrintInputHelp()
 	default:
 		return nil, fmt.Errorf("please specify an -input-type. got %s", inputType)
 	}
-	return tabledata.Data(mails), nil
+	return tabledata.Data(rows), nil
 }
 
 func PrintInputHelp() {

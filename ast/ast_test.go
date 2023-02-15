@@ -20,11 +20,11 @@ func LoadData1(fn string) pimtrace.Data {
 		panic(err)
 	}
 	defer f.Close()
-	r, err := tabledata.ReadCSV(f, fn)
+	r, err := tabledata.ReadCSV(f, "test", fn)
 	if err != nil {
 		panic(err)
 	}
-	return r
+	return tabledata.Data(r)
 }
 
 func Valueify(ss ...any) (result []pimtrace.Value) {

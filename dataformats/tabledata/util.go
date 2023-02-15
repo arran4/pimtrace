@@ -7,9 +7,17 @@ import (
 	"pimtrace"
 )
 
+func RowsToData(r ...[]*Row) (result []Data) {
+	result = make([]Data, len(r), len(r))
+	for i, e := range r {
+		result[i] = e
+	}
+	return
+}
+
 func ReadCSV(r io.Reader, fType string, fName string, ops ...any) ([]*Row, error) {
 	header := map[string]int{}
-	result := []*Row{}
+	var result []*Row
 	cr := csv.NewReader(r)
 	for l := 0; ; l++ {
 		r, err := cr.Read()
