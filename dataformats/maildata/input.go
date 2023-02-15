@@ -65,16 +65,16 @@ func ReadMailStream(f io.Reader, fType string, fName string, ops ...any) ([]*Mai
 		SourceFile: fName,
 		SourceType: fType,
 		MailHeader: mail.HeaderFromMap(msg.Root.Header),
-		MailBodies: []MailBody{},
 	}
-	mws.MailBodies = append(mws.MailBodies, &MailBodyGeneral{
-		Body:    bytes.NewBufferString(msg.HTML),
-		Message: mws,
-	})
-	mws.MailBodies = append(mws.MailBodies, &MailBodyGeneral{
-		Body:    bytes.NewBufferString(msg.Text),
-		Message: mws,
-	})
+	mws.MailBodies = []MailBody{
+		&MailBodyGeneral{
+			Body:    bytes.NewBufferString(msg.HTML),
+			Message: mws,
+		}, &MailBodyGeneral{
+			Body:    bytes.NewBufferString(msg.Text),
+			Message: mws,
+		},
+	}
 
 	return []*MailWithSource{mws}, nil
 
