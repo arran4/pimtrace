@@ -9,15 +9,15 @@ import (
 
 type ReaderStreamMapper func(io.Reader) (io.Reader, error)
 
-var _ ReaderStreamMapper = Gzip
+var Gzip ReaderStreamMapper = fgzip
 
-func Gzip(reader io.Reader) (io.Reader, error) {
+func fgzip(reader io.Reader) (io.Reader, error) {
 	return gzip.NewReader(reader)
 }
 
-var _ ReaderStreamMapper = Bzip2
+var Bzip2 ReaderStreamMapper = fbzip2
 
-func Bzip2(reader io.Reader) (io.Reader, error) {
+func fbzip2(reader io.Reader) (io.Reader, error) {
 	return bzip2.NewReader(reader), nil
 }
 
