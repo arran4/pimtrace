@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/araddon/dateparse"
 	"github.com/goodsign/monday"
+	"log"
 	"pimtrace"
 	"time"
 	"unicode"
@@ -33,7 +34,8 @@ func (c Year[T]) Arguments() []ArgumentList {
 func (c Year[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	t, err := Arg1OnlyToTime("year", d, args)
 	if err != nil {
-		return nil, err
+		log.Printf("Error: %s", err)
+		return &pimtrace.SimpleNilValue{}, nil //, err
 	}
 	if t == nil {
 		return &pimtrace.SimpleNilValue{}, nil

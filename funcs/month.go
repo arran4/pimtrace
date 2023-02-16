@@ -2,6 +2,7 @@ package funcs
 
 import (
 	"errors"
+	"log"
 	"pimtrace"
 )
 
@@ -36,7 +37,8 @@ func (c Month[T]) Arguments() []ArgumentList {
 func (c Month[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	t, err := Arg1OnlyToTime("month", d, args)
 	if err != nil {
-		return nil, err
+		log.Printf("Error: %s", err)
+		return &pimtrace.SimpleNilValue{}, nil //, err
 	}
 	if t == nil {
 		return &pimtrace.SimpleNilValue{}, nil
