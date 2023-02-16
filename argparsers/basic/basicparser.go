@@ -190,7 +190,7 @@ func ParseFilter(args []string, statements []ast.Operation) (ast.BooleanExpressi
 		[]any{ast.EntryExpression(""), ast.ConstantExpression("")},
 		[]any{FilterEquals(""), FilterContains(""), FilterIContains("")},
 		[]any{ast.EntryExpression(""), ast.ConstantExpression("")},
-	); len(matches) > 0 {
+	); len(matches) > 1 {
 		var op ast.OpFunc
 		switch /*opMatch :=*/ matches[1].(type) {
 		case FilterEquals:
