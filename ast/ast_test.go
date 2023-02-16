@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"bytes"
 	"embed"
 	_ "embed"
 	"github.com/google/go-cmp/cmp"
@@ -251,6 +252,76 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			}
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("Execute() \n%s", diff)
+			}
+		})
+	}
+}
+
+func TestSortTransformer_Execute(t *testing.T) {
+	yearDateHeader := map[string]int{
+		"year-date": 0,
+		"count":     1,
+	}
+	tests := []struct {
+		name            string
+		SortTransformer SortTransformer
+		d               pimtrace.Data
+		want            string
+		wantErr         bool
+	}{
+		{
+			name:            "Year-Date",
+			SortTransformer: SortTransformer{Expression: []ValueExpression{EntryExpression("c.year-date")}},
+			d: tabledata.Data{
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2023), pimtrace.SimpleIntegerValue(2190)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(15664)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2015), pimtrace.SimpleIntegerValue(25332)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2017), pimtrace.SimpleIntegerValue(26803)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2021), pimtrace.SimpleIntegerValue(14606)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{&pimtrace.SimpleNilValue{}, pimtrace.SimpleIntegerValue(175271)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2019), pimtrace.SimpleIntegerValue(31743)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2020), pimtrace.SimpleIntegerValue(26422)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2007), pimtrace.SimpleIntegerValue(24102)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2018), pimtrace.SimpleIntegerValue(24107)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2016), pimtrace.SimpleIntegerValue(29190)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2004), pimtrace.SimpleIntegerValue(9855)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2013), pimtrace.SimpleIntegerValue(33164)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2014), pimtrace.SimpleIntegerValue(38906)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2012), pimtrace.SimpleIntegerValue(33274)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2006), pimtrace.SimpleIntegerValue(17979)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2011), pimtrace.SimpleIntegerValue(39946)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2010), pimtrace.SimpleIntegerValue(34943)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2008), pimtrace.SimpleIntegerValue(14722)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2009), pimtrace.SimpleIntegerValue(28008)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2003), pimtrace.SimpleIntegerValue(9)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2005), pimtrace.SimpleIntegerValue(16396)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1970), pimtrace.SimpleIntegerValue(2)}},
+				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2002), pimtrace.SimpleIntegerValue(2)}},
+			},
+			want:    "year-date,count\n,175271\n1970,2\n2002,2\n2003,9\n2004,9855\n2005,16396\n2006,17979\n2007,24102\n2008,14722\n2009,28008\n2010,34943\n2011,39946\n2012,33274\n2013,33164\n2014,38906\n2015,25332\n2016,29190\n2017,26803\n2018,24107\n2019,31743\n2020,26422\n2021,14606\n2022,15664\n2023,2190\n",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.SortTransformer.Execute(tt.d)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			b := bytes.NewBuffer(nil)
+			np, ok := got.(pimtrace.CSVOutputCapable)
+			if !ok {
+				t.Errorf("Not a csv capable data set")
+				return
+			}
+			if err := np.WriteCSVStream(b, "out.csv"); err != nil {
+				t.Errorf("Failed CSV write: %s", err)
+				return
+			}
+			if diff := cmp.Diff(b.String(), tt.want); diff != "" {
+				t.Errorf("Execute() diff = \n%s", diff)
+				t.Errorf("Execute() got = \n%s", b.String())
 			}
 		})
 	}

@@ -272,12 +272,16 @@ func (s *SortTransformerSorter) Less(i, j int) bool {
 		io, jo := s.Data.Entry(i), s.Data.Entry(j)
 		iv, _ := e.Execute(io)
 		jv, _ := e.Execute(jo)
-		if iv != nil && jv != nil {
-			if iv.Equal(jv) {
-				continue
-			}
-			return iv.Less(jv)
+		if iv == nil {
+			iv = pimtrace.SimpleIntegerValue(0)
 		}
+		if jv == nil {
+			jv = pimtrace.SimpleIntegerValue(0)
+		}
+		//if iv.Equal(jv) {
+		//	continue
+		//}
+		return iv.Less(jv)
 	}
 	return i < j
 }

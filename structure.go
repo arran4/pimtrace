@@ -35,7 +35,7 @@ func (s SimpleStringValue) Less(jv Value) bool {
 	case SimpleStringValue:
 		return strings.Compare(string(s), string(jv)) < 0
 	default:
-		return s == jv
+		return strings.Compare(string(s), jv.String()) < 0
 	}
 }
 
@@ -109,9 +109,9 @@ func (s *SimpleNilValue) StringArray() []string {
 func (s *SimpleNilValue) Less(jv Value) bool {
 	switch jv.(type) {
 	case *SimpleNilValue:
-		return true
-	default:
 		return false
+	default:
+		return strings.Compare(s.String(), jv.String()) < 0
 	}
 }
 
@@ -173,7 +173,7 @@ func (s SimpleIntegerValue) Less(jv Value) bool {
 	case SimpleIntegerValue:
 		return s < jv
 	default:
-		return s == jv
+		return strings.Compare(s.String(), jv.String()) < 0
 	}
 }
 
@@ -238,9 +238,9 @@ func (s SimpleArrayValue) Less(jv Value) bool {
 				return true
 			}
 		}
-		return true
-	default:
 		return false
+	default:
+		return strings.Compare(s.String(), jv.String()) < 0
 	}
 }
 
