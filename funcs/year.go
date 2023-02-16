@@ -76,7 +76,11 @@ func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args [
 		if err != nil {
 			return nil, fmt.Errorf("%s parse format: %w", funcName, err)
 		}
-		t, err = monday.NewLocaleDetector().Parse(layout, s)
+		end := len(s)
+		if len(layout) < end {
+			end = len(layout)
+		}
+		t, err = monday.NewLocaleDetector().Parse(layout, s[:end])
 		if err != nil {
 			return nil, fmt.Errorf("%s parse time with locale detector: %w", funcName, err)
 		}
