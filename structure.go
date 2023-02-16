@@ -44,7 +44,7 @@ func (s SimpleStringValue) Equal(jv Value) bool {
 	case SimpleStringValue:
 		return string(s) == string(jv)
 	default:
-		return s == jv
+		return s.String() == jv.String()
 	}
 }
 
@@ -120,7 +120,7 @@ func (s *SimpleNilValue) Equal(jv Value) bool {
 	case *SimpleNilValue:
 		return true
 	default:
-		return false
+		return s.String() == jv.String()
 	}
 }
 
@@ -178,7 +178,12 @@ func (s SimpleIntegerValue) Less(jv Value) bool {
 }
 
 func (s SimpleIntegerValue) Equal(jv Value) bool {
-	return s == jv
+	switch jv := jv.(type) {
+	case SimpleIntegerValue:
+		return s == jv
+	default:
+		return s.String() == jv.String()
+	}
 }
 
 func (s SimpleIntegerValue) Time() *time.Time {
@@ -257,7 +262,7 @@ func (s SimpleArrayValue) Equal(jv Value) bool {
 		}
 		return true
 	default:
-		return false
+		return s.String() == jv.String()
 	}
 }
 
