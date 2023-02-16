@@ -3,6 +3,7 @@ package funcs
 import (
 	"fmt"
 	"github.com/araddon/dateparse"
+	"github.com/goodsign/monday"
 	"pimtrace"
 	"time"
 	"unicode"
@@ -71,9 +72,13 @@ func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args [
 				break
 			}
 		}
-		t, err = dateparse.ParseStrict(s)
+		layout, err := dateparse.ParseFormat(s)
 		if err != nil {
-			return nil, fmt.Errorf("%s parse: %w", funcName, err)
+			return nil, fmt.Errorf("%s parse format: %w", funcName, err)
+		}
+		t, err = monday.NewLocaleDetector().Parse(layout, s)
+		if err != nil {
+			return nil, fmt.Errorf("%s parse time with locale detector: %w", funcName, err)
 		}
 	default:
 		return nil, fmt.Errorf("%s %w: %s", funcName, ErrUnsupportedType, v.Type())

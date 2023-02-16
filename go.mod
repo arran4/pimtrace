@@ -23,6 +23,7 @@ require (
 	github.com/go-pdf/fpdf v0.6.0 // indirect
 	github.com/gogs/chardet v0.0.0-20191104214054-4b6791f73a28 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/goodsign/monday v1.0.0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20200412013138-3577fbdbcff7 // indirect
 	github.com/mattn/go-runewidth v0.0.12 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
