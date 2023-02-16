@@ -278,9 +278,9 @@ func (s *SortTransformerSorter) Less(i, j int) bool {
 		if jv == nil {
 			jv = pimtrace.SimpleIntegerValue(0)
 		}
-		//if iv.Equal(jv) {
-		//	continue
-		//}
+		if iv.Equal(jv) {
+			continue
+		}
 		return iv.Less(jv)
 	}
 	return i < j
