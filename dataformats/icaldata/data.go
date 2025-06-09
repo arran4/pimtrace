@@ -50,8 +50,8 @@ func (s *ICalWithSource) StringArray(header []string) (result []string) {
 func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {
-	//case "sz", "sized": TODO
-	//	return SimpleNumberValue(s.
+	case "sz", "sized":
+		return pimtrace.SimpleIntegerValue(len(s.ComponentBase.Properties)), nil
 	case "p", "property":
 		ks = ks[1:]
 		fallthrough

@@ -410,3 +410,10 @@ func TestParseOperations(t *testing.T) {
 		})
 	}
 }
+
+func TestParseIntoMboxError(t *testing.T) {
+	_, err := ParseOperations([]string{"into", "mbox"})
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+}

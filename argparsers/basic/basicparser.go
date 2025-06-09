@@ -14,6 +14,7 @@ var (
 	ErrUnknownExpression         = fmt.Errorf("unknown expression")
 	ErrParserFault               = fmt.Errorf("parser fault")
 	ErrUnknownIntoStatement      = fmt.Errorf("unknown into")
+	ErrIntoNotImplemented        = fmt.Errorf("into not implemented")
 	ErrInvalidFunctionExpression = fmt.Errorf("invalid function expression")
 )
 
@@ -386,7 +387,7 @@ func ParseInto(args []string) (ast.Operation, []string, error) {
 		switch p[0] {
 		case "mbox":
 			//return &maildata.MBoxOutput{}, p[1:], nil
-			panic("todo implement me: generic way of inserting these")
+			return nil, nil, fmt.Errorf("%w: mbox", ErrIntoNotImplemented)
 		case "summary":
 			return ParseIntoSummary(p[1:])
 		case "table":
