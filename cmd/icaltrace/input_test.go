@@ -1,21 +1,29 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"strings"
 	"testing"
 )
 
-func TestPrintInputHelp(t *testing.T) {
+func captureOutput(f func()) string {
 	r, w, _ := os.Pipe()
 	old := os.Stdout
 	os.Stdout = w
-	PrintInputHelp()
+	f()
 	w.Close()
 	os.Stdout = old
-	out, _ := io.ReadAll(r)
-	if !strings.Contains(string(out), "ical") {
-		t.Errorf("expected help to mention ical, got %s", string(out))
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	r.Close()
+	return buf.String()
+}
+
+func TestPrintInputHelpContainsIcal(t *testing.T) {
+	out := captureOutput(PrintInputHelp)
+	if !strings.Contains(out, "ical") {
+		t.Errorf("expected help to contain 'ical' but got %q", out)
 	}
 }
