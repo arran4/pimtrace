@@ -37,8 +37,7 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 
 func PrintInputHelp() {
 	fmt.Println("input-types available: ")
-	fmt.Printf(" %-30s %s\n", "mailfile", "A single mail file")
-	fmt.Printf(" %-30s %s\n", "mbox", "Mbox file")
+	fmt.Printf(" %-30s %s\n", "ical", "Read an iCal file or '-' for stdin")
 	fmt.Printf(" %-30s %s\n", "list", "This help text")
 	fmt.Println()
 }
