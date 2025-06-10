@@ -1,13 +1,15 @@
 # PIMTrace tools
 
-These are a series of tools that allow the querying, filtering and summarizing
-of data on the command line in one-liners. 
+PIMTrace is a collection of small command line utilities for querying,
+filtering and summarising structured data.  It aims to make one liners
+feel a little closer to a query language while still being shell
+friendly.
 
-Current supported formats:
-* ICal
-* Mbox
-* Mail file
-* CSV
+Currently supported formats:
+- ICal
+- Mbox
+- Mail file
+- CSV
 
 More might be coming.
 
@@ -15,10 +17,38 @@ This is a work in progress (I need it for something else) however I will develop
 it to meet my itches. I am happy to accept PRs of reasonable addition and changes.
 I am a "batteries included" person so additions are appreciated.
 
+## Installation
+
+Pre-built binaries are available on the
+[releases page](https://github.com/arran4/pimtrace/releases).
+Download the package that matches your platform and either install it or
+extract the executables.
+Binaries are provided for Linux (deb, rpm, apk and tar.gz), macOS and Windows.
+
+### Example (Debian/Ubuntu)
+
+```bash
+VERSION=<latest release tag>
+wget https://github.com/arran4/pimtrace/releases/download/$VERSION/pimtrace_${VERSION}_linux_amd64.deb
+sudo apt install ./pimtrace_${VERSION}_linux_amd64.deb
+```
+
+### Example (RPM based)
+
+```bash
+VERSION=<latest release tag>
+curl -L -o pimtrace.rpm https://github.com/arran4/pimtrace/releases/download/$VERSION/pimtrace_${VERSION}_linux_amd64.rpm
+sudo rpm -i pimtrace.rpm
+```
+
+Alternatively grab the `.tar.gz` or `.zip` archive for your OS and copy the
+`csvtrace`, `mailtrace` and `icaltrace` binaries somewhere in your `$PATH`.
+
 ## Uses?
 
 * Filtering and sorting CSV files
 * Querying ical and mail files for specific or statistical information
+* Summarising calendar events or mail senders
 
 # Usage
 
@@ -138,8 +168,22 @@ tell me why in an issue / discussion.
 
 ## Examples:
 
+### Summarise senders in a mailbox
+
+```bash
+mailtrace -input inbox.mbox -input-type mbox -parser basic \
+    into summary header.from calculate f.count
 ```
-GolandProjects/pimtrace 1698 % go run ./cmd/csvtrace -input ast/testdata/data10.csv -input-type=csv -output-type table -parser basic 
+
+### Count calendar events per month
+
+```bash
+icaltrace -input calendar.ics -parser basic \
+    into summary property.start calculate f.count f.month[property.start]
+```
+
+```
+go run ./cmd/csvtrace -input ast/testdata/data10.csv -input-type csv -output-type table -parser basic
 +-------------------+----------------+----------------------------------+------------------------------+----------+-------------+
 |       NAME        |     PHONE      |              EMAIL               |           ADDRESS            | CURRENCY | NUMBERRANGE |
 +-------------------+----------------+----------------------------------+------------------------------+----------+-------------+
@@ -154,13 +198,13 @@ GolandProjects/pimtrace 1698 % go run ./cmd/csvtrace -input ast/testdata/data10.
 | Colorado Sandoval | (737) 534-1143 | vel.vulputate@aol.net            | 8766 Nonummy St.             | $82.73   |           9 |
 | Felix Sutton      | (915) 275-7510 | justo.faucibus@hotmail.com       | 978-3821 Odio. Rd.           | $30.35   |           1 |
 +-------------------+----------------+----------------------------------+------------------------------+----------+-------------+
-GolandProjects/pimtrace 1699 % go run ./cmd/csvtrace -input ast/testdata/data10.csv -input-type=csv -output-type table -parser basic filter h.numberrange eq .1
+go run ./cmd/csvtrace -input ast/testdata/data10.csv -input-type csv -output-type table -parser basic filter h.numberrange eq .1
 +--------------+----------------+----------------------------+--------------------+----------+-------------+
 |     NAME     |     PHONE      |           EMAIL            |      ADDRESS       | CURRENCY | NUMBERRANGE |
 +--------------+----------------+----------------------------+--------------------+----------+-------------+
 | Felix Sutton | (915) 275-7510 | justo.faucibus@hotmail.com | 978-3821 Odio. Rd. | $30.35   |           1 |
 +--------------+----------------+----------------------------+--------------------+----------+-------------+
-GolandProjects/pimtrace 1700 % go run ./cmd/csvtrace -input ast/testdata/data10.csv -input-type=csv -output-type table -parser basic into summary h.numberrange calculate f.count
+go run ./cmd/csvtrace -input ast/testdata/data10.csv -input-type csv -output-type table -parser basic into summary h.numberrange calculate f.count
 +-------------+-------+
 | NUMBERRANGE | COUNT |
 +-------------+-------+
@@ -234,13 +278,23 @@ etc.
 
 ## Basic parser
 
-I know it's a bit more than a basic parser however I was hoping to make the syntax
-more complex with an LR parser however I didn't get around to it. I was hoping
-to expand on the concept of "args" as tokens, and do more sub-arg tokenization.
+At present PIMTrace only includes a simple space separated parser called
+`basic`.  Each token is processed in order, allowing filters, grouping and other
+operations to be combined without quoting a whole query language.  The design is
+minimal so scripts remain compatible when more advanced parsers are added in the
+future.  For this reason you should explicitly pass `-parser basic` when running
+the tools.
 
-I am requiring the use of `-parser basic` so that future scripts don't get broken.
-As a "least I could do" approach.
+## Building from source
 
-# License 
+Install Go 1.20 or newer and clone the repository. Then run:
+
+```bash
+go build ./cmd/...
+```
+
+The commands `csvtrace`, `mailtrace` and `icaltrace` will be placed in the current directory.
+
+# License
 
 AGPL and "custom" to request. All contributions will have to be compatible with that.
