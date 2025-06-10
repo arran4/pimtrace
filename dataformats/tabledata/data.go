@@ -30,8 +30,15 @@ func (s *Row) Self() *Row {
 func (s *Row) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {
-	//case "sz", "sized": TODO
-	//	return SimpleNumberValue(s.
+	case "sz", "sized":
+		if len(ks) > 1 {
+			v, err := s.Get(ks[1])
+			if err != nil {
+				return nil, err
+			}
+			return pimtrace.SimpleIntegerValue(v.Length()), nil
+		}
+		return pimtrace.SimpleIntegerValue(len(s.Row)), nil
 	case "h", "header", "c", "column":
 		ks = ks[1:]
 		fallthrough

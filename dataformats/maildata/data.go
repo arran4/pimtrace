@@ -91,8 +91,32 @@ func (s *MailWithSource) StringArray(header []string) (result []string) {
 func (s *MailWithSource) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {
-	//case "sz", "sized": TODO
-	//	return SimpleNumberValue(s.
+	case "sz", "sized":
+		if len(ks) > 1 {
+			v, err := s.Get(ks[1])
+			if err != nil {
+				return nil, err
+			}
+			return pimtrace.SimpleIntegerValue(v.Length()), nil
+		}
+		size := 0
+		for k, vs := range s.MailHeader.Map() {
+			size += len(k)
+			for _, v := range vs {
+				size += len(v)
+			}
+		}
+		for _, b := range s.MailBodies {
+			switch mb := b.(type) {
+			case *MailBodyGeneral:
+				size += mb.Body.Len()
+			case *MailBodyFromPart:
+				if mb.MailBodyGeneral != nil && mb.MailBodyGeneral.Body != nil {
+					size += mb.MailBodyGeneral.Body.Len()
+				}
+			}
+		}
+		return pimtrace.SimpleIntegerValue(size), nil
 	case "h", "header":
 		ks = ks[1:]
 		fallthrough
