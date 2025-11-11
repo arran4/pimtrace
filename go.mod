@@ -1,6 +1,8 @@
 module pimtrace
 
-go 1.19
+go 1.24.0
+
+toolchain go1.24.3
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
@@ -29,9 +31,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
-	golang.org/x/image v0.10.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/image v0.32.0 // indirect
+	golang.org/x/net v0.46.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
 )
 
 replace github.com/emersion/go-message v0.16.0 => github.com/arran4/go-message v0.0.0-20221009061333-88d073923c5e
