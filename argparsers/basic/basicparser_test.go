@@ -3,6 +3,7 @@ package basic
 import (
 	"github.com/google/go-cmp/cmp"
 	"pimtrace/ast"
+	"pimtrace/dataformats/maildata"
 	"pimtrace/funcs"
 	"reflect"
 	"strings"
@@ -282,19 +283,20 @@ func TestParseOperations(t *testing.T) {
 			remaining: []string{},
 			wantErr:   false,
 		},
-		//{
-		//	name: "filter out into a mbox",
-		//	args: strings.Split("filter not h.user-agent icontains .Kmail into mbox", " "),
-		//	expectedOperation: &ast.CompoundStatement{
-		//		Statements: []ast.Operation{
-		//			&ast.FilterStatement{
-		//				Expression: &ast.NotOp{
-		//					Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
-		//				},
-		//			},
-		//		},
-		//	},
-		//},
+		{
+			name: "filter out into a mbox",
+			args: strings.Split("filter not h.user-agent icontains .Kmail into mbox", " "),
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &ast.NotOp{
+							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						},
+					},
+					&maildata.MBoxOutput{},
+				},
+			},
+		},
 		{
 			name: "filter into a table",
 			args: strings.Split("filter not h.user-agent icontains .Kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date]", " "),
@@ -316,25 +318,25 @@ func TestParseOperations(t *testing.T) {
 				},
 			},
 		},
-		//{
-		//	name: "filter out into a mbox sorted by date",
-		//	args: strings.Split("filter not h.user-agent icontains .Kmail into mbox sort h.date", " "),
-		//	expectedOperation: &ast.CompoundStatement{
-		//		Statements: []ast.Operation{
-		//			&ast.FilterStatement{
-		//				Expression: &ast.NotOp{
-		//					Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
-		//				},
-		//			},
-		//			&maildata.MBoxOutput{},
-		//			&ast.SortTransformer{
-		//				Expression: []ast.ValueExpression{
-		//					ast.EntryExpression("h.date"),
-		//				},
-		//			},
-		//		},
-		//	},
-		//},
+		{
+			name: "filter out into a mbox sorted by date",
+			args: strings.Split("filter not h.user-agent icontains .Kmail into mbox sort h.date", " "),
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &ast.NotOp{
+							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						},
+					},
+					&maildata.MBoxOutput{},
+					&ast.SortTransformer{
+						Expression: []ast.ValueExpression{
+							ast.EntryExpression("h.date"),
+						},
+					},
+				},
+			},
+		},
 		{
 			name: "filter into a table sorted by date",
 			args: strings.Split("filter not h.user-agent icontains .Kmail into table h.user-agent h.subject f.year[h.date] f.month[h.date] sort h.date", " "),
@@ -411,9 +413,9 @@ func TestParseOperations(t *testing.T) {
 	}
 }
 
-func TestParseIntoMboxError(t *testing.T) {
+func TestParseIntoMbox(t *testing.T) {
 	_, err := ParseOperations([]string{"into", "mbox"})
-	if err == nil {
-		t.Fatalf("expected error, got nil")
+	if err != nil {
+		t.Fatalf("expected no error, got %s", err)
 	}
 }

@@ -3,6 +3,7 @@ package basic
 import (
 	"fmt"
 	"pimtrace/ast"
+	"pimtrace/dataformats/maildata"
 	"reflect"
 	"regexp"
 	"strings"
@@ -386,8 +387,7 @@ func ParseInto(args []string) (ast.Operation, []string, error) {
 	if len(p) > 0 {
 		switch p[0] {
 		case "mbox":
-			//return &maildata.MBoxOutput{}, p[1:], nil
-			return nil, nil, fmt.Errorf("%w: mbox", ErrIntoNotImplemented)
+			return &maildata.MBoxOutput{}, p[1:], nil
 		case "summary":
 			return ParseIntoSummary(p[1:])
 		case "table":
