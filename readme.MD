@@ -71,6 +71,17 @@ The "Basic" parser allows you to chain operations together linearly. It reads li
 *   **`into table <columns...>`**: Transforms the data into a table with the specified columns.
 *   **`into summary <columns...> calculate <aggregates...>`**: Groups data by the specified columns and calculates aggregate statistics (like counts or sums).
 
+### Filter Conditions
+
+Conditions are constructed using **operators**:
+
+| Operator | Description | Example |
+| :--- | :--- | :--- |
+| `eq` | Equality check. | `filter h.From eq .admin@example.com` |
+| `contains` | Case-sensitive substring check. | `filter h.Subject contains .Urgent` |
+| `icontains` | Case-insensitive substring check. | `filter h.Subject icontains .urgent` |
+| `not` | Negates a condition. | `filter not h.Status eq .Closed` |
+
 ### Expressions & Functions
 
 You can refer to data fields and transform them using functions:
@@ -82,6 +93,8 @@ You can refer to data fields and transform them using functions:
 *   **Literals**: Strings starting with a dot (e.g., `.gmail`) are treated as text values.
 *   **Functions**: Prefixed with `f.` (e.g., `f.count`, `f.year[c.date]`).
 
+**Note:** Functions do not support spaces between arguments. Use `f.as[h.subject,.Title]`, not `f.as[h.subject, .Title]`.
+
 **Common Functions:**
 
 | Function | Description |
@@ -90,7 +103,7 @@ You can refer to data fields and transform them using functions:
 | `f.sum[field]` | Sums the values of a numeric field. |
 | `f.year[date]` | Extracts the year from a date string or timestamp. |
 | `f.month[date]` | Extracts the month from a date string or timestamp. |
-| `f.as[expr, name]` | Renames a column (e.g., `f.as[h.subject, .Title]`). |
+| `f.as[expr,name]` | Renames a column (e.g., `f.as[h.subject,.Title]`). |
 
 See [functions.md](functions.md) for a complete list.
 
@@ -98,7 +111,7 @@ See [functions.md](functions.md) for a complete list.
 
 ## Examples
 
-### 1. CSVTrace: Analyze Expenses
+### 1. CSVTrace: Analyze Expenses & Visualize
 
 Imagine a CSV `expenses.csv` with columns: `Date`, `Category`, `Amount`.
 
@@ -124,6 +137,14 @@ csvtrace -input expenses.csv -parser basic \
 | Utilities|     120.00 |
 +----------+------------+
 ```
+
+**Task:** Plot a bar chart of spending per category.
+```bash
+csvtrace -input expenses.csv -parser basic \
+  into summary c.Category calculate f.sum[c.Amount] \
+  -output-type plot.bar -output expenses_plot.png
+```
+*Output: Generates `expenses_plot.png` with a bar chart.*
 
 ### 2. MailTrace: Summarize Inbox
 
