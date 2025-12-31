@@ -36,7 +36,8 @@ func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) ([]*Mai
 		}
 		mrms, err := ReadMailStream(mr, fType, fName)
 		if err != nil {
-			return nil, fmt.Errorf("parsing message %d from Mbox %s: %w", len(ms)+1, fName, err)
+			log.Printf("parsing message %d from Mbox %s: %v", len(ms)+1, fName, err)
+			continue
 		}
 		ms = append(ms, mrms...)
 	}
@@ -56,8 +57,7 @@ func ReadMailStream(f io.Reader, fType string, fName string, ops ...any) ([]*Mai
 	}
 	msg, err := enmime.ReadEnvelope(ff)
 	if err != nil {
-		//return nil, fmt.Errorf("reading message: %w", err)
-		log.Printf("Error reading message %#v: %s", msg, err)
+		return nil, fmt.Errorf("reading message: %w", err)
 	}
 	if msg == nil || msg.Root.Header == nil {
 		return nil, nil
