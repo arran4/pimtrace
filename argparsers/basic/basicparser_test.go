@@ -1,14 +1,15 @@
 package basic
 
 import (
-	"github.com/arran4/go-evaluator"
-	"github.com/google/go-cmp/cmp"
 	"pimtrace/ast"
 	"pimtrace/dataformats/maildata"
 	"pimtrace/funcs"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/arran4/go-evaluator"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestFilterTokenizerScanN(t *testing.T) {
@@ -232,7 +233,7 @@ func TestParseFilter(t *testing.T) {
 			expectedExpression: &evaluator.Query{
 				Expression: &evaluator.NotExpression{
 					Expression: evaluator.Query{
-						Expression: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						Expression: &evaluator.IsExpression{Field: "user-agent", Value: "Kmail"},
 					},
 				},
 			},
@@ -284,7 +285,7 @@ func TestParseOperations(t *testing.T) {
 				Expression: &evaluator.Query{
 					Expression: &evaluator.NotExpression{
 						Expression: evaluator.Query{
-							Expression: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+							Expression: &evaluator.IsExpression{Field: "user-agent", Value: "Kmail"},
 						},
 					},
 				},
@@ -301,7 +302,7 @@ func TestParseOperations(t *testing.T) {
 						Expression: &evaluator.Query{
 							Expression: &evaluator.NotExpression{
 								Expression: evaluator.Query{
-									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+									Expression: &evaluator.IContainsExpression{Field: "user-agent", Value: "Kmail"},
 								},
 							},
 						},
@@ -319,7 +320,7 @@ func TestParseOperations(t *testing.T) {
 						Expression: &evaluator.Query{
 							Expression: &evaluator.NotExpression{
 								Expression: evaluator.Query{
-									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+									Expression: &evaluator.IContainsExpression{Field: "user-agent", Value: "Kmail"},
 								},
 							},
 						},
@@ -344,7 +345,7 @@ func TestParseOperations(t *testing.T) {
 						Expression: &evaluator.Query{
 							Expression: &evaluator.NotExpression{
 								Expression: evaluator.Query{
-									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+									Expression: &evaluator.IContainsExpression{Field: "user-agent", Value: "Kmail"},
 								},
 							},
 						},
@@ -367,7 +368,7 @@ func TestParseOperations(t *testing.T) {
 						Expression: &evaluator.Query{
 							Expression: &evaluator.NotExpression{
 								Expression: evaluator.Query{
-									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+									Expression: &evaluator.IContainsExpression{Field: "user-agent", Value: "Kmail"},
 								},
 							},
 						},
@@ -397,7 +398,7 @@ func TestParseOperations(t *testing.T) {
 						Expression: &evaluator.Query{
 							Expression: &evaluator.NotExpression{
 								Expression: evaluator.Query{
-									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+									Expression: &evaluator.IContainsExpression{Field: "user-agent", Value: "Kmail"},
 								},
 							},
 						},

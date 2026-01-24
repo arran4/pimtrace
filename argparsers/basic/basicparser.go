@@ -197,6 +197,49 @@ func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, [
 		[]any{FilterEquals(""), FilterContains(""), FilterIContains("")},
 		[]any{ast.EntryExpression(""), ast.ConstantExpression("")},
 	); len(matches) > 1 {
+		lhs := tks[0]
+		rhs := tks[2]
+		var field string
+		var value interface{}
+
+		if l, ok := lhs.(ast.EntryExpression); ok {
+			if r, ok := rhs.(ast.ConstantExpression); ok {
+				field = l.ColumnName()
+				value = string(r)
+			}
+		} else if l, ok := lhs.(ast.ConstantExpression); ok {
+			if r, ok := rhs.(ast.EntryExpression); ok {
+				field = r.ColumnName()
+				value = string(l)
+			}
+		}
+
+		if field != "" {
+			switch matches[1].(type) {
+			case FilterEquals:
+				return &evaluator.Query{
+					Expression: &evaluator.IsExpression{
+						Field: field,
+						Value: value,
+					},
+				}, remain, nil
+			case FilterContains:
+				return &evaluator.Query{
+					Expression: &evaluator.ContainsExpression{
+						Field: field,
+						Value: value,
+					},
+				}, remain, nil
+			case FilterIContains:
+				return &evaluator.Query{
+					Expression: &evaluator.IContainsExpression{
+						Field: field,
+						Value: value,
+					},
+				}, remain, nil
+			}
+		}
+
 		var op ast.OpFunc
 		switch /*opMatch :=*/ matches[1].(type) {
 		case FilterEquals:

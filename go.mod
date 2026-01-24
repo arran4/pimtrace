@@ -4,11 +4,12 @@ go 1.24.3
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
+	github.com/arran4/go-evaluator v0.0.1
 	github.com/arran4/golang-ical v0.3.2
 	github.com/emersion/go-mbox v1.0.4
 	github.com/emersion/go-message v0.18.2
 	github.com/goodsign/monday v1.0.2
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/jhillyerd/enmime v1.3.0
 	github.com/olekukonko/tablewriter v0.0.5
 	gonum.org/v1/plot v0.16.0
@@ -20,7 +21,6 @@ require (
 	codeberg.org/go-pdf/fpdf v0.11.1 // indirect
 	git.sr.ht/~sbinet/gg v0.7.0 // indirect
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
-	github.com/arran4/go-evaluator v0.0.1 // indirect
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
@@ -31,6 +31,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
+	github.com/stretchr/testify v1.10.0 // indirect
 	golang.org/x/image v0.34.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/text v0.32.0 // indirect

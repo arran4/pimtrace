@@ -142,6 +142,9 @@ func (e *Op) Evaluate(d interface{}) bool {
 	if e.Op == nil {
 		return false
 	}
+	if w, ok := d.(evaluatorEntryWrapper); ok {
+		d = w.Entry
+	}
 	eEntry, ok := d.(pimtrace.Entry)
 	if !ok {
 		return false
