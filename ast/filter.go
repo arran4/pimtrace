@@ -2,16 +2,15 @@ package ast
 
 import (
 	"pimtrace"
+
+	"github.com/arran4/go-evaluator"
 )
 
-func Filter(d pimtrace.Data, expression BooleanExpression) (pimtrace.Data, error) {
+func Filter(d pimtrace.Data, expression *evaluator.Query) (pimtrace.Data, error) {
 	i, o := 0, 0
 	for i+o < d.Len() {
 		e := d.Entry(i + o)
-		keep, err := expression.Execute(e)
-		if err != nil {
-			return nil, err
-		}
+		keep := expression.Evaluate(e)
 		if o > 0 {
 			d.SetEntry(i, e)
 		}

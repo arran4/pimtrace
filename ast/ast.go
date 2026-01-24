@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+
+	"github.com/arran4/go-evaluator"
 )
 
 var (
@@ -63,21 +65,6 @@ func (o *CompoundStatement) Simplify() Operation {
 }
 
 var _ Operation = (*CompoundStatement)(nil)
-
-type BooleanExpression interface {
-	Execute(d pimtrace.Entry) (bool, error)
-}
-
-type NotOp struct {
-	Not BooleanExpression
-}
-
-func (n *NotOp) Execute(d pimtrace.Entry) (bool, error) {
-	v, err := n.Not.Execute(d)
-	return !v, err
-}
-
-var _ BooleanExpression = (*NotOp)(nil)
 
 type ValueExpression interface {
 	funcs.ValueExpression
@@ -145,29 +132,37 @@ type Op struct {
 	RHS ValueExpression
 }
 
-func (e *Op) Execute(d pimtrace.Entry) (bool, error) {
+func (e *Op) Evaluate(d interface{}) bool {
 	if e.LHS == nil {
-		return false, fmt.Errorf("LHS invalid issue with Op")
+		return false
 	}
 	if e.RHS == nil {
-		return false, fmt.Errorf("RHS invalid with Op")
+		return false
 	}
 	if e.Op == nil {
-		return false, fmt.Errorf("op invalid with Op")
+		return false
 	}
-	lhsv, err := e.LHS.Execute(d)
+	eEntry, ok := d.(pimtrace.Entry)
+	if !ok {
+		return false
+	}
+	lhsv, err := e.LHS.Execute(eEntry)
 	if err != nil {
-		return false, fmt.Errorf("LHS error: %w", err)
+		return false
 	}
-	rhsv, err := e.RHS.Execute(d)
+	rhsv, err := e.RHS.Execute(eEntry)
 	if err != nil {
-		return false, fmt.Errorf("RHS error: %w", err)
+		return false
 	}
-	return e.Op(rhsv, lhsv)
+	v, err := e.Op(rhsv, lhsv)
+	if err != nil {
+		return false
+	}
+	return v
 }
 
 type FilterStatement struct {
-	Expression BooleanExpression
+	Expression *evaluator.Query
 }
 
 func (f FilterStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {

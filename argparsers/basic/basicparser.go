@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/arran4/go-evaluator"
 )
 
 var (
@@ -173,19 +175,21 @@ done:
 	return r, args, nil
 }
 
-func ParseFilter(args []string, statements []ast.Operation) (ast.BooleanExpression, []string, error) {
+func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, []string, error) {
 	tks, remain, err := FilterTokenizerScanN(args, 3)
 	if err != nil {
 		return nil, nil, err
 	}
 	if TokenMatcher(tks, FilterNot("")) != nil {
-		var op ast.BooleanExpression
+		var op *evaluator.Query
 		op, remain, err = ParseFilter(args[1:], []ast.Operation{})
 		if err != nil {
 			return nil, nil, err
 		}
-		return &ast.NotOp{
-			Not: op,
+		return &evaluator.Query{
+			Expression: &evaluator.NotExpression{
+				Expression: *op,
+			},
 		}, remain, nil
 	}
 	if matches := TokenMatcher(tks,
@@ -202,10 +206,12 @@ func ParseFilter(args []string, statements []ast.Operation) (ast.BooleanExpressi
 		case FilterIContains:
 			op = ast.IContainsOp
 		}
-		return &ast.Op{
-			Op:  op,
-			LHS: tks[0].(ast.ValueExpression),
-			RHS: tks[2].(ast.ValueExpression),
+		return &evaluator.Query{
+			Expression: &ast.Op{
+				Op:  op,
+				LHS: tks[0].(ast.ValueExpression),
+				RHS: tks[2].(ast.ValueExpression),
+			},
 		}, remain, nil
 	}
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)

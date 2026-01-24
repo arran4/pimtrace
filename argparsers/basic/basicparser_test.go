@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"github.com/arran4/go-evaluator"
 	"github.com/google/go-cmp/cmp"
 	"pimtrace/ast"
 	"pimtrace/dataformats/maildata"
@@ -213,7 +214,7 @@ func TestParseFilter(t *testing.T) {
 		name               string
 		args               []string
 		statements         []ast.Operation
-		expectedExpression ast.BooleanExpression
+		expectedExpression *evaluator.Query
 		remaining          []string
 		wantErr            bool
 	}{
@@ -228,8 +229,12 @@ func TestParseFilter(t *testing.T) {
 		{
 			name: "Basic neg expression",
 			args: []string{"not", "h.user-agent", "eq", ".Kmail"},
-			expectedExpression: &ast.NotOp{
-				Not: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.NotExpression{
+					Expression: evaluator.Query{
+						Expression: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+					},
+				},
 			},
 			statements: []ast.Operation{},
 			remaining:  []string{},
@@ -276,8 +281,12 @@ func TestParseOperations(t *testing.T) {
 			name: "Basic neg expression",
 			args: []string{"filter", "not", "h.user-agent", "eq", ".Kmail"},
 			expectedOperation: &ast.FilterStatement{
-				Expression: &ast.NotOp{
-					Not: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+				Expression: &evaluator.Query{
+					Expression: &evaluator.NotExpression{
+						Expression: evaluator.Query{
+							Expression: &ast.Op{Op: ast.EqualOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						},
+					},
 				},
 			},
 			remaining: []string{},
@@ -289,8 +298,12 @@ func TestParseOperations(t *testing.T) {
 			expectedOperation: &ast.CompoundStatement{
 				Statements: []ast.Operation{
 					&ast.FilterStatement{
-						Expression: &ast.NotOp{
-							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						Expression: &evaluator.Query{
+							Expression: &evaluator.NotExpression{
+								Expression: evaluator.Query{
+									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+								},
+							},
 						},
 					},
 					&maildata.MBoxOutput{},
@@ -303,8 +316,12 @@ func TestParseOperations(t *testing.T) {
 			expectedOperation: &ast.CompoundStatement{
 				Statements: []ast.Operation{
 					&ast.FilterStatement{
-						Expression: &ast.NotOp{
-							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						Expression: &evaluator.Query{
+							Expression: &evaluator.NotExpression{
+								Expression: evaluator.Query{
+									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+								},
+							},
 						},
 					},
 					&ast.TableTransformer{
@@ -324,8 +341,12 @@ func TestParseOperations(t *testing.T) {
 			expectedOperation: &ast.CompoundStatement{
 				Statements: []ast.Operation{
 					&ast.FilterStatement{
-						Expression: &ast.NotOp{
-							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						Expression: &evaluator.Query{
+							Expression: &evaluator.NotExpression{
+								Expression: evaluator.Query{
+									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+								},
+							},
 						},
 					},
 					&maildata.MBoxOutput{},
@@ -343,8 +364,12 @@ func TestParseOperations(t *testing.T) {
 			expectedOperation: &ast.CompoundStatement{
 				Statements: []ast.Operation{
 					&ast.FilterStatement{
-						Expression: &ast.NotOp{
-							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						Expression: &evaluator.Query{
+							Expression: &evaluator.NotExpression{
+								Expression: evaluator.Query{
+									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+								},
+							},
 						},
 					},
 					&ast.TableTransformer{
@@ -369,8 +394,12 @@ func TestParseOperations(t *testing.T) {
 			expectedOperation: &ast.CompoundStatement{
 				Statements: []ast.Operation{
 					&ast.FilterStatement{
-						Expression: &ast.NotOp{
-							Not: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+						Expression: &evaluator.Query{
+							Expression: &evaluator.NotExpression{
+								Expression: evaluator.Query{
+									Expression: &ast.Op{Op: ast.IContainsOp, LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
+								},
+							},
 						},
 					},
 					&ast.GroupTransformer{
