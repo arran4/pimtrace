@@ -42,13 +42,13 @@ func TestCount_Run(t *testing.T) {
 		},
 		{
 			Name:      "Count Truthy (Arg provided)",
-			Input:     createGroupRow(5), // Values 0, 1, 2, 3, 4
+			Input:     createGroupRow(5),                           // Values 0, 1, 2, 3, 4
 			InputArgs: []ValueExpression{EntryExpression("c.val")}, // Only > 0 is truthy? Integer truthy check: != 0?
 			// Checking SimpleIntegerValue.Truthy implementation:
 			// func (v SimpleIntegerValue) Truthy() bool { return int(v) != 0 }
 			// So 0 is false, 1,2,3,4 are true. Expected count: 4.
-			Output:    pimtrace.SimpleIntegerValue(4),
-			Err:       nil,
+			Output: pimtrace.SimpleIntegerValue(4),
+			Err:    nil,
 		},
 		{
 			Name: "Not a groupdata.Row",

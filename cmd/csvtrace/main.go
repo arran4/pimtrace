@@ -9,7 +9,6 @@ import (
 	"pimtrace/ast"
 	"pimtrace/dataformats"
 	"pimtrace/funcs"
-	_ "pimtrace/funcs"
 )
 
 var (

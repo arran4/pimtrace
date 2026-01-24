@@ -20,10 +20,10 @@ func main() {
 			log.Panicln(err)
 		}
 	}()
-	fmt.Fprintln(f, "# Functions")
-	fmt.Fprintln(f, "")
-	fmt.Fprintln(f, "| Function Def | Description |")
-	fmt.Fprintln(f, "| --- | --- |")
+	_, _ = fmt.Fprintln(f, "# Functions")
+	_, _ = fmt.Fprintln(f, "")
+	_, _ = fmt.Fprintln(f, "| Function Def | Description |")
+	_, _ = fmt.Fprintln(f, "| --- | --- |")
 	functions := funcs.Functions[ast.ValueExpression]()
 	funNames := make([]string, 0, len(functions))
 	for funName := range functions {
@@ -38,7 +38,7 @@ func main() {
 				args = append(args, aff.String())
 			}
 			fn := fmt.Sprintf("f.%s[%s]", fun.Name(), strings.Join(args, ","))
-			fmt.Fprintf(f, "| `%s` | %s |\n", fn, af.Description)
+			_, _ = fmt.Fprintf(f, "| `%s` | %s |\n", fn, af.Description)
 		}
 	}
 }

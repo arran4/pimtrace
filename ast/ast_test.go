@@ -3,12 +3,12 @@ package ast
 import (
 	"bytes"
 	"embed"
-	_ "embed"
-	"github.com/arran4/go-evaluator"
-	"github.com/google/go-cmp/cmp"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
 	"testing"
+
+	"github.com/arran4/go-evaluator"
+	"github.com/google/go-cmp/cmp"
 )
 
 var (
@@ -21,7 +21,9 @@ func LoadData1(fn string) pimtrace.Data {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	r, err := tabledata.ReadCSV(f, "test", fn)
 	if err != nil {
 		panic(err)
