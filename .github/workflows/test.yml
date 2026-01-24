@@ -14,11 +14,6 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: Checkout code
       uses: actions/checkout@v4
-    - name: Checkout go-evaluator
-      uses: actions/checkout@v4
-      with:
-        repository: arran4/go-evaluator
-        path: ../go-evaluator
     - name: Cache-Go
       uses: actions/cache@v4
       with:

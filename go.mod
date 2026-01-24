@@ -1,10 +1,10 @@
 module pimtrace
 
-go 1.25.3
+go 1.24.3
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/arran4/go-evaluator v0.0.1
+	github.com/arran4/go-evaluator v0.0.0-20260124070445-20e3558f4186
 	github.com/arran4/golang-ical v0.3.2
 	github.com/emersion/go-mbox v1.0.4
 	github.com/emersion/go-message v0.18.2
