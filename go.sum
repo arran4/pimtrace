@@ -19,8 +19,8 @@ github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b h1:slYM766cy2nI3BwyR
 github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b/go.mod h1:1KcenG0jGWcpt8ov532z81sp/kMMUG485J2InIOyADM=
 github.com/arran4/dateparse v0.1.2 h1:B3Cf5dYCkgSeX2R6mgzfj9zaZrYvKQ9rG1m9ZZev3mg=
 github.com/arran4/dateparse v0.1.2/go.mod h1:JgEdPusjU0OylWJ0UxRddfrbh7GGXECDGoSQ2wsp6h0=
-github.com/arran4/go-evaluator v0.0.1 h1:7I+wtEoB/trJWTvwILFisOF2lUOCHE1wtyWwuIEyHv4=
-github.com/arran4/go-evaluator v0.0.1/go.mod h1:hwzvzlqvyweMPY65G3DnjzXjUhtJpWv4ONsGdOkQ6EA=
+github.com/arran4/go-evaluator v0.0.0-20260124070445-20e3558f4186 h1:jjJ4jg9MR/wziGXAxZn1yzPk/MPO8SkgYldVGS/Jues=
+github.com/arran4/go-evaluator v0.0.0-20260124070445-20e3558f4186/go.mod h1:rKigRh65T/quUalhTweQNHNnywODQHIwMNV03cKYX2w=
 github.com/arran4/go-message v0.0.0-20221009061333-88d073923c5e h1:25LZzDAuFNtSpC9I4nQu0OgIwga44ai6RFdWJwnxYJU=
 github.com/arran4/go-message v0.0.0-20221009061333-88d073923c5e/go.mod h1:pDJDgf/xeUIF+eicT6B/hPX/ZbEorKkUMPOxrPVG2eQ=
 github.com/arran4/golang-ical v0.3.2 h1:MGNjcXJFSuCXmYX/RpZhR2HDCYoFuK8vTPFLEdFC3JY=
