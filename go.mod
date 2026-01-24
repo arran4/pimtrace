@@ -1,6 +1,6 @@
 module pimtrace
 
-go 1.24.3
+go 1.25.3
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
