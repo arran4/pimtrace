@@ -240,14 +240,14 @@ func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, [
 			}
 		}
 
-		var op ast.OpFunc
+		var op string
 		switch /*opMatch :=*/ matches[1].(type) {
 		case FilterEquals:
-			op = ast.EqualOp
+			op = "eq"
 		case FilterContains:
-			op = ast.ContainsOp
+			op = "contains"
 		case FilterIContains:
-			op = ast.IContainsOp
+			op = "icontains"
 		}
 		return &evaluator.Query{
 			Expression: &ast.Op{

@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	"github.com/arran4/go-evaluator"
+	"github.com/arran4/lookup"
 )
 
 var (
@@ -69,6 +70,7 @@ var _ Operation = (*CompoundStatement)(nil)
 type ValueExpression interface {
 	funcs.ValueExpression
 	ColumnName() string
+	evaluator.Term
 }
 
 type ConstantExpression string
@@ -83,6 +85,10 @@ func (ve ConstantExpression) ColumnName() string {
 }
 
 func (ve ConstantExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+	return pimtrace.SimpleStringValue(ve), nil
+}
+
+func (ve ConstantExpression) Evaluate(d interface{}) (interface{}, error) {
 	return pimtrace.SimpleStringValue(ve), nil
 }
 
@@ -106,6 +112,27 @@ func (ve EntryExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
 	return d.Get(string(ve))
 }
 
+func (ve EntryExpression) Evaluate(d interface{}) (interface{}, error) {
+	if w, ok := d.(evaluatorEntryWrapper); ok {
+		d = w.Entry
+	}
+	eEntry, ok := d.(pimtrace.Entry)
+	if !ok {
+		return nil, fmt.Errorf("invalid entry type")
+	}
+
+	// Create adapter
+	ep := NewEntryPathor(eEntry)
+
+	// Use lookup to traverse
+	// We need to pass the path string(ve) which might be "c.date"
+	// lookup.Reflect(ep) returns a Reflector wrapping EntryPathor.
+	// Reflector.Find(path) will call EntryPathor.Find(path) because we implemented Finder interface check in Reflector.
+
+	res := lookup.Reflect(ep).Find(string(ve))
+	return res.Raw(), nil
+}
+
 type OpFunc func(pimtrace.Value, pimtrace.Value) (bool, error)
 
 func EqualOp(rhsv pimtrace.Value, lhsv pimtrace.Value) (bool, error) {
@@ -127,21 +154,16 @@ func IContainsOp(rhsv pimtrace.Value, lhsv pimtrace.Value) (bool, error) {
 var _ OpFunc = IContainsOp
 
 type Op struct {
-	Op  OpFunc
+	Op  string
 	LHS ValueExpression
 	RHS ValueExpression
 }
 
 func (e *Op) Evaluate(d interface{}) bool {
-	if e.LHS == nil {
+	if e.LHS == nil || e.RHS == nil {
 		return false
 	}
-	if e.RHS == nil {
-		return false
-	}
-	if e.Op == nil {
-		return false
-	}
+
 	if w, ok := d.(evaluatorEntryWrapper); ok {
 		d = w.Entry
 	}
@@ -149,19 +171,17 @@ func (e *Op) Evaluate(d interface{}) bool {
 	if !ok {
 		return false
 	}
-	lhsv, err := e.LHS.Execute(eEntry)
-	if err != nil {
-		return false
+
+	expr := evaluator.ComparisonExpression{
+		LHS:       evaluator.Self{},
+		RHS:       evaluator.Self{},
+		Operation: e.Op,
 	}
-	rhsv, err := e.RHS.Execute(eEntry)
-	if err != nil {
-		return false
-	}
-	v, err := e.Op(rhsv, lhsv)
-	if err != nil {
-		return false
-	}
-	return v
+
+	expr.LHS = e.LHS
+	expr.RHS = e.RHS
+
+	return expr.Evaluate(eEntry)
 }
 
 type FilterStatement struct {
@@ -211,6 +231,17 @@ func (fe *FunctionExpression) LoadFunction() {
 			fe.F = f
 		}
 	}
+}
+
+func (fe *FunctionExpression) Evaluate(d interface{}) (interface{}, error) {
+	if w, ok := d.(evaluatorEntryWrapper); ok {
+		d = w.Entry
+	}
+	eEntry, ok := d.(pimtrace.Entry)
+	if !ok {
+		return nil, fmt.Errorf("invalid entry type")
+	}
+	return fe.Execute(eEntry)
 }
 
 var _ ValueExpression = (*FunctionExpression)(nil)

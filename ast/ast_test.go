@@ -63,7 +63,7 @@ func TestCompoundStatement_Execute(t *testing.T) {
 			name: "Simple filter",
 			Statements: &FilterStatement{
 				Expression: &evaluator.Query{
-					Expression: &Op{Op: EqualOp, LHS: EntryExpression("h.numberrange"), RHS: ConstantExpression("4")},
+					Expression: &Op{Op: "eq", LHS: EntryExpression("h.numberrange"), RHS: ConstantExpression("4")},
 				},
 			},
 			data: LoadData1("testdata/data10.csv"),
