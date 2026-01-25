@@ -9,7 +9,8 @@ import (
 	"pimtrace/ast"
 	"pimtrace/dataformats"
 	"pimtrace/funcs"
-	_ "pimtrace/funcs"
+
+	"github.com/arran4/go-evaluator"
 )
 
 var (
@@ -72,7 +73,14 @@ func main() {
 	}
 
 	if ops != nil {
-		data, err = ops.Execute(data)
+		ctx := &evaluator.Context{
+			Functions: map[string]evaluator.Function{
+				"year":  &funcs.YearAdapter{},
+				"month": &funcs.MonthAdapter{},
+				"as":    &funcs.AsAdapter{},
+			},
+		}
+		data, err = ops.Execute(data, ctx)
 		if err != nil {
 			log.Printf("Execute Error: %s", err)
 			os.Exit(-1)

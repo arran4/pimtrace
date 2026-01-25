@@ -3,11 +3,12 @@ package ast
 import (
 	"bytes"
 	"embed"
-	_ "embed"
-	"github.com/google/go-cmp/cmp"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
 	"testing"
+
+	"github.com/arran4/go-evaluator"
+	"github.com/google/go-cmp/cmp"
 )
 
 var (
@@ -20,7 +21,9 @@ func LoadData1(fn string) pimtrace.Data {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 	r, err := tabledata.ReadCSV(f, "test", fn)
 	if err != nil {
 		panic(err)
@@ -59,7 +62,9 @@ func TestCompoundStatement_Execute(t *testing.T) {
 		{
 			name: "Simple filter",
 			Statements: &FilterStatement{
-				Expression: &Op{Op: EqualOp, LHS: EntryExpression("h.numberrange"), RHS: ConstantExpression("4")},
+				Expression: &evaluator.Query{
+					Expression: &Op{Op: "eq", LHS: EntryExpression("h.numberrange"), RHS: ConstantExpression("4")},
+				},
 			},
 			data: LoadData1("testdata/data10.csv"),
 			want: tabledata.Data{
@@ -245,7 +250,7 @@ func TestCompoundStatement_Execute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.Statements.Execute(tt.data)
+			got, err := tt.Statements.Execute(tt.data, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -304,7 +309,7 @@ func TestSortTransformer_Execute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.SortTransformer.Execute(tt.d)
+			got, err := tt.SortTransformer.Execute(tt.d, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return

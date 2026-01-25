@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/arran4/go-evaluator"
 )
 
 var (
@@ -18,6 +20,8 @@ var (
 	ErrIntoNotImplemented        = fmt.Errorf("into not implemented")
 	ErrInvalidFunctionExpression = fmt.Errorf("invalid function expression")
 )
+
+// EvaluatorFunctions removed for thread safety
 
 type FilterEquals string
 type FilterContains string
@@ -108,6 +112,24 @@ func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, erro
 				return nil, nil, fmt.Errorf("parameter parse error: %w", err)
 			}
 		}
+
+		// Check if it is an Evaluator Function (standard list or heuristic)
+		// We hardcode known evaluator functions here or rely on runtime resolution.
+		if isEvaluatorFunction(m[2]) {
+			// Convert params to []evaluator.Term
+			var terms []evaluator.Term
+			for _, p := range params {
+				terms = append(terms, p)
+			}
+			return &ast.EvaluatorFunctionExpression{
+				Function: m[2],
+				FunctionExpression: evaluator.FunctionExpression{
+					// Func is resolved at runtime via Context
+					Args: terms,
+				},
+			}, args[1:], nil
+		}
+
 		return &ast.FunctionExpression{
 			Function: m[2],
 			Args:     params,
@@ -173,19 +195,21 @@ done:
 	return r, args, nil
 }
 
-func ParseFilter(args []string, statements []ast.Operation) (ast.BooleanExpression, []string, error) {
+func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, []string, error) {
 	tks, remain, err := FilterTokenizerScanN(args, 3)
 	if err != nil {
 		return nil, nil, err
 	}
 	if TokenMatcher(tks, FilterNot("")) != nil {
-		var op ast.BooleanExpression
+		var op *evaluator.Query
 		op, remain, err = ParseFilter(args[1:], []ast.Operation{})
 		if err != nil {
 			return nil, nil, err
 		}
-		return &ast.NotOp{
-			Not: op,
+		return &evaluator.Query{
+			Expression: &evaluator.NotExpression{
+				Expression: *op,
+			},
 		}, remain, nil
 	}
 	if matches := TokenMatcher(tks,
@@ -193,19 +217,64 @@ func ParseFilter(args []string, statements []ast.Operation) (ast.BooleanExpressi
 		[]any{FilterEquals(""), FilterContains(""), FilterIContains("")},
 		[]any{ast.EntryExpression(""), ast.ConstantExpression("")},
 	); len(matches) > 1 {
-		var op ast.OpFunc
+		lhs := tks[0]
+		rhs := tks[2]
+		var field string
+		var value interface{}
+
+		if l, ok := lhs.(ast.EntryExpression); ok {
+			if r, ok := rhs.(ast.ConstantExpression); ok {
+				field = l.ColumnName()
+				value = string(r)
+			}
+		} else if l, ok := lhs.(ast.ConstantExpression); ok {
+			if r, ok := rhs.(ast.EntryExpression); ok {
+				field = r.ColumnName()
+				value = string(l)
+			}
+		}
+
+		if field != "" {
+			switch matches[1].(type) {
+			case FilterEquals:
+				return &evaluator.Query{
+					Expression: &evaluator.IsExpression{
+						Field: field,
+						Value: value,
+					},
+				}, remain, nil
+			case FilterContains:
+				return &evaluator.Query{
+					Expression: &evaluator.ContainsExpression{
+						Field: field,
+						Value: value,
+					},
+				}, remain, nil
+			case FilterIContains:
+				return &evaluator.Query{
+					Expression: &evaluator.IContainsExpression{
+						Field: field,
+						Value: value,
+					},
+				}, remain, nil
+			}
+		}
+
+		var op string
 		switch /*opMatch :=*/ matches[1].(type) {
 		case FilterEquals:
-			op = ast.EqualOp
+			op = "eq"
 		case FilterContains:
-			op = ast.ContainsOp
+			op = "contains"
 		case FilterIContains:
-			op = ast.IContainsOp
+			op = "icontains"
 		}
-		return &ast.Op{
-			Op:  op,
-			LHS: tks[0].(ast.ValueExpression),
-			RHS: tks[2].(ast.ValueExpression),
+		return &evaluator.Query{
+			Expression: &ast.Op{
+				Op:  op,
+				LHS: tks[0].(ast.ValueExpression),
+				RHS: tks[2].(ast.ValueExpression),
+			},
 		}, remain, nil
 	}
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
@@ -438,4 +507,11 @@ func ParseOperations(args []string) (ast.Operation, error) {
 		}
 	}
 	return result.Simplify(), nil
+}
+func isEvaluatorFunction(name string) bool {
+	switch name {
+	case "year", "month", "as":
+		return true
+	}
+	return false
 }

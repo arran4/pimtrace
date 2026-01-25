@@ -2,10 +2,11 @@ package funcs
 
 import (
 	"errors"
-	"github.com/google/go-cmp/cmp"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestMonth_Run(t *testing.T) {
@@ -60,7 +61,7 @@ func TestMonth_Run(t *testing.T) {
 		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
-			res, err := m.Run(test.Input, test.InputArgs)
+			res, err := m.Run(test.Input, test.InputArgs, nil)
 			if (err != nil) != (test.Err != nil) || (err != nil && !errors.Is(err, test.Err)) {
 				// Special case for wrapping error
 				if test.Err != nil && err != nil && errors.Is(err, test.Err) {

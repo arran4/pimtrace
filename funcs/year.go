@@ -2,12 +2,14 @@ package funcs
 
 import (
 	"fmt"
-	"github.com/araddon/dateparse"
-	"github.com/goodsign/monday"
 	"log"
 	"pimtrace"
 	"time"
 	"unicode"
+
+	"github.com/araddon/dateparse"
+	"github.com/arran4/go-evaluator"
+	"github.com/goodsign/monday"
 )
 
 type Year[T ValueExpression] struct{}
@@ -31,8 +33,8 @@ func (c Year[T]) Arguments() []ArgumentList {
 	}
 }
 
-func (c Year[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
-	t, err := Arg1OnlyToTime("year", d, args)
+func (c Year[T]) Run(d pimtrace.Entry, args []T, ctx *evaluator.Context) (pimtrace.Value, error) {
+	t, err := Arg1OnlyToTime("year", d, args, ctx)
 	if err != nil {
 		log.Printf("Error: %s", err)
 		return &pimtrace.SimpleNilValue{}, nil //, err
@@ -43,11 +45,11 @@ func (c Year[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	return pimtrace.SimpleIntegerValue(int(t.Year())), nil
 }
 
-func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args []T) (*time.Time, error) {
+func Arg1OnlyToTime[T ValueExpression](funcName string, d pimtrace.Entry, args []T, ctx *evaluator.Context) (*time.Time, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("%w", ErrExpecting1ArgumentOfTypeStringIntOrDate)
 	}
-	v, err := args[0].Execute(d)
+	v, err := args[0].Execute(d, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", funcName, err)
 	}
