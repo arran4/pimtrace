@@ -329,7 +329,7 @@ func TestParseOperations(t *testing.T) {
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", F: funcs.Year[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.EvaluatorFunctionExpression{Function: "year", FunctionExpression: evaluator.FunctionExpression{Func: &funcs.YearAdapter{}, Args: []evaluator.Term{ast.EntryExpression("h.date")}}}},
 							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", F: funcs.Month[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
@@ -377,7 +377,7 @@ func TestParseOperations(t *testing.T) {
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", F: funcs.Year[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.EvaluatorFunctionExpression{Function: "year", FunctionExpression: evaluator.FunctionExpression{Func: &funcs.YearAdapter{}, Args: []evaluator.Term{ast.EntryExpression("h.date")}}}},
 							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", F: funcs.Month[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},
@@ -407,7 +407,7 @@ func TestParseOperations(t *testing.T) {
 						Columns: []*ast.ColumnExpression{
 							{Name: "user-agent", Operation: ast.EntryExpression("h.user-agent")},
 							{Name: "subject", Operation: ast.EntryExpression("h.subject")},
-							{Name: "year-date", Operation: &ast.FunctionExpression{Function: "year", F: funcs.Year[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
+							{Name: "year-date", Operation: &ast.EvaluatorFunctionExpression{Function: "year", FunctionExpression: evaluator.FunctionExpression{Func: &funcs.YearAdapter{}, Args: []evaluator.Term{ast.EntryExpression("h.date")}}}},
 							{Name: "month-date", Operation: &ast.FunctionExpression{Function: "month", F: funcs.Month[ast.ValueExpression]{}, Args: []ast.ValueExpression{ast.EntryExpression("h.date")}}},
 						},
 					},

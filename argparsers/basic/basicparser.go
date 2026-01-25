@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"pimtrace/ast"
 	"pimtrace/dataformats/maildata"
+	"pimtrace/funcs"
 	"reflect"
 	"regexp"
 	"strings"
@@ -20,6 +21,10 @@ var (
 	ErrIntoNotImplemented        = fmt.Errorf("into not implemented")
 	ErrInvalidFunctionExpression = fmt.Errorf("invalid function expression")
 )
+
+var EvaluatorFunctions = map[string]evaluator.Function{
+	"year": &funcs.YearAdapter{},
+}
 
 type FilterEquals string
 type FilterContains string
@@ -110,6 +115,23 @@ func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, erro
 				return nil, nil, fmt.Errorf("parameter parse error: %w", err)
 			}
 		}
+
+		// Check if it is an Evaluator Function
+		if fn, ok := EvaluatorFunctions[m[2]]; ok {
+			// Convert params to []evaluator.Term
+			var terms []evaluator.Term
+			for _, p := range params {
+				terms = append(terms, p)
+			}
+			return &ast.EvaluatorFunctionExpression{
+				Function: m[2],
+				FunctionExpression: evaluator.FunctionExpression{
+					Func: fn,
+					Args: terms,
+				},
+			}, args[1:], nil
+		}
+
 		return &ast.FunctionExpression{
 			Function: m[2],
 			Args:     params,

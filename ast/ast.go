@@ -246,6 +246,70 @@ func (fe *FunctionExpression) Evaluate(d interface{}) (interface{}, error) {
 
 var _ ValueExpression = (*FunctionExpression)(nil)
 
+type EvaluatorFunctionExpression struct {
+	Function string
+	evaluator.FunctionExpression
+}
+
+func (fe *EvaluatorFunctionExpression) ColumnName() string {
+	elems := []string{fe.Function}
+	for _, arg := range fe.Args {
+		if c, ok := arg.(ValueExpression); ok {
+			elems = append(elems, c.ColumnName())
+		}
+	}
+	return strings.Join(elems, "-")
+}
+
+func (fe *EvaluatorFunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+	res, err := fe.Evaluate(d)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := res.(pimtrace.Value); ok {
+		return v, nil
+	}
+	// Conversion logic if result is not pimtrace.Value
+	return toPimtraceValue(res)
+}
+
+func toPimtraceValue(v interface{}) (pimtrace.Value, error) {
+	if v == nil {
+		return &pimtrace.SimpleNilValue{}, nil
+	}
+	switch val := v.(type) {
+	case pimtrace.Value:
+		return val, nil
+	case int:
+		return pimtrace.SimpleIntegerValue(val), nil
+	case int64:
+		return pimtrace.SimpleIntegerValue(int(val)), nil
+	case float64:
+		return pimtrace.SimpleIntegerValue(int(val)), nil // Lossy? pimtrace seems to use int mostly
+	case string:
+		return pimtrace.SimpleStringValue(val), nil
+	case []interface{}:
+		var arr []pimtrace.Value
+		for _, item := range val {
+			pv, err := toPimtraceValue(item)
+			if err != nil {
+				return nil, err
+			}
+			arr = append(arr, pv)
+		}
+		return pimtrace.SimpleArrayValue(arr), nil
+	}
+	return nil, fmt.Errorf("cannot convert %T to pimtrace.Value", v)
+}
+
+// Evaluate is inherited from evaluator.FunctionExpression but we might need to wrap context?
+// No, FunctionExpression.Evaluate does: arg.Evaluate(d).
+// As long as arguments are ValueExpressions (which trigger Finder), it works.
+// BUT arguments stored in evaluator.FunctionExpression are []Term.
+// ValueExpression implements Term. So it works.
+
+var _ ValueExpression = (*EvaluatorFunctionExpression)(nil)
+
 type FunctionDef func(d pimtrace.Entry) (pimtrace.Value, error)
 
 type ColumnExpression struct {
