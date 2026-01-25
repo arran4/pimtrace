@@ -43,3 +43,5 @@ replace github.com/emersion/go-message => github.com/arran4/go-message v0.0.0-20
 replace github.com/araddon/dateparse => github.com/arran4/dateparse v0.1.2
 
 replace github.com/goodsign/monday => github.com/arran4/monday v1.0.1-0.20230216020933-1c1261681fd6
+
+replace github.com/arran4/go-evaluator => ../go-evaluator

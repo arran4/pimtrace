@@ -250,7 +250,7 @@ func TestCompoundStatement_Execute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.Statements.Execute(tt.data)
+			got, err := tt.Statements.Execute(tt.data, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -309,7 +309,7 @@ func TestSortTransformer_Execute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.SortTransformer.Execute(tt.d)
+			got, err := tt.SortTransformer.Execute(tt.d, nil)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Execute() error = %v, wantErr %v", err, tt.wantErr)
 				return

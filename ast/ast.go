@@ -19,17 +19,17 @@ var (
 )
 
 type Operation interface {
-	Execute(d pimtrace.Data) (pimtrace.Data, error)
+	Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error)
 }
 
 type CompoundStatement struct {
 	Statements []Operation
 }
 
-func (o *CompoundStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (o *CompoundStatement) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
 	for _, op := range o.Statements {
 		var err error
-		d, err = op.Execute(d)
+		d, err = op.Execute(d, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -84,11 +84,11 @@ func (ve ConstantExpression) ColumnName() string {
 	}, string(ve))
 }
 
-func (ve ConstantExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+func (ve ConstantExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (pimtrace.Value, error) {
 	return pimtrace.SimpleStringValue(ve), nil
 }
 
-func (ve ConstantExpression) Evaluate(d interface{}) (interface{}, error) {
+func (ve ConstantExpression) Evaluate(d interface{}, opts ...any) (interface{}, error) {
 	return pimtrace.SimpleStringValue(ve), nil
 }
 
@@ -108,11 +108,11 @@ func (ve EntryExpression) ColumnName() string {
 	}, s)
 }
 
-func (ve EntryExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+func (ve EntryExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (pimtrace.Value, error) {
 	return d.Get(string(ve))
 }
 
-func (ve EntryExpression) Evaluate(d interface{}) (interface{}, error) {
+func (ve EntryExpression) Evaluate(d interface{}, opts ...any) (interface{}, error) {
 	if w, ok := d.(evaluatorEntryWrapper); ok {
 		d = w.Entry
 	}
@@ -159,9 +159,9 @@ type Op struct {
 	RHS ValueExpression
 }
 
-func (e *Op) Evaluate(d interface{}) bool {
+func (e *Op) Evaluate(d interface{}, opts ...any) (bool, error) {
 	if e.LHS == nil || e.RHS == nil {
-		return false
+		return false, fmt.Errorf("missing operands")
 	}
 
 	if w, ok := d.(evaluatorEntryWrapper); ok {
@@ -169,7 +169,7 @@ func (e *Op) Evaluate(d interface{}) bool {
 	}
 	eEntry, ok := d.(pimtrace.Entry)
 	if !ok {
-		return false
+		return false, fmt.Errorf("invalid data type for Op evaluate")
 	}
 
 	expr := evaluator.ComparisonExpression{
@@ -181,15 +181,15 @@ func (e *Op) Evaluate(d interface{}) bool {
 	expr.LHS = e.LHS
 	expr.RHS = e.RHS
 
-	return expr.Evaluate(eEntry)
+	return expr.Evaluate(eEntry, opts...)
 }
 
 type FilterStatement struct {
 	Expression *evaluator.Query
 }
 
-func (f FilterStatement) Execute(d pimtrace.Data) (pimtrace.Data, error) {
-	return Filter(d, f.Expression)
+func (f FilterStatement) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
+	return Filter(d, f.Expression, ctx)
 }
 
 var _ Operation = (*FilterStatement)(nil)
@@ -216,12 +216,12 @@ func (fe *FunctionExpression) ColumnName() string {
 	return strings.Join(elems, "-")
 }
 
-func (fe *FunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+func (fe *FunctionExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (pimtrace.Value, error) {
 	fe.LoadFunction()
 	if fe.F == nil {
 		return nil, fmt.Errorf("%w: %s", ErrUnknownFunction, fe.Function)
 	}
-	return fe.F.Run(d, fe.Args)
+	return fe.F.Run(d, fe.Args, ctx)
 }
 
 func (fe *FunctionExpression) LoadFunction() {
@@ -233,7 +233,7 @@ func (fe *FunctionExpression) LoadFunction() {
 	}
 }
 
-func (fe *FunctionExpression) Evaluate(d interface{}) (interface{}, error) {
+func (fe *FunctionExpression) Evaluate(d interface{}, opts ...any) (interface{}, error) {
 	if w, ok := d.(evaluatorEntryWrapper); ok {
 		d = w.Entry
 	}
@@ -241,7 +241,16 @@ func (fe *FunctionExpression) Evaluate(d interface{}) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("invalid entry type")
 	}
-	return fe.Execute(eEntry)
+	// Extract context from opts if possible?
+	// Evaluate signature takes opts.
+	// FunctionExpression.Execute needs ctx.
+	var ctx *evaluator.Context
+	for _, opt := range opts {
+		if c, ok := opt.(*evaluator.Context); ok {
+			ctx = c
+		}
+	}
+	return fe.Execute(eEntry, ctx)
 }
 
 var _ ValueExpression = (*FunctionExpression)(nil)
@@ -261,8 +270,8 @@ func (fe *EvaluatorFunctionExpression) ColumnName() string {
 	return strings.Join(elems, "-")
 }
 
-func (fe *EvaluatorFunctionExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
-	res, err := fe.Evaluate(d)
+func (fe *EvaluatorFunctionExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (pimtrace.Value, error) {
+	res, err := fe.Evaluate(d, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +330,7 @@ type TableTransformer struct {
 	Columns []*ColumnExpression
 }
 
-func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (t *TableTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
 	headers := map[string]int{}
 	for i, c := range t.Columns {
 		headers[c.Name] = i
@@ -331,7 +340,8 @@ func (t *TableTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 		r := make([]pimtrace.Value, len(t.Columns))
 		e := d.Entry(i)
 		for i, c := range t.Columns {
-			v, err := c.Operation.Execute(e)
+			// Context is now passed to all ValueExpressions
+			v, err := c.Operation.Execute(e, ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -354,6 +364,7 @@ type SortTransformer struct {
 type SortTransformerSorter struct {
 	SortTransformer *SortTransformer
 	Data            pimtrace.Data
+	Context         *evaluator.Context
 }
 
 func (s *SortTransformerSorter) Len() int {
@@ -363,8 +374,8 @@ func (s *SortTransformerSorter) Len() int {
 func (s *SortTransformerSorter) Less(i, j int) bool {
 	for _, e := range s.SortTransformer.Expression {
 		io, jo := s.Data.Entry(i), s.Data.Entry(j)
-		iv, _ := e.Execute(io)
-		jv, _ := e.Execute(jo)
+		iv, _ := e.Execute(io, s.Context)
+		jv, _ := e.Execute(jo, s.Context)
 		if iv.Equal(jv) {
 			continue
 		}
@@ -379,10 +390,11 @@ func (s *SortTransformerSorter) Swap(i, j int) {
 	s.Data.SetEntry(i, jo)
 }
 
-func (s *SortTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (s *SortTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
 	sort.Sort(&SortTransformerSorter{
 		SortTransformer: s,
 		Data:            d,
+		Context:         ctx,
 	})
 	return d, nil
 }
@@ -393,7 +405,7 @@ type GroupTransformer struct {
 	Columns []*ColumnExpression
 }
 
-func (g *GroupTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
+func (g *GroupTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
 	headers := map[string]int{}
 	for i, c := range g.Columns {
 		headers[c.Name] = i
@@ -404,7 +416,7 @@ func (g *GroupTransformer) Execute(d pimtrace.Data) (pimtrace.Data, error) {
 		r := make([]pimtrace.Value, len(g.Columns))
 		e := d.Entry(i)
 		for i, c := range g.Columns {
-			v, err := c.Operation.Execute(e)
+			v, err := c.Operation.Execute(e, ctx)
 			if err != nil {
 				return nil, err
 			}

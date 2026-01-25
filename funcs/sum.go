@@ -3,6 +3,8 @@ package funcs
 import (
 	"pimtrace"
 	"pimtrace/dataformats/groupdata"
+
+	"github.com/arran4/go-evaluator"
 )
 
 type Sum[T ValueExpression] struct{}
@@ -25,7 +27,7 @@ func (c Sum[T]) Arguments() []ArgumentList {
 	}
 }
 
-func (c Sum[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
+func (c Sum[T]) Run(d pimtrace.Entry, args []T, ctx *evaluator.Context) (pimtrace.Value, error) {
 	if len(args) == 0 {
 		return pimtrace.SimpleIntegerValue(1), nil
 	}
@@ -36,7 +38,7 @@ func (c Sum[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
 	value := 0
 	for i := 0; i < dd.Contents.Len(); i++ {
 		e := dd.Contents.Entry(i)
-		r, err := args[0].Execute(e)
+		r, err := args[0].Execute(e, ctx)
 		if err != nil {
 			return nil, err
 		}

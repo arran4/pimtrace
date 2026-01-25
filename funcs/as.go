@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"pimtrace"
 	"pimtrace/dataformats/nildata"
+
+	"github.com/arran4/go-evaluator"
 )
 
 var (
@@ -33,13 +35,13 @@ func (c As[T]) ColumnName(args []T) string {
 	if len(args) < 2 {
 		return ""
 	}
-	v, _ := args[1].Execute(&nildata.Row{})
+	v, _ := args[1].Execute(&nildata.Row{}, nil)
 	return v.String()
 }
 
-func (c As[T]) Run(d pimtrace.Entry, args []T) (pimtrace.Value, error) {
+func (c As[T]) Run(d pimtrace.Entry, args []T, ctx *evaluator.Context) (pimtrace.Value, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("as: %w", ErrExpecting2ArgumentsAnyString)
 	}
-	return args[0].Execute(d)
+	return args[0].Execute(d, ctx)
 }

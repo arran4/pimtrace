@@ -2,13 +2,15 @@ package funcs
 
 import (
 	"errors"
-	"github.com/araddon/dateparse"
-	"github.com/google/go-cmp/cmp"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
 	"strings"
 	"testing"
 	"unicode"
+
+	"github.com/araddon/dateparse"
+	"github.com/arran4/go-evaluator"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestParseStrict(t *testing.T) {
@@ -92,7 +94,7 @@ func (ve EntryExpression) ColumnName() string {
 	}, s)
 }
 
-func (ve EntryExpression) Execute(d pimtrace.Entry) (pimtrace.Value, error) {
+func (ve EntryExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (pimtrace.Value, error) {
 	return d.Get(string(ve))
 }
 
@@ -122,7 +124,7 @@ func TestArg1OnlyToTime(t *testing.T) {
 		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
-			d, err := Arg1OnlyToTime("test", test.Input, test.InputArgs)
+			d, err := Arg1OnlyToTime("test", test.Input, test.InputArgs, nil)
 			if (err != nil) != (test.Err != nil) || (err != nil && !errors.Is(err, test.Err)) {
 				if test.Err == nil {
 					t.Errorf("Got error when wanted none: %s", err)

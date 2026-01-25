@@ -2,17 +2,19 @@ package funcs
 
 import (
 	"pimtrace"
+
+	"github.com/arran4/go-evaluator"
 )
 
 type ValueExpression interface {
-	Execute(d pimtrace.Entry) (pimtrace.Value, error)
+	Execute(d pimtrace.Entry, ctx *evaluator.Context) (pimtrace.Value, error)
 }
 
 type ColumnNamer[T ValueExpression] interface {
 	ColumnName(args []T) string
 }
 
-type FunctionDef[T ValueExpression] func(d pimtrace.Entry, args []T) (pimtrace.Value, error)
+type FunctionDef[T ValueExpression] func(d pimtrace.Entry, args []T, ctx *evaluator.Context) (pimtrace.Value, error)
 
 type Argument int
 
@@ -45,7 +47,7 @@ type ArgumentList struct {
 type Function[T ValueExpression] interface {
 	Name() string
 	Arguments() []ArgumentList
-	Run(d pimtrace.Entry, args []T) (pimtrace.Value, error)
+	Run(d pimtrace.Entry, args []T, ctx *evaluator.Context) (pimtrace.Value, error)
 }
 
 func Functions[T ValueExpression]() map[string]Function[T] {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"pimtrace/ast"
 	"pimtrace/dataformats/maildata"
-	"pimtrace/funcs"
 	"reflect"
 	"regexp"
 	"strings"
@@ -22,9 +21,7 @@ var (
 	ErrInvalidFunctionExpression = fmt.Errorf("invalid function expression")
 )
 
-var EvaluatorFunctions = map[string]evaluator.Function{
-	"year": &funcs.YearAdapter{},
-}
+// EvaluatorFunctions removed for thread safety
 
 type FilterEquals string
 type FilterContains string
@@ -116,8 +113,9 @@ func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, erro
 			}
 		}
 
-		// Check if it is an Evaluator Function
-		if fn, ok := EvaluatorFunctions[m[2]]; ok {
+		// Check if it is an Evaluator Function (standard list or heuristic)
+		// We hardcode known evaluator functions here or rely on runtime resolution.
+		if isEvaluatorFunction(m[2]) {
 			// Convert params to []evaluator.Term
 			var terms []evaluator.Term
 			for _, p := range params {
@@ -126,7 +124,7 @@ func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, erro
 			return &ast.EvaluatorFunctionExpression{
 				Function: m[2],
 				FunctionExpression: evaluator.FunctionExpression{
-					Func: fn,
+					// Func is resolved at runtime via Context
 					Args: terms,
 				},
 			}, args[1:], nil
@@ -509,4 +507,11 @@ func ParseOperations(args []string) (ast.Operation, error) {
 		}
 	}
 	return result.Simplify(), nil
+}
+func isEvaluatorFunction(name string) bool {
+	switch name {
+	case "year", "month", "as":
+		return true
+	}
+	return false
 }

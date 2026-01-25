@@ -2,11 +2,12 @@ package funcs
 
 import (
 	"errors"
-	"github.com/google/go-cmp/cmp"
 	"pimtrace"
 	"pimtrace/dataformats/groupdata"
 	"pimtrace/dataformats/tabledata"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestCount_Run(t *testing.T) {
@@ -69,7 +70,7 @@ func TestCount_Run(t *testing.T) {
 		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
-			res, err := c.Run(test.Input, test.InputArgs)
+			res, err := c.Run(test.Input, test.InputArgs, nil)
 			if (err != nil) != (test.Err != nil) || (err != nil && !errors.Is(err, test.Err)) {
 				if test.Err == nil {
 					t.Errorf("Got error when wanted none: %s", err)
