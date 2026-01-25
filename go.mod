@@ -6,7 +6,7 @@ require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/arran4/go-evaluator v0.0.2
 	github.com/arran4/golang-ical v0.3.2
-	github.com/arran4/lookup v1.0.2
+	github.com/arran4/lookup v1.0.3
 	github.com/emersion/go-mbox v1.0.4
 	github.com/emersion/go-message v0.18.2
 	github.com/goodsign/monday v1.0.2
