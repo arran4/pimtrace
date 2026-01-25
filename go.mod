@@ -4,7 +4,7 @@ go 1.25.3
 
 require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/arran4/go-evaluator v0.0.0-20260124070445-20e3558f4186
+	github.com/arran4/go-evaluator v0.0.2
 	github.com/arran4/golang-ical v0.3.2
 	github.com/arran4/lookup v1.0.2
 	github.com/emersion/go-mbox v1.0.4
@@ -43,5 +43,3 @@ replace github.com/emersion/go-message => github.com/arran4/go-message v0.0.0-20
 replace github.com/araddon/dateparse => github.com/arran4/dateparse v0.1.2
 
 replace github.com/goodsign/monday => github.com/arran4/monday v1.0.1-0.20230216020933-1c1261681fd6
-
-replace github.com/arran4/go-evaluator => ../go-evaluator
