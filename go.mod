@@ -25,7 +25,6 @@ require (
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
-	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594 // indirect
 	github.com/gogs/chardet v0.0.0-20211120154057-b7413eaefb8f // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20230321000545-74c2419ad056 // indirect
@@ -38,8 +37,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/emersion/go-message => github.com/arran4/go-message v0.0.0-20221009061333-88d073923c5e
-
 replace github.com/araddon/dateparse => github.com/arran4/dateparse v0.1.2
-
-replace github.com/goodsign/monday => github.com/arran4/monday v1.0.1-0.20230216020933-1c1261681fd6
