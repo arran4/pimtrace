@@ -9,6 +9,7 @@ import (
 
 	"github.com/arran4/go-evaluator"
 	"github.com/google/go-cmp/cmp"
+	"fmt"
 )
 
 var (
@@ -329,5 +330,397 @@ func TestSortTransformer_Execute(t *testing.T) {
 				t.Errorf("Execute() got = \n%s", b.String())
 			}
 		})
+	}
+}
+
+type mockEntry struct {
+	vals map[string]pimtrace.Value
+}
+
+func (m *mockEntry) Get(key string) (pimtrace.Value, error) {
+	if v, ok := m.vals[key]; ok {
+		return v, nil
+	}
+	return nil, fmt.Errorf("not found")
+}
+
+type filterMockData struct {
+	entries []pimtrace.Entry
+}
+
+func (m *filterMockData) Len() int { return len(m.entries) }
+func (m *filterMockData) Entry(n int) pimtrace.Entry { return m.entries[n] }
+func (m *filterMockData) Truncate(n int) pimtrace.Data {
+	m.entries = m.entries[:n]
+	return m
+}
+func (m *filterMockData) SetEntry(n int, entry pimtrace.Entry) pimtrace.Data {
+	m.entries[n] = entry
+	return m
+}
+func (m *filterMockData) NewSelf() pimtrace.Data { return &filterMockData{} }
+
+func TestFilter(t *testing.T) {
+	d := &filterMockData{entries: []pimtrace.Entry{
+		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("yes")}},
+		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("no")}},
+		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("yes")}},
+		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("error")}},
+	}}
+
+	// Because of evaluator behavior we just use dummy expressions
+	res, err := Filter(d, &evaluator.Query{
+		Expression: &dummyBoolExpr{val: true, limit: 2},
+	}, nil)
+
+	if err != nil {
+		t.Errorf("Filter() error = %v", err)
+	}
+
+	if res.Len() != 2 {
+		t.Errorf("Filter() expected 2 results, got %d", res.Len())
+	}
+}
+
+type dummyBoolExpr struct {
+	val bool
+	limit int
+	calls int
+}
+
+func (m *dummyBoolExpr) Evaluate(d interface{}, opts ...any) (bool, error) {
+	m.calls++
+	if m.calls == 4 {
+		return false, fmt.Errorf("error case")
+	}
+	return m.val && m.calls <= m.limit, nil
+}
+
+func TestOps(t *testing.T) {
+	v1 := pimtrace.SimpleStringValue("hello")
+	v2 := pimtrace.SimpleStringValue("hello")
+	v3 := pimtrace.SimpleStringValue("world")
+
+	if eq, _ := EqualOp(v1, v2); !eq {
+		t.Errorf("EqualOp(v1, v2) = %v, want true", eq)
+	}
+	if eq, _ := EqualOp(v1, v3); eq {
+		t.Errorf("EqualOp(v1, v3) = %v, want false", eq)
+	}
+
+	v4 := pimtrace.SimpleStringValue("hello world")
+	if contains, _ := ContainsOp(v4, v1); !contains {
+		t.Errorf("ContainsOp(v4, v1) = %v, want true", contains)
+	}
+	if contains, _ := ContainsOp(v1, v4); contains {
+		t.Errorf("ContainsOp(v1, v4) = %v, want false", contains)
+	}
+
+	v5 := pimtrace.SimpleStringValue("HELLO")
+	if icontains, _ := IContainsOp(v1, v5); !icontains {
+		t.Errorf("IContainsOp(v1, v5) = %v, want true", icontains)
+	}
+	if icontains, _ := IContainsOp(v4, v5); !icontains {
+		t.Errorf("IContainsOp(v4, v5) = %v, want true", icontains)
+	}
+}
+
+func TestCompoundStatement_Simplify(t *testing.T) {
+	c1 := &CompoundStatement{
+		Statements: []Operation{
+			&FilterStatement{},
+		},
+	}
+	s1 := c1.Simplify()
+	if _, ok := s1.(*FilterStatement); !ok {
+		t.Errorf("Simplify() of 1 len CompoundStatement failed")
+	}
+
+	c0 := &CompoundStatement{
+		Statements: []Operation{},
+	}
+	if s0 := c0.Simplify(); s0 != nil {
+		t.Errorf("Simplify() of 0 len CompoundStatement failed")
+	}
+
+	c2 := &CompoundStatement{
+		Statements: []Operation{
+			&FilterStatement{},
+			&CompoundStatement{
+				Statements: []Operation{
+					&FilterStatement{},
+				},
+			},
+		},
+	}
+	s2 := c2.Simplify()
+	if cs, ok := s2.(*CompoundStatement); !ok || len(cs.Statements) != 2 {
+		t.Errorf("Simplify() of nested CompoundStatement failed")
+	}
+}
+
+func TestValueExpressions(t *testing.T) {
+	c := ConstantExpression("test_value")
+	if n := c.ColumnName(); n != "test-value" {
+		t.Errorf("ConstantExpression.ColumnName() = %v, want test-value", n)
+	}
+
+	e := EntryExpression("c.name")
+	if n := e.ColumnName(); n != "name" {
+		t.Errorf("EntryExpression.ColumnName() = %v, want name", n)
+	}
+
+	f := &FunctionExpression{
+		Function: "count",
+		Args: []ValueExpression{
+			e,
+		},
+	}
+	if n := f.ColumnName(); n != "count-name" {
+		t.Errorf("FunctionExpression.ColumnName() = %v, want count-name", n)
+	}
+
+	ef := &EvaluatorFunctionExpression{
+		Function: "sum",
+		FunctionExpression: evaluator.FunctionExpression{
+			Name: "sum",
+			Args: []evaluator.Term{
+				e,
+			},
+		},
+	}
+	if n := ef.ColumnName(); n != "sum-name" {
+		t.Errorf("EvaluatorFunctionExpression.ColumnName() = %v, want sum-name", n)
+	}
+}
+
+func TestToPimtraceValue(t *testing.T) {
+	if v, _ := toPimtraceValue(nil); v.Type() != pimtrace.Nil {
+		t.Errorf("toPimtraceValue(nil) failed")
+	}
+
+	if v, _ := toPimtraceValue(pimtrace.SimpleStringValue("test")); v.Type() != pimtrace.String {
+		t.Errorf("toPimtraceValue(pimtrace.Value) failed")
+	}
+
+	if v, _ := toPimtraceValue(int(42)); v.Type() != pimtrace.Integer {
+		t.Errorf("toPimtraceValue(int) failed")
+	}
+
+	if v, _ := toPimtraceValue(int64(42)); v.Type() != pimtrace.Integer {
+		t.Errorf("toPimtraceValue(int64) failed")
+	}
+
+	if v, _ := toPimtraceValue(float64(42.5)); v.Type() != pimtrace.Integer {
+		t.Errorf("toPimtraceValue(float64) failed")
+	}
+
+	if v, _ := toPimtraceValue("hello"); v.Type() != pimtrace.String {
+		t.Errorf("toPimtraceValue(string) failed")
+	}
+
+	if v, _ := toPimtraceValue([]interface{}{"test", 42}); v.Type() != pimtrace.Array {
+		t.Errorf("toPimtraceValue([]interface{}) failed")
+	}
+
+	if _, err := toPimtraceValue([]interface{}{struct{}{}}); err == nil {
+		t.Errorf("toPimtraceValue([]interface{} with bad inner) should error")
+	}
+
+	if _, err := toPimtraceValue(struct{}{}); err == nil {
+		t.Errorf("toPimtraceValue(unsupported) should error")
+	}
+}
+
+func TestEntryExpression_Execute(t *testing.T) {
+	ve := EntryExpression("c.val")
+	ctx := &evaluator.Context{}
+	d := &mockEntry{vals: map[string]pimtrace.Value{"c.val": pimtrace.SimpleIntegerValue(42)}}
+
+	res, err := ve.Execute(d, ctx)
+	if err != nil {
+		t.Errorf("Execute() error = %v", err)
+	}
+	if iv, ok := res.(pimtrace.SimpleIntegerValue); !ok || int(iv) != 42 {
+		t.Errorf("Execute() result = %v, want 42", res)
+	}
+
+	evalRes, err := ve.Evaluate(evaluatorEntryWrapper{Entry: d})
+	if err != nil {
+		t.Errorf("Evaluate() error = %v", err)
+	}
+	if iv, ok := evalRes.(pimtrace.SimpleIntegerValue); !ok || int(iv) != 42 {
+		t.Errorf("Evaluate() result = %v, want 42", evalRes)
+	}
+}
+
+func TestConstantExpression_Execute(t *testing.T) {
+	ve := ConstantExpression("test")
+	ctx := &evaluator.Context{}
+	res, err := ve.Execute(nil, ctx)
+	if err != nil {
+		t.Errorf("Execute() error = %v", err)
+	}
+	if sv, ok := res.(pimtrace.SimpleStringValue); !ok || string(sv) != "test" {
+		t.Errorf("Execute() result = %v, want test", res)
+	}
+
+	evalRes, err := ve.Evaluate(nil)
+	if err != nil {
+		t.Errorf("Evaluate() error = %v", err)
+	}
+	if sv, ok := evalRes.(pimtrace.SimpleStringValue); !ok || string(sv) != "test" {
+		t.Errorf("Evaluate() result = %v, want test", evalRes)
+	}
+}
+
+type mockErrOp struct{}
+
+func (m *mockErrOp) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
+	return nil, fmt.Errorf("mock error")
+}
+
+func TestCompoundStatement_ExecuteError(t *testing.T) {
+	c := &CompoundStatement{
+		Statements: []Operation{
+			&mockErrOp{},
+		},
+	}
+	_, err := c.Execute(nil, nil)
+	if err == nil {
+		t.Errorf("CompoundStatement.Execute error expected")
+	}
+}
+
+func TestFunctionExpression_ExecuteError(t *testing.T) {
+	fe := &FunctionExpression{Function: "unknown_func"}
+	_, err := fe.Execute(nil, nil)
+	if err == nil {
+		t.Errorf("Execute() unknown func expected error")
+	}
+}
+
+// A mock struct for evaluator.Function
+type mockEvalFunc struct {
+	callFunc func(args ...interface{}) (interface{}, error)
+}
+
+func (m *mockEvalFunc) Call(args ...interface{}) (interface{}, error) {
+	return m.callFunc(args...)
+}
+
+func TestEvaluatorFunctionExpression_Execute(t *testing.T) {
+	ef := &EvaluatorFunctionExpression{
+		Function: "sum",
+		FunctionExpression: evaluator.FunctionExpression{
+			Name: "sum",
+			Args: []evaluator.Term{
+				EntryExpression("c.val"),
+			},
+		},
+	}
+
+	ctx := &evaluator.Context{
+		Functions: map[string]evaluator.Function{
+			"sum": &mockEvalFunc{
+				callFunc: func(args ...interface{}) (interface{}, error) {
+					return 42, nil
+				},
+			},
+		},
+	}
+
+	d := &mockEntry{vals: map[string]pimtrace.Value{"c.val": pimtrace.SimpleIntegerValue(10)}}
+
+	res, err := ef.Execute(d, ctx)
+	if err != nil {
+		t.Errorf("Execute() error = %v", err)
+	}
+
+	if iv, ok := res.(pimtrace.SimpleIntegerValue); !ok || int(iv) != 42 {
+		t.Errorf("Execute() result = %v, want 42", res)
+	}
+
+	// Test non-Value return from function that toPimtraceValue can convert
+	ctx.Functions["sum"] = &mockEvalFunc{
+		callFunc: func(args ...interface{}) (interface{}, error) {
+			return "hello", nil
+		},
+	}
+	res2, err := ef.Execute(d, ctx)
+	if err != nil {
+		t.Errorf("Execute() error = %v", err)
+	}
+	if sv, ok := res2.(pimtrace.SimpleStringValue); !ok || string(sv) != "hello" {
+		t.Errorf("Execute() result = %v, want hello", res2)
+	}
+
+	// Test error return
+	ctx.Functions["sum"] = &mockEvalFunc{
+		callFunc: func(args ...interface{}) (interface{}, error) {
+			return nil, fmt.Errorf("some error")
+		},
+	}
+	_, err = ef.Execute(d, ctx)
+	if err == nil {
+		t.Errorf("Execute() expected error, got nil")
+	}
+}
+
+func TestFunctionExpression_Evaluate(t *testing.T) {
+	fe := &FunctionExpression{Function: "unknown_func"}
+
+	d := &mockEntry{}
+	w := evaluatorEntryWrapper{Entry: d}
+
+	ctx := &evaluator.Context{}
+	_, err := fe.Evaluate(w, ctx)
+	if err == nil {
+		t.Errorf("Evaluate() error expected for unknown func")
+	}
+
+	// invalid entry type
+	_, err = fe.Evaluate(nil)
+	if err == nil {
+		t.Errorf("Evaluate() invalid type expected error")
+	}
+}
+
+type valueEntry struct {
+	pimtrace.SimpleStringValue
+}
+
+func (v valueEntry) Get(k string) (pimtrace.Value, error) {
+	return v.SimpleStringValue, nil
+}
+
+func TestEntryPathor_Find(t *testing.T) {
+	d := &mockEntry{vals: map[string]pimtrace.Value{
+		"c.val": pimtrace.SimpleIntegerValue(42),
+		"c.sub": valueEntry{pimtrace.SimpleStringValue("subval")},
+	}}
+	ep := NewEntryPathor(d)
+
+	// Test empty path
+	if p := ep.Find(""); p != ep {
+		t.Errorf("Find empty path should return self")
+	}
+
+	// Test successful Get
+	p := ep.Find("c.val")
+	if p == nil {
+		t.Errorf("Find(c.val) should not be nil")
+	}
+
+	// Test successful Get returning Entry
+	p3 := ep.Find("c.sub")
+	if _, ok := p3.(*EntryPathor); !ok {
+		t.Errorf("Find(c.sub) returning entry should wrap in EntryPathor")
+	}
+
+	// Test unsuccessful Get
+	p2 := ep.Find("nonexistent")
+	if p2 == nil {
+		t.Errorf("Find(nonexistent) should not be nil but Invalidor")
 	}
 }

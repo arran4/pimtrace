@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	_ "github.com/emersion/go-message/charset"
 	"os"
 	"pimtrace"
@@ -9,7 +10,10 @@ import (
 	"pimtrace/dataformats/icaldata"
 )
 
-func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
+func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Data, error) {
+	if w == nil {
+		w = os.Stdout
+	}
 	ventry := []*icaldata.ICalWithSource{}
 	switch inputType {
 	case "ical":
@@ -28,16 +32,16 @@ func InputHandler(inputType string, inputFile string) (pimtrace.Data, error) {
 			ventry = append(ventry, nm...)
 		}
 	case "list":
-		PrintInputHelp()
+		PrintInputHelp(w)
 	default:
 		return nil, fmt.Errorf("please specify an -input-type. got %s", inputType)
 	}
 	return icaldata.Data(ventry), nil
 }
 
-func PrintInputHelp() {
-	fmt.Println("input-types available: ")
-	fmt.Printf(" %-30s %s\n", "ical", "Read an iCal file or '-' for stdin")
-	fmt.Printf(" %-30s %s\n", "list", "This help text")
-	fmt.Println()
+func PrintInputHelp(w io.Writer) {
+	fmt.Fprintln(w, "input-types available: ")
+	fmt.Fprintf(w, " %-30s %s\n", "ical", "Read an iCal file or '-' for stdin")
+	fmt.Fprintf(w, " %-30s %s\n", "list", "This help text")
+	fmt.Fprintln(w)
 }

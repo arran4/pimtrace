@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	_ "github.com/emersion/go-message/charset"
 	"os"
 	"pimtrace"
@@ -10,6 +11,14 @@ import (
 )
 
 func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+	var out io.Writer = os.Stdout
+	for _, op := range ops {
+		if w, ok := op.(io.Writer); ok && w != nil {
+			out = w
+			break
+		}
+	}
+
 	var mails []*maildata.MailWithSource
 	switch inputType {
 	case "mailfile":
@@ -64,19 +73,19 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 			mails = append(mails, nm...)
 		}
 	case "list":
-		PrintInputHelp()
+		PrintInputHelp(out)
 	default:
 		return nil, fmt.Errorf("please specify an -input-type. got %s", inputType)
 	}
 	return maildata.Data(mails), nil
 }
 
-func PrintInputHelp() {
-	fmt.Println("input-types available: ")
-	fmt.Printf(" %-30s %s\n", "mailfile", "A single mail file")
-	fmt.Printf(" %-30s %s\n", "mbox", "Mbox file")
-	fmt.Printf(" %-30s %s\n", "mboxgz", "Gzipped Mbox file")
-	fmt.Printf(" %-30s %s\n", "mboxtargz", "Gzipped Tarred collection of Mbox file")
-	fmt.Printf(" %-30s %s\n", "list", "This help text")
-	fmt.Println()
+func PrintInputHelp(w io.Writer) {
+	fmt.Fprintln(w, "input-types available: ")
+	fmt.Fprintf(w, " %-30s %s\n", "mailfile", "A single mail file")
+	fmt.Fprintf(w, " %-30s %s\n", "mbox", "Mbox file")
+	fmt.Fprintf(w, " %-30s %s\n", "mboxgz", "Gzipped Mbox file")
+	fmt.Fprintf(w, " %-30s %s\n", "mboxtargz", "Gzipped Tarred collection of Mbox file")
+	fmt.Fprintf(w, " %-30s %s\n", "list", "This help text")
+	fmt.Fprintln(w)
 }
