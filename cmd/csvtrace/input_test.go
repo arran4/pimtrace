@@ -8,31 +8,14 @@ import (
 	"testing"
 )
 
-func captureOutput(f func()) (string, error) {
-	r, w, err := os.Pipe()
-	if err != nil {
-		return "", err
-	}
-	old := os.Stdout
-	os.Stdout = w
-	f()
-	if err := w.Close(); err != nil {
-		return "", err
-	}
-	os.Stdout = old
+func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		_ = r.Close()
-		return "", err
-	}
-	if err := r.Close(); err != nil {
-		return "", err
-	}
+	f(&buf)
 	return buf.String(), nil
 }
 
 func TestPrintInputHelpContainsCsv(t *testing.T) {
-	out, err := captureOutput(PrintInputHelp)
+	out, err := captureOutput(func(w io.Writer) { PrintInputHelp(w) })
 	if err != nil {
 		t.Fatalf("error capturing output: %v", err)
 	}
@@ -43,19 +26,23 @@ func TestPrintInputHelpContainsCsv(t *testing.T) {
 
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
-	_, err := InputHandler("list", "")
+	var buf bytes.Buffer
+	_, err := InputHandler("list", "", &buf)
 	if err != nil {
 		t.Errorf("InputHandler(list) error: %v", err)
 	}
+	if !strings.Contains(buf.String(), "csv") {
+		t.Errorf("InputHandler(list) did not print expected help")
+	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "")
+	_, err = InputHandler("unknown", "", nil)
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
 
 	// File error case
-	_, err = InputHandler("csv", "nonexistent.csv")
+	_, err = InputHandler("csv", "nonexistent.csv", nil)
 	if err == nil {
 		t.Errorf("InputHandler(csv, nonexistent.csv) expected error")
 	}
@@ -70,7 +57,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	w.WriteString("col1,col2\nval1,val2\n")
 	w.Close()
 
-	data, err := InputHandler("csv", "-")
+	data, err := InputHandler("csv", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(csv, -) error: %v", err)
 	}
@@ -90,7 +77,7 @@ func TestInputHandler_File(t *testing.T) {
 	f.WriteString("col1,col2\nval1,val2\n")
 	f.Close()
 
-	data, err := InputHandler("csv", f.Name())
+	data, err := InputHandler("csv", f.Name(), nil)
 	if err != nil {
 		t.Errorf("InputHandler(csv, file) error: %v", err)
 	}
@@ -100,7 +87,7 @@ func TestInputHandler_File(t *testing.T) {
 }
 
 func TestPrintQueryHelp(t *testing.T) {
-	out, err := captureOutput(func() { PrintQueryHelp("basic") })
+	out, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "basic") })
 	if err != nil {
 		t.Fatalf("error capturing output: %v", err)
 	}
@@ -108,7 +95,7 @@ func TestPrintQueryHelp(t *testing.T) {
 		t.Errorf("expected help to contain 'Basic Parser' but got %q", out)
 	}
 
-	out2, err := captureOutput(func() { PrintQueryHelp("unknown") })
+	out2, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "unknown") })
 	if err != nil {
 		t.Fatalf("error capturing output: %v", err)
 	}

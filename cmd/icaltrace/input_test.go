@@ -9,31 +9,14 @@ import (
 	"testing"
 )
 
-func captureOutput(f func()) (string, error) {
-	r, w, err := os.Pipe()
-	if err != nil {
-		return "", err
-	}
-	old := os.Stdout
-	os.Stdout = w
-	f()
-	if err := w.Close(); err != nil {
-		return "", err
-	}
-	os.Stdout = old
+func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		_ = r.Close()
-		return "", err
-	}
-	if err := r.Close(); err != nil {
-		return "", err
-	}
+	f(&buf)
 	return buf.String(), nil
 }
 
 func TestPrintInputHelpContainsIcal(t *testing.T) {
-	out, err := captureOutput(PrintInputHelp)
+	out, err := captureOutput(func(w io.Writer) { PrintInputHelp(w) })
 	if err != nil {
 		t.Fatalf("error capturing output: %v", err)
 	}
@@ -44,13 +27,17 @@ func TestPrintInputHelpContainsIcal(t *testing.T) {
 
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
-	_, err := InputHandler("list", "")
+	var buf bytes.Buffer
+	_, err := InputHandler("list", "", &buf)
 	if err != nil {
 		t.Errorf("InputHandler(list) error: %v", err)
 	}
+	if !strings.Contains(buf.String(), "ical") {
+		t.Errorf("InputHandler(list) output did not contain expected help")
+	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "")
+	_, err = InputHandler("unknown", "", nil)
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -58,7 +45,7 @@ func TestInputHandler(t *testing.T) {
 	// For input file, we would need to mock or create a real ical file.
 	// The problem is `ReadFile` uses a stream mapping that reads from a file path.
 	// But passing an invalid file should give an error. Let's just check the error case.
-	_, err = InputHandler("ical", "nonexistent.ics")
+	_, err = InputHandler("ical", "nonexistent.ics", nil)
 	if err == nil {
 		t.Errorf("InputHandler(ical, nonexistent.ics) expected error")
 	}
@@ -80,7 +67,7 @@ func TestOutputHandler(t *testing.T) {
 }
 
 func TestPrintQueryHelp(t *testing.T) {
-	out, err := captureOutput(func() { PrintQueryHelp("basic") })
+	out, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "basic") })
 	if err != nil {
 		t.Fatalf("error capturing output: %v", err)
 	}
@@ -88,7 +75,7 @@ func TestPrintQueryHelp(t *testing.T) {
 		t.Errorf("expected help to contain 'Basic Parser' but got %q", out)
 	}
 
-	out2, err := captureOutput(func() { PrintQueryHelp("unknown") })
+	out2, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "unknown") })
 	if err != nil {
 		t.Fatalf("error capturing output: %v", err)
 	}
@@ -144,7 +131,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 	w.Close()
 
-	data, err := InputHandler("ical", "-")
+	data, err := InputHandler("ical", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(ical, -) error: %v", err)
 	}
@@ -165,7 +152,7 @@ func TestInputHandler_File(t *testing.T) {
 	f.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 	f.Close()
 
-	data, err := InputHandler("ical", f.Name())
+	data, err := InputHandler("ical", f.Name(), nil)
 	if err != nil {
 		t.Errorf("InputHandler(ical, file) error: %v", err)
 	}
