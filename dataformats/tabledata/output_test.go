@@ -11,7 +11,7 @@ func TestWriteCSVFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Remove(tmpFile.Name()) })
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
 	data := Data{}
 	if err := data.WriteCSVFile(tmpFile.Name()); err != nil {
@@ -25,7 +25,7 @@ func TestWriteCSVStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Remove(tmpFile.Name()) })
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
 	if err := data.WriteCSVStream(tmpFile, "file.csv"); err != nil {
 		t.Errorf("WriteCSVStream returned error: %v", err)
@@ -37,7 +37,7 @@ func TestWriteTableFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Remove(tmpFile.Name()) })
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
 	data := Data{}
 	if err := data.WriteTableFile(tmpFile.Name()); err != nil {
@@ -51,7 +51,7 @@ func TestWriteTableStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Remove(tmpFile.Name()) })
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
 	if err := data.WriteTableStream(tmpFile, "file.txt"); err != nil {
 		t.Errorf("WriteTableStream returned error: %v", err)
@@ -68,7 +68,7 @@ func TestWriteCSVStream_WithData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Remove(tmpFile.Name()) })
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
 	if err := data.WriteCSVStream(tmpFile, "file.csv"); err != nil {
 		t.Errorf("WriteCSVStream returned error: %v", err)
@@ -85,7 +85,7 @@ func TestWriteTableStream_WithData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Remove(tmpFile.Name()) })
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
 
 	if err := data.WriteTableStream(tmpFile, "file.txt"); err != nil {
 		t.Errorf("WriteTableStream returned error: %v", err)
