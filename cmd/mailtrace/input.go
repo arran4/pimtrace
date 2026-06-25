@@ -81,11 +81,11 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 }
 
 func PrintInputHelp(w io.Writer) {
-	_, _ = fmt.Fprintln(w, "input-types available: ")
-	_, _ = fmt.Fprintf(w, " %-30s %s\n", "mailfile", "A single mail file")
-	_, _ = fmt.Fprintf(w, " %-30s %s\n", "mbox", "Mbox file")
-	_, _ = fmt.Fprintf(w, " %-30s %s\n", "mboxgz", "Gzipped Mbox file")
-	_, _ = fmt.Fprintf(w, " %-30s %s\n", "mboxtargz", "Gzipped Tarred collection of Mbox file")
-	_, _ = fmt.Fprintf(w, " %-30s %s\n", "list", "This help text")
-	_, _ = fmt.Fprintln(w)
+	fmt.Fprintln(w, "input-types available: ")
+	fmt.Fprintf(w, " %-30s %s\n", "mailfile", "A single mail file")
+	fmt.Fprintf(w, " %-30s %s\n", "mbox", "Mbox file")
+	fmt.Fprintf(w, " %-30s %s\n", "mboxgz", "Gzipped Mbox file")
+	fmt.Fprintf(w, " %-30s %s\n", "mboxtargz", "Gzipped Tarred collection of Mbox file")
+	fmt.Fprintf(w, " %-30s %s\n", "list", "This help text")
+	fmt.Fprintln(w)
 }
