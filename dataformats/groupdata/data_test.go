@@ -154,11 +154,8 @@ func TestData(t *testing.T) {
 
 func TestData_Output(t *testing.T) {
 	var d Data = make([]*Row, 0)
-	d = append(d, &Row{
+	_ = append(d, &Row{
 		Headers: map[string]int{"a": 0},
 		Row: []pimtrace.Value{pimtrace.SimpleStringValue("a")},
 	})
-
-	//d.WriteCSVFile("-")
-	//d.WriteTableFile("-")
 }
