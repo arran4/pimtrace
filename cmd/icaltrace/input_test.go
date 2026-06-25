@@ -128,8 +128,8 @@ func TestInputHandler_Stdin(t *testing.T) {
 	defer func() { os.Stdin = oldStdin }()
 
 	// Write a minimal valid ical to our fake stdin so it doesn't block
-	w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
-	w.Close()
+	_, _ = w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
+	_ = w.Close()
 
 	data, err := InputHandler("ical", "-", nil)
 	if err != nil {
@@ -149,8 +149,8 @@ func TestInputHandler_File(t *testing.T) {
 	}
 	defer os.Remove(f.Name())
 
-	f.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
-	f.Close()
+	_, _ = f.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
+	_ = f.Close()
 
 	data, err := InputHandler("ical", f.Name(), nil)
 	if err != nil {
