@@ -128,8 +128,8 @@ func TestInputHandler_Stdin(t *testing.T) {
 	defer func() { os.Stdin = oldStdin }()
 
 	// Write a minimal valid ical to our fake stdin so it doesn't block
-	_, _ = w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
-	_ = w.Close()
+	w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
+	w.Close()
 
 	data, err := InputHandler("ical", "-", nil)
 	if err != nil {
@@ -147,10 +147,10 @@ func TestInputHandler_File(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer os.Remove(f.Name())
+	t.Cleanup(func() { os.Remove(f.Name()) })
 
-	_, _ = f.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
-	_ = f.Close()
+	f.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
+	f.Close()
 
 	data, err := InputHandler("ical", f.Name(), nil)
 	if err != nil {
