@@ -58,8 +58,8 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	_, _ = w.WriteString(mailContent)
-	_ = w.Close()
+	w.WriteString(mailContent)
+	w.Close()
 
 	data, err := InputHandler("mailfile", "-")
 	if err != nil {
@@ -75,7 +75,7 @@ func TestInputHandler_File(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	t.Cleanup(func() { _ = os.Remove(f.Name()) })
+	t.Cleanup(func() { os.Remove(f.Name()) })
 
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
@@ -84,8 +84,8 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	_, _ = f.WriteString(mailContent)
-	_ = f.Close()
+	f.WriteString(mailContent)
+	f.Close()
 
 	data, err := InputHandler("mailfile", f.Name())
 	if err != nil {
