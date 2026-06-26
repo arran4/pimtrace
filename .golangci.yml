@@ -14,3 +14,9 @@ linters:
         - os.Remove
         - (pimtrace/dataformats/maildata.Data).WriteMBoxStream
         - (pimtrace/dataformats/maildata.Data).WriteMailStream
+        - (io.Closer).Close
+        - (io.ReadCloser).Close
+        - (io.WriteCloser).Close
+        - (io.ReadWriteCloser).Close
+        - (io.ReaderAt).Close
+        - (io/fs.File).Close
