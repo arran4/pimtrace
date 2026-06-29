@@ -291,7 +291,7 @@ func TestData_Output(t *testing.T) {
 	h.Set("From", "tester@example.com")
 	h.Set("Date", "Thu, 13 Feb 1969 23:32:54 -0330")
 
-	_ = append(d, &MailWithSource{
+	d = append(d, &MailWithSource{
 		MailHeader: h,
 		MailBodies: []MailBody{
 			&MailBodyGeneral{

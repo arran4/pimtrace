@@ -81,11 +81,11 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 }
 
 func PrintInputHelp(w io.Writer) {
-	fmt.Fprintln(w, "input-types available: ")
-	fmt.Fprintf(w, " %-30s %s\n", "mailfile", "A single mail file")
-	fmt.Fprintf(w, " %-30s %s\n", "mbox", "Mbox file")
-	fmt.Fprintf(w, " %-30s %s\n", "mboxgz", "Gzipped Mbox file")
-	fmt.Fprintf(w, " %-30s %s\n", "mboxtargz", "Gzipped Tarred collection of Mbox file")
-	fmt.Fprintf(w, " %-30s %s\n", "list", "This help text")
-	fmt.Fprintln(w)
+	 if _, err := fmt.Fprintln(w, "input-types available: "); err != nil { panic(err) }
+	 if _, err := fmt.Fprintf(w, " %-30s %s\n", "mailfile", "A single mail file"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintf(w, " %-30s %s\n", "mbox", "Mbox file"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintf(w, " %-30s %s\n", "mboxgz", "Gzipped Mbox file"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintf(w, " %-30s %s\n", "mboxtargz", "Gzipped Tarred collection of Mbox file"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintf(w, " %-30s %s\n", "list", "This help text"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w); err != nil { panic(err) }
 }
