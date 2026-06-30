@@ -100,54 +100,54 @@ func main() {
 }
 
 func PrintQueryHelp(w io.Writer, parser string) {
-	fmt.Fprintln(w, "This tool is for helping you filter, query and summarize mail files in a comprehensible way")
-	fmt.Fprintln(w, "The usage is as follows:")
-	fmt.Fprintln(w, "\tmailtrace -parser basic -input mail.mbox -input-type mbox -output table $QUERY")
-	fmt.Fprintln(w, "In this example it selects the basic parser, reads from mail.mbox, of the type mbox. Outputs a table")
-	fmt.Fprintln(w, "and runs query $QUERY. You are required to specify all of these arguments.")
-	fmt.Fprintln(w, "")
+	 if _, err := fmt.Fprintln(w, "This tool is for helping you filter, query and summarize mail files in a comprehensible way"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "The usage is as follows:"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "\tmailtrace -parser basic -input mail.mbox -input-type mbox -output table $QUERY"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "In this example it selects the basic parser, reads from mail.mbox, of the type mbox. Outputs a table"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "and runs query $QUERY. You are required to specify all of these arguments."); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
 	switch parser {
 	case "basic":
-		fmt.Fprintln(w, "Basic Parser")
-		fmt.Fprintln(w, "")
-		fmt.Fprintln(w, "Queries can do the following:")
-		fmt.Fprintln(w, "- Filtering out data")
-		fmt.Fprintln(w, "- Selecting components of the data to view")
-		fmt.Fprintln(w, "- Grouping and summarizing data")
-		fmt.Fprintln(w, "")
-		fmt.Fprintln(w, "The Queries can be build up like this:")
-		fmt.Fprintln(w, "Simple filter query")
-		fmt.Fprintln(w, "\tfilter not h.user-agent icontains .Kmail")
-		fmt.Fprintln(w, "Which filters all emails sent with a user agent that does not contain `kmail` ")
-		fmt.Fprintln(w, "Then you can convert the emails to tabular form using:")
-		fmt.Fprintln(w, "\tinto table h.user-agent h.subject f.year[h.date] f.month[h.date]")
-		fmt.Fprintln(w, "Which creates table of user agent, subject, and the year and month.")
-		fmt.Fprintln(w, "If you wanted a summary / count of the lines you can use the summary converter:")
-		fmt.Fprintln(w, "\tinto summary h.user-agent h.subject f.year[h.date] f.month[h.date] calculate f.sum[c.size] f.count")
-		fmt.Fprintln(w, "Which groups the mail based on user-agent, subject, year, month, then creates a sum and a count")
-		fmt.Fprintln(w, "If you want to sort you can use:")
-		fmt.Fprintln(w, "\tsort f.year[h.date] f.month[h.date]")
-		fmt.Fprintln(w, "These can be used in any combination and repeated for the desired effect:")
-		fmt.Fprintln(w, "\tfilter h.user-agent icontains .Kmail into summary h.user-agent f.year[h.date] calculate f.count filter c.year-date eq 2022 sort h.user-agent")
-		fmt.Fprintln(w, "And so forth")
-		fmt.Fprintln(w, "")
-		fmt.Fprintln(w, "Notes:")
-		fmt.Fprintln(w, "- Single word string literals begin with a `.`")
-		fmt.Fprintln(w, "- Headers are referred to with `h.` once in table form it becomes a column referred to by `c.`")
-		fmt.Fprintln(w, "- I haven't implemented any body parsing components yet")
-		fmt.Fprintln(w, "- Extension PRs are welcome and intended")
-		fmt.Fprintln(w, "- All functions are preceded by `f.`")
-		fmt.Fprintln(w, "- Once converted to table form, it can not be converted back to mailfile or mbox")
+		 if _, err := fmt.Fprintln(w, "Basic Parser"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Queries can do the following:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Filtering out data"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Selecting components of the data to view"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Grouping and summarizing data"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "The Queries can be build up like this:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Simple filter query"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tfilter not h.user-agent icontains .Kmail"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Which filters all emails sent with a user agent that does not contain `kmail` "); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Then you can convert the emails to tabular form using:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tinto table h.user-agent h.subject f.year[h.date] f.month[h.date]"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Which creates table of user agent, subject, and the year and month."); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "If you wanted a summary / count of the lines you can use the summary converter:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tinto summary h.user-agent h.subject f.year[h.date] f.month[h.date] calculate f.sum[c.size] f.count"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Which groups the mail based on user-agent, subject, year, month, then creates a sum and a count"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "If you want to sort you can use:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tsort f.year[h.date] f.month[h.date]"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "These can be used in any combination and repeated for the desired effect:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tfilter h.user-agent icontains .Kmail into summary h.user-agent f.year[h.date] calculate f.count filter c.year-date eq 2022 sort h.user-agent"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "And so forth"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Notes:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Single word string literals begin with a `.`"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Headers are referred to with `h.` once in table form it becomes a column referred to by `c.`"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- I haven't implemented any body parsing components yet"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Extension PRs are welcome and intended"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- All functions are preceded by `f.`"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Once converted to table form, it can not be converted back to mailfile or mbox"); err != nil { panic(err) }
 	}
-	fmt.Fprintln(w, "A complete list of functions supported:")
+	 if _, err := fmt.Fprintln(w, "A complete list of functions supported:"); err != nil { panic(err) }
 	// TODO funcs.PrintFunctionList(w) when updated
 	funcs.PrintFunctionList()
-	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "List of supported input types:")
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "List of supported input types:"); err != nil { panic(err) }
 	PrintInputHelp(w)
-	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "List of supported output types: (Must be supported based on query.)")
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "List of supported output types: (Must be supported based on query.)"); err != nil { panic(err) }
 	// TODO dataformats.PrintOutputHelp(w, customOutputs) when updated
 	dataformats.PrintOutputHelp(customOutputs)
-	fmt.Fprintln(w, "")
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
 }

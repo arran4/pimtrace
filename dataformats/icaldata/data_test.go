@@ -205,5 +205,5 @@ END:VCALENDAR`
 	badData := `BEGIN:VCALENDAR` // missing END
 	rBad := strings.NewReader(badData)
 	// golang-ical parses line by line and might just return an empty calendar or error
-	_, _ = ReadICalStream(rBad, "ical", "bad.ics") // Just hitting it for coverage
+	 _, _ = ReadICalStream(rBad, "ical", "bad.ics") // Just hitting it for coverage
 }

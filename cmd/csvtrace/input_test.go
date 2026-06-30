@@ -54,8 +54,8 @@ func TestInputHandler_Stdin(t *testing.T) {
 	os.Stdin = r
 	defer func() { os.Stdin = oldStdin }()
 
-	_, _ = w.WriteString("col1,col2\nval1,val2\n")
-	_ = w.Close()
+	 if _, err := w.WriteString("col1,col2\nval1,val2\n"); err != nil { panic(err) }
+	if err := w.Close(); err != nil { panic(err) }
 
 	data, err := InputHandler("csv", "-", nil)
 	if err != nil {
@@ -72,10 +72,10 @@ func TestInputHandler_File(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer os.Remove(f.Name())
+	t.Cleanup(func() { if err := os.Remove(f.Name()); err != nil && !os.IsNotExist(err) { t.Logf("failed to remove %v: %v", f.Name(), err) } })
 
-	_, _ = f.WriteString("col1,col2\nval1,val2\n")
-	_ = f.Close()
+	 if _, err := f.WriteString("col1,col2\nval1,val2\n"); err != nil { panic(err) }
+	if err := f.Close(); err != nil { panic(err) }
 
 	data, err := InputHandler("csv", f.Name(), nil)
 	if err != nil {

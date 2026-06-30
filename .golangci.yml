@@ -1,0 +1,22 @@
+version: "2"
+linters:
+  enable:
+    - errcheck
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Fprint
+        - io.WriteString
+        - (*os.File).WriteString
+        - (*os.File).Close
+        - os.Remove
+        - (pimtrace/dataformats/maildata.Data).WriteMBoxStream
+        - (pimtrace/dataformats/maildata.Data).WriteMailStream
+        - (io.Closer).Close
+        - (io.ReadCloser).Close
+        - (io.WriteCloser).Close
+        - (io.ReadWriteCloser).Close
+        - (io.ReaderAt).Close
+        - (io/fs.File).Close

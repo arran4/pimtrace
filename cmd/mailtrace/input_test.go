@@ -58,8 +58,8 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	w.WriteString(mailContent)
-	w.Close()
+	 if _, err := w.WriteString(mailContent); err != nil { panic(err) }
+	if err := w.Close(); err != nil { panic(err) }
 
 	data, err := InputHandler("mailfile", "-")
 	if err != nil {
@@ -75,7 +75,7 @@ func TestInputHandler_File(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer os.Remove(f.Name())
+	t.Cleanup(func() { if err := os.Remove(f.Name()); err != nil && !os.IsNotExist(err) { t.Logf("failed to remove %v: %v", f.Name(), err) } })
 
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
@@ -84,8 +84,8 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	f.WriteString(mailContent)
-	f.Close()
+	 if _, err := f.WriteString(mailContent); err != nil { panic(err) }
+	if err := f.Close(); err != nil { panic(err) }
 
 	data, err := InputHandler("mailfile", f.Name())
 	if err != nil {

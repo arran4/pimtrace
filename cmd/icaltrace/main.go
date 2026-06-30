@@ -93,54 +93,54 @@ func main() {
 }
 
 func PrintQueryHelp(w io.Writer, parser string) {
-	fmt.Fprintln(w, "This tool is for helping you filter, query and summarize ical files in a comprehensible way")
-	fmt.Fprintln(w, "The usage is as follows:")
-	fmt.Fprintln(w, "\ticaltrace -parser basic -input events.ical -input-type ical -output table $QUERY")
-	fmt.Fprintln(w, "In this example it selects the basic parser, reads from events.ical, of the type ical. Outputs a table")
-	fmt.Fprintln(w, "and runs query $QUERY. You are required to specify all of these arguments.")
-	fmt.Fprintln(w, "")
+	 if _, err := fmt.Fprintln(w, "This tool is for helping you filter, query and summarize ical files in a comprehensible way"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "The usage is as follows:"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "\ticaltrace -parser basic -input events.ical -input-type ical -output table $QUERY"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "In this example it selects the basic parser, reads from events.ical, of the type ical. Outputs a table"); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "and runs query $QUERY. You are required to specify all of these arguments."); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
 	switch parser {
 	case "basic":
-		fmt.Fprintln(w, "Basic Parser")
-		fmt.Fprintln(w, "")
-		fmt.Fprintln(w, "Queries can do the following:")
-		fmt.Fprintln(w, "- Filtering out data")
-		fmt.Fprintln(w, "- Selecting components of the data to view")
-		fmt.Fprintln(w, "- Grouping and summarizing data")
-		fmt.Fprintln(w, "")
-		fmt.Fprintln(w, "The Queries can be build up like this:")
-		fmt.Fprintln(w, "Simple filter query")
-		fmt.Fprintln(w, "\tfilter not p.SUMMARY icontains .Report")
-		fmt.Fprintln(w, "Which filters all events without SUMMARY containing 'Report' ")
-		fmt.Fprintln(w, "Then you can convert the emails to tabular form using:")
-		fmt.Fprintln(w, "\tinto table p.LOCATION f.year[p.DUE] f.month[p.DUE]")
-		fmt.Fprintln(w, "Which creates table of locations, and the due year and due month.")
-		fmt.Fprintln(w, "If you wanted a summary / count of the lines you can use the summary converter:")
-		fmt.Fprintln(w, "\tinto summary p.LOCATION f.year[p.DUE] f.month[p.DUE] calculate f.count")
-		fmt.Fprintln(w, "Which groups the calendar invites based on location, due date year, due date month, then adds a count")
-		fmt.Fprintln(w, "If you want to sort you can use:")
-		fmt.Fprintln(w, "\tsort f.year[p.DUE] f.month[p.DUE]")
-		fmt.Fprintln(w, "These can be used in any combination and repeated for the desired effect:")
-		fmt.Fprintln(w, "\tfilter p.SUMMARY icontains .Report into summary p.LOCATION f.year[p.DUE] f.month[p.DUE] calculate f.count filter c.year-DUE eq 2022 sort p.LOCATION")
-		fmt.Fprintln(w, "And so forth")
-		fmt.Fprintln(w, "")
-		fmt.Fprintln(w, "Notes:")
-		fmt.Fprintln(w, "- Single word string literals begin with a `.`")
-		fmt.Fprintln(w, "- Properties are referred to with `p.` once in table form it becomes a column referred to by `c.`")
-		fmt.Fprintln(w, "- I haven't implemented sub components yet")
-		fmt.Fprintln(w, "- Extension PRs are welcome and intended")
-		fmt.Fprintln(w, "- All functions are preceded by `f.`")
-		fmt.Fprintln(w, "- Once converted to table form, it can not be converted back to ical / ics")
+		 if _, err := fmt.Fprintln(w, "Basic Parser"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Queries can do the following:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Filtering out data"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Selecting components of the data to view"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Grouping and summarizing data"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "The Queries can be build up like this:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Simple filter query"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tfilter not p.SUMMARY icontains .Report"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Which filters all events without SUMMARY containing 'Report' "); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Then you can convert the emails to tabular form using:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tinto table p.LOCATION f.year[p.DUE] f.month[p.DUE]"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Which creates table of locations, and the due year and due month."); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "If you wanted a summary / count of the lines you can use the summary converter:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tinto summary p.LOCATION f.year[p.DUE] f.month[p.DUE] calculate f.count"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Which groups the calendar invites based on location, due date year, due date month, then adds a count"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "If you want to sort you can use:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tsort f.year[p.DUE] f.month[p.DUE]"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "These can be used in any combination and repeated for the desired effect:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "\tfilter p.SUMMARY icontains .Report into summary p.LOCATION f.year[p.DUE] f.month[p.DUE] calculate f.count filter c.year-DUE eq 2022 sort p.LOCATION"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "And so forth"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "Notes:"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Single word string literals begin with a `.`"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Properties are referred to with `p.` once in table form it becomes a column referred to by `c.`"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- I haven't implemented sub components yet"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Extension PRs are welcome and intended"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- All functions are preceded by `f.`"); err != nil { panic(err) }
+		 if _, err := fmt.Fprintln(w, "- Once converted to table form, it can not be converted back to ical / ics"); err != nil { panic(err) }
 	}
-	fmt.Fprintln(w, "A complete list of functions supported:")
+	 if _, err := fmt.Fprintln(w, "A complete list of functions supported:"); err != nil { panic(err) }
 	// TODO funcs.PrintFunctionList(w) when updated
 	funcs.PrintFunctionList()
-	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "List of supported input types:")
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "List of supported input types:"); err != nil { panic(err) }
 	PrintInputHelp(w)
-	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "List of supported output types: (Must be supported based on query.)")
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
+	 if _, err := fmt.Fprintln(w, "List of supported output types: (Must be supported based on query.)"); err != nil { panic(err) }
 	// TODO dataformats.PrintOutputHelp(w, customOutputs) when updated
 	dataformats.PrintOutputHelp(customOutputs)
-	fmt.Fprintln(w, "")
+	 if _, err := fmt.Fprintln(w, ""); err != nil { panic(err) }
 }
