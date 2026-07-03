@@ -40,8 +40,8 @@ func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Dat
 }
 
 func PrintInputHelp(w io.Writer) {
-	_, _ = fmt.Fprintln(w, "input-types available: ")
-	_, _ = fmt.Fprintf(w, " %-30s %s\n", "ical", "Read an iCal file or '-' for stdin")
-	_, _ = fmt.Fprintf(w, " %-30s %s\n", "list", "This help text")
-	_, _ = fmt.Fprintln(w)
+	fmt.Fprintln(w, "input-types available: ")
+	fmt.Fprintf(w, " %-30s %s\n", "ical", "Read an iCal file or '-' for stdin")
+	fmt.Fprintf(w, " %-30s %s\n", "list", "This help text")
+	fmt.Fprintln(w)
 }

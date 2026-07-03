@@ -93,7 +93,7 @@ func main() {
 }
 
 func PrintQueryHelp(w io.Writer, parser string) {
-	_, _ = fmt.Fprintln(w, "This tool is for helping you filter, query and summarize ical files in a comprehensible way")
+	fmt.Fprintln(w, "This tool is for helping you filter, query and summarize ical files in a comprehensible way")
 	fmt.Fprintln(w, "The usage is as follows:")
 	fmt.Fprintln(w, "\ticaltrace -parser basic -input events.ical -input-type ical -output table $QUERY")
 	fmt.Fprintln(w, "In this example it selects the basic parser, reads from events.ical, of the type ical. Outputs a table")
