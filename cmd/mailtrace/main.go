@@ -100,7 +100,7 @@ func main() {
 }
 
 func PrintQueryHelp(w io.Writer, parser string) {
-	fmt.Fprintln(w, "This tool is for helping you filter, query and summarize mail files in a comprehensible way")
+	_, _ = fmt.Fprintln(w, "This tool is for helping you filter, query and summarize mail files in a comprehensible way")
 	fmt.Fprintln(w, "The usage is as follows:")
 	fmt.Fprintln(w, "\tmailtrace -parser basic -input mail.mbox -input-type mbox -output table $QUERY")
 	fmt.Fprintln(w, "In this example it selects the basic parser, reads from mail.mbox, of the type mbox. Outputs a table")
