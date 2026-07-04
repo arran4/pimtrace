@@ -72,7 +72,7 @@ func TestInputHandler_File(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
-	defer os.Remove(f.Name())
+	defer func() { _ = os.Remove(f.Name()) }()
 
 	_, _ = f.WriteString("col1,col2\nval1,val2\n")
 	_ = f.Close()
