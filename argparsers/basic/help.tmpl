@@ -5,15 +5,15 @@ Queries can do the following:
 - Selecting components of the data to view
 - Grouping and summarizing data
 
-The Queries can be build up like this:
+The Queries can be built up like this:
 Simple filter query
 {{if eq .Type "csv"}}	filter not c.job icontains .Software
-Which filters all row's `job` column that does not contain `Software`
+Which filters each row's `job` column that does not contain `Software`
 Then you can filter the columns using:
 	into table c.job f.year[c.startdate] f.month[c.startdate]
 {{else if eq .Type "ical"}}	filter not p.SUMMARY icontains .Report
 Which filters all events without SUMMARY containing 'Report'
-Then you can convert the emails to tabular form using:
+Then you can convert the events to tabular form using:
 	into table p.LOCATION f.year[p.DUE] f.month[p.DUE]
 Which creates table of locations, and the due year and due month.
 {{else if eq .Type "mail"}}	filter not h.user-agent icontains .Kmail
