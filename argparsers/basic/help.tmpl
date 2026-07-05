@@ -1,33 +1,39 @@
 Basic Parser
 
-Queries can do the following:
-- Filtering out data
-- Selecting components of the data to view
-- Grouping and summarizing data
+Queries are designed to process, filter, and summarize data effectively.
+Specifically, queries allow you to:
+- Filter out irrelevant data
+- Select specific components of the data to view
+- Group, summarize, and calculate metrics on the data
 
-The Queries can be built up like this:
-Simple filter query
-{{.FilterQuery}}
-{{.FilterDesc}}
-{{.TableIntro}}
-{{.TableQuery}}
-{{if .TableDesc}}{{.TableDesc}}
-{{end -}}
-If you wanted a summary / count of the lines you can use the summary converter:
-{{.SummaryQuery}}
-{{.SummaryDesc}}
-If you want to sort you can use:
-{{.SortQuery}}
-These can be used in any combination and repeated for the desired effect:
-{{.ComboQuery}}
-And so forth
+You can construct queries progressively. Here are examples of how to build them:
+
+1. Simple Filtering
+	{{.FilterExample}}
+	Explanation: {{.FilterExplanation}}
+
+2. Selecting Components (Tabular Conversion)
+	{{.TableExample}}
+	Explanation: This extracts specific fields from the {{.EntityPlural}} and converts them into a tabular format for viewing.
+
+3. Grouping and Summarization
+	{{.SummaryExample}}
+	Explanation: This groups the {{.EntityPlural}} based on specific fields, and then applies aggregate calculations (like sums or counts) to those groups.
+
+4. Sorting Data
+	{{.SortExample}}
+	Explanation: This sorts the resulting data based on the specified fields.
+
+5. Combining Operations
+	Operations can be chained together sequentially to achieve complex data processing:
+	{{.ComboExample}}
 
 Notes:
-- Single word string literals begin with a `.`
-{{.ColRefNote}}
+- String literals consisting of a single word should begin with a dot (`.`).
+- {{.ColRef}}
+- All functions must be preceded by `f.`.
+- Extension PRs are welcome and encouraged!
 {{if .NotImplementedNote}}{{.NotImplementedNote}}
 {{end -}}
-- Extension PRs are welcome and intended
-- All functions are preceded by `f.`
 {{if .CannotConvertBackNote}}{{.CannotConvertBackNote}}
 {{end -}}
