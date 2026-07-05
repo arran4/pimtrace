@@ -1,0 +1,28 @@
+{{template "header"}}
+
+1. Simple Filtering
+	filter not h.user-agent icontains .Kmail
+	Explanation: Filters all emails sent with a user agent that does not contain `kmail`.
+
+2. Selecting Components (Tabular Conversion)
+	into table h.user-agent h.subject f.year[h.date] f.month[h.date]
+	Explanation: This extracts specific fields from the emails and converts them into a tabular format for viewing.
+
+3. Grouping and Summarization
+	into summary h.user-agent h.subject f.year[h.date] f.month[h.date] calculate f.sum[c.size] f.count
+	Explanation: This groups the emails based on specific fields, and then applies aggregate calculations (like sums or counts) to those groups.
+
+4. Sorting Data
+	sort f.year[h.date] f.month[h.date]
+{{template "sortIntro"}}
+
+5. Combining Operations
+{{template "comboIntro"}}
+	filter h.user-agent icontains .Kmail into summary h.user-agent f.year[h.date] calculate f.count filter c.year-date eq 2022 sort h.user-agent
+
+Notes:
+{{template "notesIntro"}}
+- Headers are referred to with `h.`. Once in table form, they become columns referred to by `c.`.
+- Body parsing components are not fully implemented yet.
+{{template "footer"}}
+- Once converted to table form, the data cannot be converted back to mailfile or mbox.

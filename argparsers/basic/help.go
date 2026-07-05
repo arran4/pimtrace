@@ -6,15 +6,11 @@ import (
 	"text/template"
 )
 
-//go:embed help.tmpl
+//go:embed help_*.tmpl
 var helpFS embed.FS
 
-var helpTemplate = template.Must(template.ParseFS(helpFS, "help.tmpl"))
+var helpTemplate = template.Must(template.ParseFS(helpFS, "help_*.tmpl"))
 
 func PrintHelp(w io.Writer, t string) error {
-	return helpTemplate.Execute(w, struct {
-		Type string
-	}{
-		Type: t,
-	})
+	return helpTemplate.ExecuteTemplate(w, "help_"+t+".tmpl", nil)
 }

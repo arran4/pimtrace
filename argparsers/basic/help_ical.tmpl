@@ -1,0 +1,28 @@
+{{template "header"}}
+
+1. Simple Filtering
+	filter not p.SUMMARY icontains .Report
+	Explanation: Filters all events without a SUMMARY containing 'Report'.
+
+2. Selecting Components (Tabular Conversion)
+	into table p.LOCATION f.year[p.DUE] f.month[p.DUE]
+	Explanation: This extracts specific fields from the events and converts them into a tabular format for viewing.
+
+3. Grouping and Summarization
+	into summary p.LOCATION f.year[p.DUE] f.month[p.DUE] calculate f.count
+	Explanation: This groups the events based on specific fields, and then applies aggregate calculations (like sums or counts) to those groups.
+
+4. Sorting Data
+	sort f.year[p.DUE] f.month[p.DUE]
+{{template "sortIntro"}}
+
+5. Combining Operations
+{{template "comboIntro"}}
+	filter p.SUMMARY icontains .Report into summary p.LOCATION f.year[p.DUE] f.month[p.DUE] calculate f.count filter c.year-DUE eq 2022 sort p.LOCATION
+
+Notes:
+{{template "notesIntro"}}
+- Properties are referred to with `p.`. Once in table form, they become columns referred to by `c.`.
+- Subcomponents are not fully implemented yet.
+{{template "footer"}}
+- Once converted to table form, the data cannot be converted back to ical / ics.

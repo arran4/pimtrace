@@ -1,0 +1,26 @@
+{{template "header"}}
+
+1. Simple Filtering
+	filter not c.job icontains .Software
+	Explanation: Filters all rows where the `job` column does not contain `Software`.
+
+2. Selecting Components (Tabular Conversion)
+	into table c.job f.year[c.startdate] f.month[c.startdate]
+	Explanation: This extracts specific fields from the rows and converts them into a tabular format for viewing.
+
+3. Grouping and Summarization
+	into summary c.job calculate f.sum[c.pay] f.count
+	Explanation: This groups the rows based on specific fields, and then applies aggregate calculations (like sums or counts) to those groups.
+
+4. Sorting Data
+	sort f.year[c.startdate] f.month[c.startdate]
+{{template "sortIntro"}}
+
+5. Combining Operations
+{{template "comboIntro"}}
+	filter c.startdate icontains .Software into summary c.job f.year[c.startdate] calculate f.count filter c.year-startdate eq 2022 sort c.job
+
+Notes:
+{{template "notesIntro"}}
+- Columns are referred to by `c.`.
+{{template "footer"}}
