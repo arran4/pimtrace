@@ -15,7 +15,8 @@ import (
 func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) (res []*MailWithSource, err error) {
 	ff, closers, err := dataformats.ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		for _, fc := range closers {
+		for i := range closers {
+			fc := closers[len(closers)-i-1]
 			if cerr := fc.Close(); cerr != nil {
 				if err == nil {
 					err = fmt.Errorf("closing ReaderStreamMapper: %w", cerr)
@@ -50,7 +51,8 @@ func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) (res []
 func ReadMailStream(f io.Reader, fType string, fName string, ops ...any) (res []*MailWithSource, err error) {
 	ff, closers, err := dataformats.ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		for _, fc := range closers {
+		for i := range closers {
+			fc := closers[len(closers)-i-1]
 			if cerr := fc.Close(); cerr != nil {
 				if err == nil {
 					err = fmt.Errorf("closing ReaderStreamMapper: %w", cerr)

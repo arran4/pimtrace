@@ -379,9 +379,15 @@ func (s *SortTransformerSorter) Less(i, j int) bool {
 		if err != nil {
 			log.Printf("Sort execution error for element i: %v", err)
 		}
+		if iv == nil {
+			iv = &pimtrace.SimpleNilValue{}
+		}
 		jv, err := e.Execute(jo, s.Context)
 		if err != nil {
 			log.Printf("Sort execution error for element j: %v", err)
+		}
+		if jv == nil {
+			jv = &pimtrace.SimpleNilValue{}
 		}
 		if iv.Equal(jv) {
 			continue

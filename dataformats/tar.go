@@ -26,7 +26,8 @@ func ReadTarFile[T any](fType string, fName string, next Next[T], globs []string
 	}()
 	ff, closers, err := ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		for _, fc := range closers {
+		for i := range closers {
+			fc := closers[len(closers)-i-1]
 			if cerr := fc.Close(); cerr != nil {
 				if err == nil {
 					err = fmt.Errorf("closing ReaderStreamMapper: %w", cerr)
@@ -45,7 +46,8 @@ func ReadTarFile[T any](fType string, fName string, next Next[T], globs []string
 func ReadTarStream[T any](f io.Reader, fType string, fName string, next Next[T], globs []string, ops ...any) (res []T, err error) {
 	ff, closers, err := ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		for _, fc := range closers {
+		for i := range closers {
+			fc := closers[len(closers)-i-1]
 			if cerr := fc.Close(); cerr != nil {
 				if err == nil {
 					err = fmt.Errorf("closing ReaderStreamMapper: %w", cerr)
