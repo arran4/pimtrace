@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"github.com/emersion/go-message/mail"
 	"io"
 	"mime/multipart"
@@ -119,7 +120,10 @@ func (s *MailWithSource) From() string {
 }
 
 func (s *MailWithSource) Time() time.Time {
-	d, _ := s.MailHeader.Date()
+	d, err := s.MailHeader.Date()
+	if err != nil {
+		log.Printf("Error parsing mail date: %v", err)
+	}
 	return d
 }
 

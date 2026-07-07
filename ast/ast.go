@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"log"
 	"pimtrace"
 	"pimtrace/dataformats/groupdata"
 	"pimtrace/dataformats/tabledata"
@@ -374,8 +375,20 @@ func (s *SortTransformerSorter) Len() int {
 func (s *SortTransformerSorter) Less(i, j int) bool {
 	for _, e := range s.SortTransformer.Expression {
 		io, jo := s.Data.Entry(i), s.Data.Entry(j)
-		iv, _ := e.Execute(io, s.Context)
-		jv, _ := e.Execute(jo, s.Context)
+		iv, err := e.Execute(io, s.Context)
+		if err != nil {
+			log.Printf("Sort execution error for element i: %v", err)
+		}
+		if iv == nil {
+			iv = &pimtrace.SimpleNilValue{}
+		}
+		jv, err := e.Execute(jo, s.Context)
+		if err != nil {
+			log.Printf("Sort execution error for element j: %v", err)
+		}
+		if jv == nil {
+			jv = &pimtrace.SimpleNilValue{}
+		}
 		if iv.Equal(jv) {
 			continue
 		}

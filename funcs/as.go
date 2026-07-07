@@ -3,6 +3,7 @@ package funcs
 import (
 	"errors"
 	"fmt"
+	"log"
 	"pimtrace"
 	"pimtrace/dataformats/nildata"
 
@@ -35,7 +36,13 @@ func (c As[T]) ColumnName(args []T) string {
 	if len(args) < 2 {
 		return ""
 	}
-	v, _ := args[1].Execute(&nildata.Row{}, nil)
+	v, err := args[1].Execute(&nildata.Row{}, nil)
+	if err != nil {
+		log.Printf("Error executing as argument: %v", err)
+	}
+	if v == nil {
+		return ""
+	}
 	return v.String()
 }
 

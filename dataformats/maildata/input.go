@@ -12,12 +12,17 @@ import (
 	"pimtrace/dataformats"
 )
 
-func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) ([]*MailWithSource, error) {
+func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) (res []*MailWithSource, err error) {
 	ff, closers, err := dataformats.ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		for _, fc := range closers {
-			if err := fc.Close(); err != nil {
-				log.Printf("error closing ReaderStreamMapper: %s", err)
+		for i := range closers {
+			fc := closers[len(closers)-i-1]
+			if cerr := fc.Close(); cerr != nil {
+				if err == nil {
+					err = fmt.Errorf("closing ReaderStreamMapper: %w", cerr)
+				} else {
+					log.Printf("error closing ReaderStreamMapper: %s", cerr)
+				}
 			}
 		}
 	}()
@@ -27,28 +32,33 @@ func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) ([]*Mai
 	mbr := mbox.NewReader(ff)
 	var ms []*MailWithSource
 	for {
-		mr, err := mbr.NextMessage()
-		if err != nil && !errors.Is(err, io.EOF) {
-			return nil, fmt.Errorf("reading message %d from Mbox %s: %w", len(ms)+1, fName, err)
+		mr, nextErr := mbr.NextMessage()
+		if nextErr != nil && !errors.Is(nextErr, io.EOF) {
+			return nil, fmt.Errorf("reading message %d from Mbox %s: %w", len(ms)+1, fName, nextErr)
 		}
 		if mr == nil {
 			return ms, nil
 		}
-		mrms, err := ReadMailStream(mr, fType, fName)
-		if err != nil {
-			log.Printf("parsing message %d from Mbox %s: %v", len(ms)+1, fName, err)
+		mrms, readErr := ReadMailStream(mr, fType, fName)
+		if readErr != nil {
+			log.Printf("parsing message %d from Mbox %s: %v", len(ms)+1, fName, readErr)
 			continue
 		}
 		ms = append(ms, mrms...)
 	}
 }
 
-func ReadMailStream(f io.Reader, fType string, fName string, ops ...any) ([]*MailWithSource, error) {
+func ReadMailStream(f io.Reader, fType string, fName string, ops ...any) (res []*MailWithSource, err error) {
 	ff, closers, err := dataformats.ReaderStreamMapperOptionProcessor(f, ops)
 	defer func() {
-		for _, fc := range closers {
-			if err := fc.Close(); err != nil {
-				log.Printf("error closing ReaderStreamMapper: %s", err)
+		for i := range closers {
+			fc := closers[len(closers)-i-1]
+			if cerr := fc.Close(); cerr != nil {
+				if err == nil {
+					err = fmt.Errorf("closing ReaderStreamMapper: %w", cerr)
+				} else {
+					log.Printf("error closing ReaderStreamMapper: %s", cerr)
+				}
 			}
 		}
 	}()
