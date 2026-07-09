@@ -10,25 +10,9 @@ import (
 	"testing/fstest"
 )
 
-type mapFSAdapter struct {
-	fs fstest.MapFS
-}
 
-type nopFile struct {
-	io.Reader
-}
 
-func (n nopFile) Close() error { return nil }
-func (n nopFile) Write(p []byte) (int, error) { return 0, io.ErrClosedPipe }
-func (n nopFile) Seek(offset int64, whence int) (int64, error) { return 0, io.EOF }
 
-func (m mapFSAdapter) OpenFile(name string, flag int, perm os.FileMode) (fsys.File, error) {
-	f, err := m.fs.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	return nopFile{Reader: f}, nil
-}
 
 func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
@@ -103,8 +87,8 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	mockFS := mapFSAdapter{
-		fs: fstest.MapFS{
+	mockFS := fsys.MapFSAdapter{
+		MapFS: fstest.MapFS{
 			"test.eml": &fstest.MapFile{Data: []byte(mailContent)},
 		},
 	}
