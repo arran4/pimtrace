@@ -32,13 +32,13 @@ func main() {
 		helpFlag    = f.Bool("help", false, "Prints help")
 	)
 	f.Usage = func() {
-		fmt.Println("Usage: ", os.Args[0], "[Flags]", "[Query]")
+		_, _ = fmt.Println("Usage: ", os.Args[0], "[Flags]", "[Query]")
 		f.PrintDefaults()
 		PrintQueryHelp(os.Stdout, *parser)
 	}
 
 	if *versionFlag {
-		fmt.Println(version, commit, date)
+		_, _ = fmt.Println(version, commit, date)
 		return
 	}
 
@@ -48,7 +48,7 @@ func main() {
 	}
 
 	if *helpFlag || len(os.Args) <= 1 {
-		fmt.Println("No query found")
+		_, _ = fmt.Println("No query found")
 		f.Usage()
 		os.Exit(-1)
 	}
