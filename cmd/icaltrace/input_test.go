@@ -12,7 +12,7 @@ import (
 )
 
 type mapFSAdapter struct {
-	fstest.MapFS
+	fs fstest.MapFS
 }
 
 type nopFile struct {
@@ -24,7 +24,7 @@ func (n nopFile) Write(p []byte) (int, error) { return 0, io.ErrClosedPipe }
 func (n nopFile) Seek(offset int64, whence int) (int64, error) { return 0, io.EOF }
 
 func (m mapFSAdapter) OpenFile(name string, flag int, perm os.FileMode) (fsys.File, error) {
-	f, err := m.MapFS.Open(name)
+	f, err := m.fs.Open(name)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ func TestInputHandler_File(t *testing.T) {
 	defer func() { fsys.DefaultFS = oldFS }()
 
 	mockFS := mapFSAdapter{
-		MapFS: fstest.MapFS{
+		fs: fstest.MapFS{
 			"test.ics": &fstest.MapFile{Data: []byte("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")},
 		},
 	}
