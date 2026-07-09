@@ -33,7 +33,7 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string, customOutputs [][2]
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	case "count":
-		fmt.Println(p.Len())
+		_, _ = fmt.Println(p.Len())
 		return nil
 	case "list":
 		PrintOutputHelp(customOutputs)
@@ -49,7 +49,7 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string, customOutputs [][2]
 }
 
 func PrintOutputHelp(custom [][2]string) {
-	fmt.Println("--output-types: ")
+	_, _ = fmt.Println("--output-types: ")
 	each := [][2]string{
 		{"list", "This help text"},
 		{"csv", "Data in csv format"},
@@ -58,7 +58,7 @@ func PrintOutputHelp(custom [][2]string) {
 		{"plot.bar", "Writes a plot of the data out, the data must be tabular and columns must be in the form of: string, number*"},
 	}
 	for _, e := range append(each, custom...) {
-		fmt.Printf(" %-30s %s\n", e[0], e[1])
+		_, _ = fmt.Printf(" %-30s %s\n", e[0], e[1])
 	}
-	fmt.Println()
+	_, _ = fmt.Println()
 }
