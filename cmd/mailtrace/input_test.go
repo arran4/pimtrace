@@ -4,9 +4,31 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"pimtrace/fsys"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
+
+type mapFSAdapter struct {
+	fstest.MapFS
+}
+
+type nopFile struct {
+	io.Reader
+}
+
+func (n nopFile) Close() error { return nil }
+func (n nopFile) Write(p []byte) (int, error) { return 0, io.ErrClosedPipe }
+func (n nopFile) Seek(offset int64, whence int) (int64, error) { return 0, io.EOF }
+
+func (m mapFSAdapter) OpenFile(name string, flag int, perm os.FileMode) (fsys.File, error) {
+	f, err := m.MapFS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return nopFile{Reader: f}, nil
+}
 
 func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
@@ -71,11 +93,8 @@ body
 }
 
 func TestInputHandler_File(t *testing.T) {
-	f, err := os.CreateTemp("", "test*.eml")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
-	defer func() { _ = os.Remove(f.Name()) }()
+	oldFS := fsys.DefaultFS
+	defer func() { fsys.DefaultFS = oldFS }()
 
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
@@ -84,10 +103,14 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	_, _ = f.WriteString(mailContent)
-	_ = f.Close()
+	mockFS := mapFSAdapter{
+		MapFS: fstest.MapFS{
+			"test.eml": &fstest.MapFile{Data: []byte(mailContent)},
+		},
+	}
+	fsys.DefaultFS = mockFS
 
-	data, err := InputHandler("mailfile", f.Name())
+	data, err := InputHandler("mailfile", "test.eml")
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, file) error: %v", err)
 	}

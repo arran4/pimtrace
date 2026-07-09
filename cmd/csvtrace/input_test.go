@@ -4,9 +4,31 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"pimtrace/fsys"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
+
+type mapFSAdapter struct {
+	fstest.MapFS
+}
+
+type nopFile struct {
+	io.Reader
+}
+
+func (n nopFile) Close() error { return nil }
+func (n nopFile) Write(p []byte) (int, error) { return 0, io.ErrClosedPipe }
+func (n nopFile) Seek(offset int64, whence int) (int64, error) { return 0, io.EOF }
+
+func (m mapFSAdapter) OpenFile(name string, flag int, perm os.FileMode) (fsys.File, error) {
+	f, err := m.MapFS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return nopFile{Reader: f}, nil
+}
 
 func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
@@ -67,17 +89,17 @@ func TestInputHandler_Stdin(t *testing.T) {
 }
 
 func TestInputHandler_File(t *testing.T) {
-	// Create a temporary file
-	f, err := os.CreateTemp("", "test*.csv")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
+	oldFS := fsys.DefaultFS
+	defer func() { fsys.DefaultFS = oldFS }()
+
+	mockFS := mapFSAdapter{
+		MapFS: fstest.MapFS{
+			"test.csv": &fstest.MapFile{Data: []byte("col1,col2\nval1,val2\n")},
+		},
 	}
-	defer func() { _ = os.Remove(f.Name()) }()
+	fsys.DefaultFS = mockFS
 
-	_, _ = f.WriteString("col1,col2\nval1,val2\n")
-	_ = f.Close()
-
-	data, err := InputHandler("csv", f.Name(), nil)
+	data, err := InputHandler("csv", "test.csv", nil)
 	if err != nil {
 		t.Errorf("InputHandler(csv, file) error: %v", err)
 	}

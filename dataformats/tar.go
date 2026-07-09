@@ -8,10 +8,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"pimtrace/fsys"
 )
 
 func ReadTarFile[T any](fType string, fName string, next Next[T], globs []string, ops ...any) (res []T, err error) {
-	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
+	f, err := fsys.DefaultFS.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
 	}

@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"pimtrace/fsys"
 )
 
 type HasStringArray interface {
@@ -13,7 +14,7 @@ type HasStringArray interface {
 }
 
 func WriteFileWrapper(fType string, fName string, fun func(f io.Writer, fName string) error) (err error) {
-	f, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	f, err := fsys.DefaultFS.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("creating %s %s: %w", fType, fName, err)
 	}
@@ -30,7 +31,7 @@ func WriteFileWrapper(fType string, fName string, fun func(f io.Writer, fName st
 }
 
 func ReadFileWrapper[T Data](fType string, fName string, fun func(f io.Reader, fName string) (T, error)) (result T, err error) {
-	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
+	f, err := fsys.DefaultFS.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return result, fmt.Errorf("reading %s %s: %w", fType, fName, err)
 	}

@@ -5,9 +5,31 @@ import (
 	"io"
 	"os"
 	"pimtrace"
+	"pimtrace/fsys"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
+
+type mapFSAdapter struct {
+	fstest.MapFS
+}
+
+type nopFile struct {
+	io.Reader
+}
+
+func (n nopFile) Close() error { return nil }
+func (n nopFile) Write(p []byte) (int, error) { return 0, io.ErrClosedPipe }
+func (n nopFile) Seek(offset int64, whence int) (int64, error) { return 0, io.EOF }
+
+func (m mapFSAdapter) OpenFile(name string, flag int, perm os.FileMode) (fsys.File, error) {
+	f, err := m.MapFS.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	return nopFile{Reader: f}, nil
+}
 
 func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
@@ -142,17 +164,17 @@ func TestInputHandler_Stdin(t *testing.T) {
 }
 
 func TestInputHandler_File(t *testing.T) {
-	// Create a temporary file
-	f, err := os.CreateTemp("", "test*.ics")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
+	oldFS := fsys.DefaultFS
+	defer func() { fsys.DefaultFS = oldFS }()
+
+	mockFS := mapFSAdapter{
+		MapFS: fstest.MapFS{
+			"test.ics": &fstest.MapFile{Data: []byte("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")},
+		},
 	}
-	defer func() { _ = os.Remove(f.Name()) }()
+	fsys.DefaultFS = mockFS
 
-	_, _ = f.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
-	_ = f.Close()
-
-	data, err := InputHandler("ical", f.Name(), nil)
+	data, err := InputHandler("ical", "test.ics", nil)
 	if err != nil {
 		t.Errorf("InputHandler(ical, file) error: %v", err)
 	}

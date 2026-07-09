@@ -49,6 +49,8 @@ func FilterIdentify(s string) (any, error) {
 		return ast.EntryExpression(s), nil
 	case "c", "column":
 		return ast.EntryExpression(s), nil
+	case "p", "property":
+		return ast.EntryExpression(s), nil
 	case "":
 		if strings.HasPrefix(s, ".") {
 			return ast.ConstantExpression(ss[1]), nil
@@ -69,6 +71,8 @@ func IntoIdentify(args []string) (any, []string, error) {
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "c", "column":
 		return ast.EntryExpression(args[0]), args[1:], nil
+	case "p", "property":
+		return ast.EntryExpression(args[0]), args[1:], nil
 	case "f", "func":
 		return ParseFunctionExpression(args)
 	case "":
@@ -88,6 +92,8 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 	case "h", "header":
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "c", "column":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "p", "property":
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "f", "func":
 		return ParseFunctionExpression(args)
