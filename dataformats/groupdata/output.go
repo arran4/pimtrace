@@ -4,10 +4,11 @@ import (
 	"io"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
+	"pimtrace/fsys"
 )
 
 func (d Data) WriteCSVFile(fName string) error {
-	return pimtrace.WriteFileWrapper("CSV", fName, d.WriteCSVStream)
+	return pimtrace.WriteFileWrapper(fsys.OSFS{}, "CSV", fName, d.WriteCSVStream)
 }
 
 func (d Data) WriteCSVStream(f io.Writer, fName string) error {
@@ -15,7 +16,7 @@ func (d Data) WriteCSVStream(f io.Writer, fName string) error {
 }
 
 func (d Data) WriteTableFile(fName string) error {
-	return pimtrace.WriteFileWrapper("Table", fName, d.WriteTableStream)
+	return pimtrace.WriteFileWrapper(fsys.OSFS{}, "Table", fName, d.WriteTableStream)
 }
 
 func (d Data) WriteTableStream(f io.Writer, fName string) error {

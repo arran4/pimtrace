@@ -6,6 +6,7 @@ import (
 	"io"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
+	"pimtrace/fsys"
 )
 
 var _ pimtrace.ICalFileOutputCapable = (*Data)(nil)
@@ -13,7 +14,7 @@ var _ pimtrace.CSVOutputCapable = (*Data)(nil)
 var _ pimtrace.TableOutputCapable = (*Data)(nil)
 
 func (icd Data) WriteCSVFile(fName string) error {
-	return pimtrace.WriteFileWrapper("CSV", fName, icd.WriteCSVStream)
+	return pimtrace.WriteFileWrapper(fsys.OSFS{}, "CSV", fName, icd.WriteCSVStream)
 }
 
 func (icd Data) WriteCSVStream(f io.Writer, fName string) error {
@@ -21,7 +22,7 @@ func (icd Data) WriteCSVStream(f io.Writer, fName string) error {
 }
 
 func (icd Data) WriteTableFile(fName string) error {
-	return pimtrace.WriteFileWrapper("Table", fName, icd.WriteTableStream)
+	return pimtrace.WriteFileWrapper(fsys.OSFS{}, "Table", fName, icd.WriteTableStream)
 }
 
 func (icd Data) WriteTableStream(f io.Writer, fName string) error {
@@ -30,7 +31,7 @@ func (icd Data) WriteTableStream(f io.Writer, fName string) error {
 }
 
 func (icd Data) WriteICalFile(fName string) error {
-	return pimtrace.WriteFileWrapper("ICalFile", fName, icd.WriteICalStream)
+	return pimtrace.WriteFileWrapper(fsys.OSFS{}, "ICalFile", fName, icd.WriteICalStream)
 }
 
 func (icd Data) WriteICalStream(f io.Writer, fName string) error {

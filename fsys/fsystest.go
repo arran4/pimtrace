@@ -7,7 +7,7 @@ import (
 )
 
 type MapFSAdapter struct {
-	fstest.MapFS
+	MapFS fstest.MapFS
 }
 
 type NopFile struct {

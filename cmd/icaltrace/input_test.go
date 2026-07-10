@@ -11,10 +11,6 @@ import (
 	"testing/fstest"
 )
 
-
-
-
-
 func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
 	f(&buf)
@@ -34,7 +30,7 @@ func TestPrintInputHelpContainsIcal(t *testing.T) {
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
-	_, err := InputHandler("list", "", &buf)
+	_, err := InputHandler(fsys.OSFS{}, "list", "", &buf)
 	if err != nil {
 		t.Errorf("InputHandler(list) error: %v", err)
 	}
@@ -43,7 +39,7 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "", nil)
+	_, err = InputHandler(fsys.OSFS{}, "unknown", "", nil)
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -51,7 +47,7 @@ func TestInputHandler(t *testing.T) {
 	// For input file, we would need to mock or create a real ical file.
 	// The problem is `ReadFile` uses a stream mapping that reads from a file path.
 	// But passing an invalid file should give an error. Let's just check the error case.
-	_, err = InputHandler("ical", "nonexistent.ics", nil)
+	_, err = InputHandler(fsys.OSFS{}, "ical", "nonexistent.ics", nil)
 	if err == nil {
 		t.Errorf("InputHandler(ical, nonexistent.ics) expected error")
 	}
@@ -101,12 +97,11 @@ func (d *dummyICalData) WriteICalStream(f io.Writer, fName string) error {
 	return nil
 }
 
-func (d *dummyICalData) Len() int { return 0 }
-func (d *dummyICalData) Entry(n int) pimtrace.Entry { return nil }
-func (d *dummyICalData) Truncate(n int) pimtrace.Data { return nil }
+func (d *dummyICalData) Len() int                                           { return 0 }
+func (d *dummyICalData) Entry(n int) pimtrace.Entry                         { return nil }
+func (d *dummyICalData) Truncate(n int) pimtrace.Data                       { return nil }
 func (d *dummyICalData) SetEntry(n int, entry pimtrace.Entry) pimtrace.Data { return nil }
-func (d *dummyICalData) NewSelf() pimtrace.Data { return nil }
-
+func (d *dummyICalData) NewSelf() pimtrace.Data                             { return nil }
 
 func TestOutputHandlerICal(t *testing.T) {
 	d := &dummyICalData{}
@@ -137,7 +132,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	_, _ = w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 	_ = w.Close()
 
-	data, err := InputHandler("ical", "-", nil)
+	data, err := InputHandler(fsys.OSFS{}, "ical", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(ical, -) error: %v", err)
 	}
@@ -148,17 +143,13 @@ func TestInputHandler_Stdin(t *testing.T) {
 }
 
 func TestInputHandler_File(t *testing.T) {
-	oldFS := fsys.DefaultFS
-	defer func() { fsys.DefaultFS = oldFS }()
-
 	mockFS := fsys.MapFSAdapter{
 		MapFS: fstest.MapFS{
 			"test.ics": &fstest.MapFile{Data: []byte("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")},
 		},
 	}
-	fsys.DefaultFS = mockFS
 
-	data, err := InputHandler("ical", "test.ics", nil)
+	data, err := InputHandler(mockFS, "ical", "test.ics", nil)
 	if err != nil {
 		t.Errorf("InputHandler(ical, file) error: %v", err)
 	}

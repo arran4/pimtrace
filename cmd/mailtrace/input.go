@@ -8,9 +8,10 @@ import (
 	"pimtrace"
 	"pimtrace/dataformats"
 	"pimtrace/dataformats/maildata"
+	"pimtrace/fsys"
 )
 
-func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+func InputHandler(fs fsys.FS, inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
 	var out io.Writer = os.Stdout
 	for _, op := range ops {
 		if w, ok := op.(io.Writer); ok && w != nil {
@@ -30,7 +31,7 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := dataformats.ReadFile(inputType, inputFile, maildata.ReadMailStream)
+			nm, err := dataformats.ReadFile(fs, inputType, inputFile, maildata.ReadMailStream)
 			if err != nil {
 				return nil, err
 			}
@@ -48,7 +49,7 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := dataformats.ReadFile(inputType, inputFile, maildata.ReadMBoxStream, ops...)
+			nm, err := dataformats.ReadFile(fs, inputType, inputFile, maildata.ReadMBoxStream, ops...)
 			if err != nil {
 				return nil, err
 			}
@@ -66,7 +67,7 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := dataformats.ReadTarFile(inputType, inputFile, maildata.ReadMBoxStream, []string{"*.mbox"}, ops...)
+			nm, err := dataformats.ReadTarFile(fs, inputType, inputFile, maildata.ReadMBoxStream, []string{"*.mbox"}, ops...)
 			if err != nil {
 				return nil, err
 			}

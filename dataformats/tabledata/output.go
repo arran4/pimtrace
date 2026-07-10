@@ -5,12 +5,13 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"io"
 	"pimtrace"
+	"pimtrace/fsys"
 )
 
 var _ pimtrace.CSVOutputCapable = (*Data)(nil)
 
 func (d Data) WriteCSVFile(fName string) error {
-	return pimtrace.WriteFileWrapper("CSV", fName, d.WriteCSVStream)
+	return pimtrace.WriteFileWrapper(fsys.OSFS{}, "CSV", fName, d.WriteCSVStream)
 }
 
 func (d Data) WriteCSVStream(f io.Writer, fName string) error {
@@ -20,7 +21,7 @@ func (d Data) WriteCSVStream(f io.Writer, fName string) error {
 var _ pimtrace.TableOutputCapable = (*Data)(nil)
 
 func (d Data) WriteTableFile(fName string) error {
-	return pimtrace.WriteFileWrapper("Table", fName, d.WriteTableStream)
+	return pimtrace.WriteFileWrapper(fsys.OSFS{}, "Table", fName, d.WriteTableStream)
 }
 
 func (d Data) WriteTableStream(f io.Writer, fName string) error {

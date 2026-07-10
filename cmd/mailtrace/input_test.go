@@ -10,10 +10,6 @@ import (
 	"testing/fstest"
 )
 
-
-
-
-
 func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
 	f(&buf)
@@ -36,7 +32,7 @@ func TestPrintInputHelpContainsTypes(t *testing.T) {
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
-	_, err := InputHandler("list", "", &buf)
+	_, err := InputHandler(fsys.OSFS{}, "list", "", &buf)
 	if err != nil {
 		t.Errorf("InputHandler(list) error: %v", err)
 	}
@@ -45,7 +41,7 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "")
+	_, err = InputHandler(fsys.OSFS{}, "unknown", "")
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -67,7 +63,7 @@ body
 	_, _ = w.WriteString(mailContent)
 	_ = w.Close()
 
-	data, err := InputHandler("mailfile", "-")
+	data, err := InputHandler(fsys.OSFS{}, "mailfile", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, -) error: %v", err)
 	}
@@ -77,9 +73,6 @@ body
 }
 
 func TestInputHandler_File(t *testing.T) {
-	oldFS := fsys.DefaultFS
-	defer func() { fsys.DefaultFS = oldFS }()
-
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
@@ -92,9 +85,8 @@ body
 			"test.eml": &fstest.MapFile{Data: []byte(mailContent)},
 		},
 	}
-	fsys.DefaultFS = mockFS
 
-	data, err := InputHandler("mailfile", "test.eml")
+	data, err := InputHandler(mockFS, "mailfile", "test.eml")
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, file) error: %v", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"pimtrace/argparsers/basic"
 	"pimtrace/ast"
 	"pimtrace/dataformats"
+	"pimtrace/fsys"
 	"pimtrace/funcs"
 
 	"github.com/arran4/go-evaluator"
@@ -60,7 +61,7 @@ func main() {
 		iops = append(iops, dataformats.NewProgressor())
 	}
 
-	data, err := InputHandler(*inputType, *inputFile, iops...)
+	data, err := InputHandler(fsys.OSFS{}, *inputType, *inputFile, iops...)
 	if err != nil {
 		log.Printf("Read Error: %s", err)
 		os.Exit(-1)

@@ -11,8 +11,8 @@ import (
 	"pimtrace/fsys"
 )
 
-func ReadTarFile[T any](fType string, fName string, next Next[T], globs []string, ops ...any) (res []T, err error) {
-	f, err := fsys.DefaultFS.OpenFile(fName, os.O_RDONLY, 0644)
+func ReadTarFile[T any](fs fsys.FS, fType string, fName string, next Next[T], globs []string, ops ...any) (res []T, err error) {
+	f, err := fs.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("reading Mbox %s: %w", fName, err)
 	}

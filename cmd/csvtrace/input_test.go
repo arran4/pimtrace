@@ -10,10 +10,6 @@ import (
 	"testing/fstest"
 )
 
-
-
-
-
 func captureOutput(f func(w io.Writer)) (string, error) {
 	var buf bytes.Buffer
 	f(&buf)
@@ -33,7 +29,7 @@ func TestPrintInputHelpContainsCsv(t *testing.T) {
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
-	_, err := InputHandler("list", "", &buf)
+	_, err := InputHandler(fsys.OSFS{}, "list", "", &buf)
 	if err != nil {
 		t.Errorf("InputHandler(list) error: %v", err)
 	}
@@ -42,13 +38,13 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "", nil)
+	_, err = InputHandler(fsys.OSFS{}, "unknown", "", nil)
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
 
 	// File error case
-	_, err = InputHandler("csv", "nonexistent.csv", nil)
+	_, err = InputHandler(fsys.OSFS{}, "csv", "nonexistent.csv", nil)
 	if err == nil {
 		t.Errorf("InputHandler(csv, nonexistent.csv) expected error")
 	}
@@ -63,7 +59,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	_, _ = w.WriteString("col1,col2\nval1,val2\n")
 	_ = w.Close()
 
-	data, err := InputHandler("csv", "-", nil)
+	data, err := InputHandler(fsys.OSFS{}, "csv", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(csv, -) error: %v", err)
 	}
@@ -73,17 +69,13 @@ func TestInputHandler_Stdin(t *testing.T) {
 }
 
 func TestInputHandler_File(t *testing.T) {
-	oldFS := fsys.DefaultFS
-	defer func() { fsys.DefaultFS = oldFS }()
-
 	mockFS := fsys.MapFSAdapter{
 		MapFS: fstest.MapFS{
 			"test.csv": &fstest.MapFile{Data: []byte("col1,col2\nval1,val2\n")},
 		},
 	}
-	fsys.DefaultFS = mockFS
 
-	data, err := InputHandler("csv", "test.csv", nil)
+	data, err := InputHandler(mockFS, "csv", "test.csv", nil)
 	if err != nil {
 		t.Errorf("InputHandler(csv, file) error: %v", err)
 	}

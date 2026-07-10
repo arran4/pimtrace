@@ -8,9 +8,10 @@ import (
 	"pimtrace"
 	"pimtrace/dataformats"
 	"pimtrace/dataformats/tabledata"
+	"pimtrace/fsys"
 )
 
-func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Data, error) {
+func InputHandler(fs fsys.FS, inputType string, inputFile string, w io.Writer) (pimtrace.Data, error) {
 	if w == nil {
 		w = os.Stdout
 	}
@@ -25,7 +26,7 @@ func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Dat
 			}
 			rows = append(rows, nm...)
 		default:
-			nm, err := dataformats.ReadFile(inputType, inputFile, tabledata.ReadCSV)
+			nm, err := dataformats.ReadFile(fs, inputType, inputFile, tabledata.ReadCSV)
 			if err != nil {
 				return nil, err
 			}

@@ -8,9 +8,10 @@ import (
 	"pimtrace"
 	"pimtrace/dataformats"
 	"pimtrace/dataformats/icaldata"
+	"pimtrace/fsys"
 )
 
-func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Data, error) {
+func InputHandler(fs fsys.FS, inputType string, inputFile string, w io.Writer) (pimtrace.Data, error) {
 	if w == nil {
 		w = os.Stdout
 	}
@@ -25,7 +26,7 @@ func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Dat
 			}
 			ventry = append(ventry, nm...)
 		default:
-			nm, err := dataformats.ReadFile(inputType, inputFile, icaldata.ReadICalStream)
+			nm, err := dataformats.ReadFile(fs, inputType, inputFile, icaldata.ReadICalStream)
 			if err != nil {
 				return nil, err
 			}
