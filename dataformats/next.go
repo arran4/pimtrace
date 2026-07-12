@@ -11,7 +11,7 @@ import (
 type Next[T any] func(f io.Reader, fType string, fName string, ops ...any) ([]T, error)
 
 func ReadFile[T any](fType string, fName string, next Next[T], ops ...any) (res []T, err error) {
-	fs := fsys.DefaultFS
+	var fs fsys.FS = fsys.NewOSFS()
 	for _, op := range ops {
 		if o, ok := op.(fsys.FS); ok {
 			fs = o
