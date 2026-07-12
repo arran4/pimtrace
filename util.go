@@ -14,7 +14,7 @@ type HasStringArray interface {
 }
 
 func WriteFileWrapper(fType string, fName string, fun func(f io.Writer, fName string) error, ops ...any) (err error) {
-	var fs fsys.FS = fsys.NewOSFS()
+	fs := fsys.NewOSFS()
 	for _, op := range ops {
 		if o, ok := op.(fsys.FS); ok {
 			fs = o
@@ -37,7 +37,7 @@ func WriteFileWrapper(fType string, fName string, fun func(f io.Writer, fName st
 }
 
 func ReadFileWrapper[T Data](fType string, fName string, fun func(f io.Reader, fName string) (T, error), ops ...any) (result T, err error) {
-	var fs fsys.FS = fsys.NewOSFS()
+	fs := fsys.NewOSFS()
 	for _, op := range ops {
 		if o, ok := op.(fsys.FS); ok {
 			fs = o

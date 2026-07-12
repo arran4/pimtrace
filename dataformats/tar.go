@@ -12,7 +12,7 @@ import (
 )
 
 func ReadTarFile[T any](fType string, fName string, next Next[T], globs []string, ops ...any) (res []T, err error) {
-	var fs fsys.FS = fsys.NewOSFS()
+	fs := fsys.NewOSFS()
 	for _, op := range ops {
 		if o, ok := op.(fsys.FS); ok {
 			fs = o
