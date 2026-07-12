@@ -5,12 +5,19 @@ import (
 	"io"
 	"log"
 	"os"
+	"pimtrace/fsys"
 )
 
 type Next[T any] func(f io.Reader, fType string, fName string, ops ...any) ([]T, error)
 
 func ReadFile[T any](fType string, fName string, next Next[T], ops ...any) (res []T, err error) {
-	f, err := os.OpenFile(fName, os.O_RDONLY, 0644)
+	fs := fsys.NewOSFS()
+	for _, op := range ops {
+		if o, ok := op.(fsys.FS); ok {
+			fs = o
+		}
+	}
+	f, err := fs.OpenFile(fName, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("reading %s %s: %w", fType, fName, err)
 	}

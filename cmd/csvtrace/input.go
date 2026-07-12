@@ -10,9 +10,12 @@ import (
 	"pimtrace/dataformats/tabledata"
 )
 
-func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Data, error) {
-	if w == nil {
-		w = os.Stdout
+func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+	var w io.Writer = os.Stdout
+	for _, op := range ops {
+		if o, ok := op.(io.Writer); ok {
+			w = o
+		}
 	}
 	var rows []*tabledata.Row
 	switch inputType {
@@ -25,7 +28,7 @@ func InputHandler(inputType string, inputFile string, w io.Writer) (pimtrace.Dat
 			}
 			rows = append(rows, nm...)
 		default:
-			nm, err := dataformats.ReadFile(inputType, inputFile, tabledata.ReadCSV)
+			nm, err := dataformats.ReadFile(inputType, inputFile, tabledata.ReadCSV, ops...)
 			if err != nil {
 				return nil, err
 			}

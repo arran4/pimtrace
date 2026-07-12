@@ -30,7 +30,7 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 			}
 			mails = append(mails, nm...)
 		default:
-			nm, err := dataformats.ReadFile(inputType, inputFile, maildata.ReadMailStream)
+			nm, err := dataformats.ReadFile(inputType, inputFile, maildata.ReadMailStream, ops...)
 			if err != nil {
 				return nil, err
 			}

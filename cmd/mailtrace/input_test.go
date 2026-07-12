@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"pimtrace/fsys/fsystest"
 	"strings"
 	"testing"
+	"testing/fstest"
 )
 
 func captureOutput(f func(w io.Writer)) (string, error) {
@@ -71,12 +73,6 @@ body
 }
 
 func TestInputHandler_File(t *testing.T) {
-	f, err := os.CreateTemp("", "test*.eml")
-	if err != nil {
-		t.Fatalf("failed to create temp file: %v", err)
-	}
-	defer func() { _ = os.Remove(f.Name()) }()
-
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
@@ -84,10 +80,13 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	_, _ = f.WriteString(mailContent)
-	_ = f.Close()
+	mockFS := fsystest.MapFSAdapter{
+		MapFS: fstest.MapFS{
+			"test.eml": &fstest.MapFile{Data: []byte(mailContent)},
+		},
+	}
 
-	data, err := InputHandler("mailfile", f.Name())
+	data, err := InputHandler("mailfile", "test.eml", mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, file) error: %v", err)
 	}
