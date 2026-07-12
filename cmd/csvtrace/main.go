@@ -9,7 +9,6 @@ import (
 	"pimtrace/argparsers/basic"
 	"pimtrace/ast"
 	"pimtrace/dataformats"
-	"pimtrace/fsys"
 	"pimtrace/funcs"
 
 	"github.com/arran4/go-evaluator"
@@ -55,7 +54,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	data, err := InputHandler(fsys.OSFS{}, *inputType, *inputFile, os.Stdout)
+	data, err := InputHandler(*inputType, *inputFile, os.Stdout)
 	if err != nil {
 		log.Printf("Read Error: %s", err)
 		os.Exit(-1)

@@ -30,7 +30,7 @@ func TestPrintInputHelpContainsIcal(t *testing.T) {
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
-	_, err := InputHandler(fsys.OSFS{}, "list", "", &buf)
+	_, err := InputHandler("list", "", &buf)
 	if err != nil {
 		t.Errorf("InputHandler(list) error: %v", err)
 	}
@@ -39,7 +39,7 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler(fsys.OSFS{}, "unknown", "", nil)
+	_, err = InputHandler("unknown", "")
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -47,7 +47,7 @@ func TestInputHandler(t *testing.T) {
 	// For input file, we would need to mock or create a real ical file.
 	// The problem is `ReadFile` uses a stream mapping that reads from a file path.
 	// But passing an invalid file should give an error. Let's just check the error case.
-	_, err = InputHandler(fsys.OSFS{}, "ical", "nonexistent.ics", nil)
+	_, err = InputHandler("ical", "nonexistent.ics")
 	if err == nil {
 		t.Errorf("InputHandler(ical, nonexistent.ics) expected error")
 	}
@@ -132,7 +132,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	_, _ = w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 	_ = w.Close()
 
-	data, err := InputHandler(fsys.OSFS{}, "ical", "-", nil)
+	data, err := InputHandler("ical", "-")
 	if err != nil {
 		t.Errorf("InputHandler(ical, -) error: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestInputHandler_File(t *testing.T) {
 		},
 	}
 
-	data, err := InputHandler(mockFS, "ical", "test.ics", nil)
+	data, err := InputHandler("ical", "test.ics", mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(ical, file) error: %v", err)
 	}

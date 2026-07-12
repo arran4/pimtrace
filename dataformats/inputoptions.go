@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"pimtrace/fsys"
 	"time"
 )
 
@@ -118,6 +119,8 @@ func ReaderStreamMapperOptionProcessor(f io.Reader, ops []any) (io.Reader, []io.
 			if fc, ok := ff.(io.Closer); ok {
 				closers = append(closers, fc)
 			}
+		case fsys.FS:
+			// File systems are processed elsewhere, ignore them here
 		default:
 			return nil, closers, fmt.Errorf("unknown option: %d", i)
 		}

@@ -5,7 +5,6 @@ import (
 	"log"
 	"pimtrace/dataformats"
 	"pimtrace/dataformats/maildata"
-	"pimtrace/fsys"
 )
 
 /**
@@ -19,7 +18,7 @@ func main() {
 	}
 	for _, fn := range flag.Args() {
 		log.Printf("Reading %s", fn)
-		nm, err := dataformats.ReadFile(fsys.OSFS{}, "mailfile", fn, maildata.ReadMailStream)
+		nm, err := dataformats.ReadFile("mailfile", fn, maildata.ReadMailStream)
 		if err != nil {
 			log.Panicf("Read error: %s", err)
 		}

@@ -32,7 +32,7 @@ func TestPrintInputHelpContainsTypes(t *testing.T) {
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
-	_, err := InputHandler(fsys.OSFS{}, "list", "", &buf)
+	_, err := InputHandler("list", "", &buf)
 	if err != nil {
 		t.Errorf("InputHandler(list) error: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler(fsys.OSFS{}, "unknown", "")
+	_, err = InputHandler("unknown", "")
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -63,7 +63,7 @@ body
 	_, _ = w.WriteString(mailContent)
 	_ = w.Close()
 
-	data, err := InputHandler(fsys.OSFS{}, "mailfile", "-", nil)
+	data, err := InputHandler("mailfile", "-")
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, -) error: %v", err)
 	}
@@ -86,7 +86,7 @@ body
 		},
 	}
 
-	data, err := InputHandler(mockFS, "mailfile", "test.eml")
+	data, err := InputHandler("mailfile", "test.eml", mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, file) error: %v", err)
 	}
