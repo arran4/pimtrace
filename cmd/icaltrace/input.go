@@ -10,9 +10,12 @@ import (
 	"pimtrace/dataformats/icaldata"
 )
 
-func InputHandler(inputType string, inputFile string, w io.Writer, ops ...any) (pimtrace.Data, error) {
-	if w == nil {
-		w = os.Stdout
+func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+	var w io.Writer = os.Stdout
+	for _, op := range ops {
+		if o, ok := op.(io.Writer); ok {
+			w = o
+		}
 	}
 	ventry := []*icaldata.ICalWithSource{}
 	switch inputType {

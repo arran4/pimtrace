@@ -41,7 +41,7 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "", nil)
+	_, err = InputHandler("unknown", "")
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -63,7 +63,7 @@ body
 	_, _ = w.WriteString(mailContent)
 	_ = w.Close()
 
-	data, err := InputHandler("mailfile", "-", nil)
+	data, err := InputHandler("mailfile", "-")
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, -) error: %v", err)
 	}
@@ -86,7 +86,7 @@ body
 		},
 	}
 
-	data, err := InputHandler("mailfile", "test.eml", nil, mockFS)
+	data, err := InputHandler("mailfile", "test.eml", mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, file) error: %v", err)
 	}

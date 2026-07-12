@@ -53,7 +53,7 @@ func main() {
 		os.Exit(-1)
 	}
 
-	data, err := InputHandler(*inputType, *inputFile, os.Stdout)
+	data, err := InputHandler(*inputType, *inputFile)
 	if err != nil {
 		log.Printf("Read Error: %s", err)
 		os.Exit(-1)

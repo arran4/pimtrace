@@ -38,13 +38,13 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "", nil)
+	_, err = InputHandler("unknown", "")
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
 
 	// File error case
-	_, err = InputHandler("csv", "nonexistent.csv", nil)
+	_, err = InputHandler("csv", "nonexistent.csv")
 	if err == nil {
 		t.Errorf("InputHandler(csv, nonexistent.csv) expected error")
 	}
@@ -59,7 +59,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	_, _ = w.WriteString("col1,col2\nval1,val2\n")
 	_ = w.Close()
 
-	data, err := InputHandler("csv", "-", nil)
+	data, err := InputHandler("csv", "-")
 	if err != nil {
 		t.Errorf("InputHandler(csv, -) error: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestInputHandler_File(t *testing.T) {
 		},
 	}
 
-	data, err := InputHandler("csv", "test.csv", nil, mockFS)
+	data, err := InputHandler("csv", "test.csv", mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(csv, file) error: %v", err)
 	}
