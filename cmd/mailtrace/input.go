@@ -10,13 +10,9 @@ import (
 	"pimtrace/dataformats/maildata"
 )
 
-func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
-	var out io.Writer = os.Stdout
-	for _, op := range ops {
-		if w, ok := op.(io.Writer); ok && w != nil {
-			out = w
-			break
-		}
+func InputHandler(inputType string, inputFile string, out io.Writer, ops ...any) (pimtrace.Data, error) {
+	if out == nil {
+		out = os.Stdout
 	}
 
 	var mails []*maildata.MailWithSource

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"pimtrace/fsys"
+	"pimtrace/fsys/fsystest"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -38,13 +38,13 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "")
+	_, err = InputHandler("unknown", "", nil)
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
 
 	// File error case
-	_, err = InputHandler("csv", "nonexistent.csv")
+	_, err = InputHandler("csv", "nonexistent.csv", nil)
 	if err == nil {
 		t.Errorf("InputHandler(csv, nonexistent.csv) expected error")
 	}
@@ -59,7 +59,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	_, _ = w.WriteString("col1,col2\nval1,val2\n")
 	_ = w.Close()
 
-	data, err := InputHandler("csv", "-")
+	data, err := InputHandler("csv", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(csv, -) error: %v", err)
 	}
@@ -69,13 +69,13 @@ func TestInputHandler_Stdin(t *testing.T) {
 }
 
 func TestInputHandler_File(t *testing.T) {
-	mockFS := fsys.MapFSAdapter{
+	mockFS := fsystest.MapFSAdapter{
 		MapFS: fstest.MapFS{
 			"test.csv": &fstest.MapFile{Data: []byte("col1,col2\nval1,val2\n")},
 		},
 	}
 
-	data, err := InputHandler("csv", "test.csv", mockFS)
+	data, err := InputHandler("csv", "test.csv", nil, mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(csv, file) error: %v", err)
 	}

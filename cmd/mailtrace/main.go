@@ -60,7 +60,7 @@ func main() {
 		iops = append(iops, dataformats.NewProgressor())
 	}
 
-	data, err := InputHandler(*inputType, *inputFile, iops...)
+	data, err := InputHandler(*inputType, *inputFile, os.Stdout, iops...)
 	if err != nil {
 		log.Printf("Read Error: %s", err)
 		os.Exit(-1)

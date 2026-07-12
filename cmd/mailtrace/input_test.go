@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"pimtrace/fsys"
+	"pimtrace/fsys/fsystest"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -41,7 +41,7 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "")
+	_, err = InputHandler("unknown", "", nil)
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -63,7 +63,7 @@ body
 	_, _ = w.WriteString(mailContent)
 	_ = w.Close()
 
-	data, err := InputHandler("mailfile", "-")
+	data, err := InputHandler("mailfile", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, -) error: %v", err)
 	}
@@ -80,13 +80,13 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	mockFS := fsys.MapFSAdapter{
+	mockFS := fsystest.MapFSAdapter{
 		MapFS: fstest.MapFS{
 			"test.eml": &fstest.MapFile{Data: []byte(mailContent)},
 		},
 	}
 
-	data, err := InputHandler("mailfile", "test.eml", mockFS)
+	data, err := InputHandler("mailfile", "test.eml", nil, mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, file) error: %v", err)
 	}

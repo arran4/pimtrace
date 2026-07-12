@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 	"pimtrace"
-	"pimtrace/fsys"
+	"pimtrace/fsys/fsystest"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -39,7 +39,7 @@ func TestInputHandler(t *testing.T) {
 	}
 
 	// Test unsupported type
-	_, err = InputHandler("unknown", "")
+	_, err = InputHandler("unknown", "", nil)
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
@@ -47,7 +47,7 @@ func TestInputHandler(t *testing.T) {
 	// For input file, we would need to mock or create a real ical file.
 	// The problem is `ReadFile` uses a stream mapping that reads from a file path.
 	// But passing an invalid file should give an error. Let's just check the error case.
-	_, err = InputHandler("ical", "nonexistent.ics")
+	_, err = InputHandler("ical", "nonexistent.ics", nil)
 	if err == nil {
 		t.Errorf("InputHandler(ical, nonexistent.ics) expected error")
 	}
@@ -132,7 +132,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 	_, _ = w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 	_ = w.Close()
 
-	data, err := InputHandler("ical", "-")
+	data, err := InputHandler("ical", "-", nil)
 	if err != nil {
 		t.Errorf("InputHandler(ical, -) error: %v", err)
 	}
@@ -143,13 +143,13 @@ func TestInputHandler_Stdin(t *testing.T) {
 }
 
 func TestInputHandler_File(t *testing.T) {
-	mockFS := fsys.MapFSAdapter{
+	mockFS := fsystest.MapFSAdapter{
 		MapFS: fstest.MapFS{
 			"test.ics": &fstest.MapFile{Data: []byte("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")},
 		},
 	}
 
-	data, err := InputHandler("ical", "test.ics", mockFS)
+	data, err := InputHandler("ical", "test.ics", nil, mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(ical, file) error: %v", err)
 	}
