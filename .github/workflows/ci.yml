@@ -1,6 +1,7 @@
 # Agent rules for generation:
-# https://arran4.com/post/2026/006-Github-CI-and-Deploy/
-# Built using this post as a reference/guide.
+# https://arran4.github.io/blog/post/2026/042-simplified-github-ci-release-safe/
+# Release safety details:
+# https://arran4.github.io/blog/post/2026/041-release-safe-single-owner-github-ci/
 name: CI/CD
 
 on:
@@ -16,8 +17,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, closed]
     branches: [main, master]
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       mode:
@@ -71,7 +70,6 @@ jobs:
       run_code_checks: ${{ steps.route.outputs.run_code_checks }}
       run_pr_meta_checks: ${{ steps.route.outputs.run_pr_meta_checks }}
       run_cleanup: ${{ steps.route.outputs.run_cleanup }}
-      run_release: ${{ steps.route.outputs.run_release }}
       is_monthly: ${{ steps.route.outputs.is_monthly }}
       is_nightly: ${{ steps.route.outputs.is_nightly }}
     steps:
@@ -83,7 +81,6 @@ jobs:
           run_code_checks=false
           run_pr_meta_checks=false
           run_cleanup=false
-          run_release=false
           is_monthly=false
           is_nightly=false
 
@@ -101,14 +98,8 @@ jobs:
                 run_code_checks=true
               fi
               ;;
-            release)
-              run_release=true
-              ;;
             workflow_dispatch)
               run_code_checks=true
-              if [[ "${{ inputs.mode }}" == release-* ]]; then
-                run_release=true
-              fi
               if [[ "${{ inputs.mode }}" == "monthly-maintenance" ]]; then
                 is_monthly=true
               fi
@@ -131,7 +122,6 @@ jobs:
           echo "run_code_checks=$run_code_checks" >> "$GITHUB_OUTPUT"
           echo "run_pr_meta_checks=$run_pr_meta_checks" >> "$GITHUB_OUTPUT"
           echo "run_cleanup=$run_cleanup" >> "$GITHUB_OUTPUT"
-          echo "run_release=$run_release" >> "$GITHUB_OUTPUT"
           echo "is_monthly=$is_monthly" >> "$GITHUB_OUTPUT"
           echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
 
@@ -222,6 +212,9 @@ jobs:
           clean_tag="${next_tag#v}"; clean_tag="${clean_tag%%-*}"
           IFS='.' read -r maj min pat <<< "$clean_tag"
           echo "next_version=${maj:-0}.${min:-0}.$(( ${pat:-0} + 1 ))-SNAPSHOT" >> "$GITHUB_OUTPUT"
+
+          git tag "$next_tag"
+          git push origin "$next_tag"
 
   discover:
     name: Discover capabilities and cost profile
@@ -406,8 +399,8 @@ jobs:
 
   goreleaser:
     name: GoReleaser
-    needs: [route, discover, go-test, prepare-release-tag]
-    if: ${{ !failure() && !cancelled() && needs.discover.outputs.has_go == 'true' && needs.discover.outputs.has_goreleaser == 'true' && (((github.event_name == 'push') && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-'))) }}
+    needs: [route, discover, go-test]
+    if: ${{ !failure() && !cancelled() && needs.discover.outputs.has_go == 'true' && needs.discover.outputs.has_goreleaser == 'true' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -416,47 +409,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Tag commit for release (workflow_dispatch)
-        if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
-        run: git tag ${{ needs.prepare-release-tag.outputs.release_tag }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: >-
-            release --clean
-            ${{ (github.event_name == 'workflow_dispatch' && (inputs.mode == 'release-test' || inputs.mode == 'release-rc' || inputs.mode == 'release-alpha')) && '--snapshot' || '' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ needs.prepare-release-tag.outputs.release_tag }}
-
-  publish-draft:
-    name: Publish draft release assets
-    needs: [goreleaser]
-    if: ${{ needs.route.outputs.run_release == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Collect artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist-release
-          pattern: '*' # Required for download-artifact v4 if fetching multiple
-          merge-multiple: true
-        continue-on-error: true # Might not have artifacts generated
-      - name: Publish draft GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          files: dist-release/**
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  promote-release:
-    name: Promote draft to published
-    needs: [publish-draft]
-    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-')) }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Release promoted via upstream process
-        run: echo "Promotion step placeholder (gh api patch release draft=false)"
