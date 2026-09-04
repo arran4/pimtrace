@@ -416,14 +416,15 @@ jobs:
       - name: Tag commit for release (workflow_dispatch)
         if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
         run: git tag ${{ needs.prepare-release-tag.outputs.release_tag }}
+      - name: Push tag (workflow_dispatch)
+        if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.mode, 'release-') }}
+        run: git push origin ${{ needs.prepare-release-tag.outputs.release_tag }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: >-
-            release --clean
-            ${{ (github.event_name == 'workflow_dispatch' && (inputs.mode == 'release-test' || inputs.mode == 'release-rc' || inputs.mode == 'release-alpha')) && '--snapshot' || '' }}
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_CURRENT_TAG: ${{ needs.prepare-release-tag.outputs.release_tag || github.ref_name }}
