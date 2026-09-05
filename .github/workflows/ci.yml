@@ -394,7 +394,7 @@ jobs:
   autofix:
     name: Auto-format and open PR
     needs: [route, discover]
-    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.mode == \'lint-fix\' && inputs.allow_prs == true }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'lint-fix' && inputs.allow_prs == true }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -446,7 +446,7 @@ jobs:
   cleanup-autofix-prs:
     name: Cleanup autofix PRs on parent close
     needs: [route]
-    if: ${{ needs.route.outputs.run_cleanup == \'true\' }}
+    if: ${{ needs.route.outputs.run_cleanup == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
