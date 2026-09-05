@@ -59,12 +59,8 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  discussions: write
-  pull-requests: write
-  checks: write
-  packages: write
-  security-events: write
+  contents: read
+  pull-requests: read
 
 jobs:
   route:
@@ -179,7 +175,7 @@ jobs:
       release_tag: ${{ steps.tag.outputs.release_tag }}
       next_version: ${{ steps.tag.outputs.next_version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Setup git-tag-inc
@@ -299,7 +295,7 @@ jobs:
       has_dart_or_flutter_tests: ${{ steps.detect.outputs.has_dart_or_flutter_tests }}
       has_packaging: ${{ steps.detect.outputs.has_packaging }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - id: detect
         shell: bash
@@ -342,7 +338,7 @@ jobs:
     if: ${{ needs.route.outputs.run_cleanup != 'true' && (needs.route.outputs.is_nightly == 'true' || needs.route.outputs.is_monthly == 'true') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
@@ -355,8 +351,8 @@ jobs:
     if: ${{ needs.discover.outputs.has_go == 'true' && needs.route.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: golangci-lint
@@ -374,8 +370,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
@@ -388,8 +384,8 @@ jobs:
     if: ${{ needs.discover.outputs.has_go == 'true' && needs.route.outputs.run_code_checks == 'true' && needs.discover.outputs.profile == 'public' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
@@ -398,13 +394,16 @@ jobs:
   autofix:
     name: Auto-format and open PR
     needs: [route, discover]
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'lint-fix' && inputs.allow_prs == true }}
+    if: ${{ github.event_name == \'workflow_dispatch\' && inputs.mode == \'lint-fix\' && inputs.allow_prs == true }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup Go (if needed)
         if: ${{ needs.discover.outputs.has_go == 'true' }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: Run autofix formatters
@@ -447,10 +446,13 @@ jobs:
   cleanup-autofix-prs:
     name: Cleanup autofix PRs on parent close
     needs: [route]
-    if: ${{ needs.route.outputs.run_cleanup == 'true' }}
+    if: ${{ needs.route.outputs.run_cleanup == \'true\' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PARENT_PR: ${{ github.event.pull_request.number }}
@@ -486,7 +488,7 @@ jobs:
     outputs:
       release_tag: ${{ steps.export.outputs.release_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -547,15 +549,17 @@ jobs:
     needs: [route, discover, release-context]
     if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' && needs.discover.outputs.has_goreleaser == 'true' && github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: '~> v2'
