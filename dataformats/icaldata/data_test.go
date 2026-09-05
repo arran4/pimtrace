@@ -202,7 +202,7 @@ END:VCALENDAR`
 	}
 
 	// Test regression fixture: VTIMEZONE + VEVENT to ensure it doesn't panic
-	// and timezone is ignored while event is kept
+	// and timezone is ignored while event is kept, while retaining timestamp interpretation.
 	tzData := `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Example Corp.//Cal//EN
@@ -219,6 +219,7 @@ END:VTIMEZONE
 BEGIN:VEVENT
 UID:12345
 DTSTAMP:20231027T100000Z
+DTSTART;TZID=America/New_York:20231027T100000
 SUMMARY:Test Event
 END:VEVENT
 END:VCALENDAR`
@@ -229,9 +230,16 @@ END:VCALENDAR`
 		t.Errorf("ReadICalStream (regression) error: %v", tzErr)
 	}
 	if len(tzSources) != 1 {
-		t.Errorf("ReadICalStream (regression) expected 1 event (skipping VTIMEZONE), got %d", len(tzSources))
-	} else if _, ok := tzSources[0].Component.(*ics.VEvent); !ok {
+		t.Errorf("ReadICalStream (regression) expected exactly 1 event (skipping VTIMEZONE), got %d", len(tzSources))
+	} else if ev, ok := tzSources[0].Component.(*ics.VEvent); !ok {
 		t.Errorf("ReadICalStream (regression) expected VEVENT, got %T", tzSources[0].Component)
+	} else {
+		startTime, err := ev.GetStartAt()
+		if err != nil {
+			t.Errorf("ReadICalStream (regression) GetStartAt error: %v", err)
+		} else if startTime.UTC().Format("2006-01-02 15:04:05 -0700 MST") != "2023-10-27 14:00:00 +0000 UTC" {
+			t.Errorf("ReadICalStream (regression) GetStartAt expected '2023-10-27 14:00:00 +0000 UTC', got %v", startTime.UTC().Format("2006-01-02 15:04:05 -0700 MST"))
+		}
 	}
 
 	// Test coverage for another supported component (VTODO)
@@ -252,9 +260,8 @@ END:VCALENDAR`
 		t.Errorf("ReadICalStream (VTODO) expected 1 event, got %d", len(todoSources))
 	}
 
-	// Test handling of an unsupported component type (VFREEBUSY which is VBusy in golang-ical but let's test a genuinely unsupported one if possible, or just VFREEBUSY if it was unsupported, but VBusy is supported. VTIMEZONE and VAlarm are skipped. A custom component is hard to create since golang-ical parses only known components.)
-	// Wait, actually golang-ical parses unknown components into *ics.UnknownComponent!
-	// Let's create an unknown component test:
+	// Test handling of an unsupported component type (e.g. unknown component)
+	// which returns a controlled error rather than panicking.
 	unsupportedData := `BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:X-UNKNOWN

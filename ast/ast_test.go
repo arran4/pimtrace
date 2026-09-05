@@ -7,9 +7,9 @@ import (
 	"pimtrace/dataformats/tabledata"
 	"testing"
 
-	"fmt"
 	"github.com/arran4/go-evaluator"
 	"github.com/google/go-cmp/cmp"
+	"fmt"
 )
 
 var (
@@ -348,7 +348,7 @@ type filterMockData struct {
 	entries []pimtrace.Entry
 }
 
-func (m *filterMockData) Len() int                   { return len(m.entries) }
+func (m *filterMockData) Len() int { return len(m.entries) }
 func (m *filterMockData) Entry(n int) pimtrace.Entry { return m.entries[n] }
 func (m *filterMockData) Truncate(n int) pimtrace.Data {
 	m.entries = m.entries[:n]
@@ -383,7 +383,7 @@ func TestFilter(t *testing.T) {
 }
 
 type dummyBoolExpr struct {
-	val   bool
+	val bool
 	limit int
 	calls int
 }

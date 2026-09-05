@@ -243,7 +243,7 @@ func TestPrintFunctionList(t *testing.T) {
 
 func TestArgumentList_String(t *testing.T) {
 	al := ArgumentList{
-		Args:        []Argument{String, Integer, Any},
+		Args: []Argument{String, Integer, Any},
 		Description: "test desc",
 	}
 	s := ""
