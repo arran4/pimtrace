@@ -53,7 +53,7 @@ func TestICalWithSource_StringArray(t *testing.T) {
 	}
 
 	r := &ICalWithSource{
-		Header: map[string]int{"SUMMARY": 0, "DTSTART": 1},
+		Header:        map[string]int{"SUMMARY": 0, "DTSTART": 1},
 		ComponentBase: cb,
 	}
 
@@ -73,7 +73,7 @@ func TestICalWithSource_Get(t *testing.T) {
 	}
 
 	r := &ICalWithSource{
-		Header: map[string]int{"SUMMARY": 0, "DTSTART": 1},
+		Header:        map[string]int{"SUMMARY": 0, "DTSTART": 1},
 		ComponentBase: cb,
 	}
 
@@ -162,9 +162,9 @@ func TestData_Output(t *testing.T) {
 
 	var d Data = make([]*ICalWithSource, 0)
 	d = append(d, &ICalWithSource{
-		Header: map[string]int{"SUMMARY": 0},
+		Header:        map[string]int{"SUMMARY": 0},
 		ComponentBase: cb,
-		Component: comp,
+		Component:     comp,
 	})
 
 	// Test CSV and Table streams (writing to - stdout)
@@ -199,6 +199,74 @@ END:VCALENDAR`
 	}
 	if sources[0].SourceType != "ical" || sources[0].SourceFile != "test.ics" {
 		t.Errorf("ReadICalStream source meta incorrect")
+	}
+
+	// Test regression fixture: VTIMEZONE + VEVENT to ensure it doesn't panic
+	// and timezone is ignored while event is kept
+	tzData := `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example Corp.//Cal//EN
+BEGIN:VTIMEZONE
+TZID:America/New_York
+BEGIN:STANDARD
+DTSTART:20071104T020000
+RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+TZNAME:EST
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:12345
+DTSTAMP:20231027T100000Z
+SUMMARY:Test Event
+END:VEVENT
+END:VCALENDAR`
+
+	rTz := strings.NewReader(tzData)
+	tzSources, tzErr := ReadICalStream(rTz, "ical", "tz.ics")
+	if tzErr != nil {
+		t.Errorf("ReadICalStream (regression) error: %v", tzErr)
+	}
+	if len(tzSources) != 1 {
+		t.Errorf("ReadICalStream (regression) expected 1 event (skipping VTIMEZONE), got %d", len(tzSources))
+	} else if _, ok := tzSources[0].Component.(*ics.VEvent); !ok {
+		t.Errorf("ReadICalStream (regression) expected VEVENT, got %T", tzSources[0].Component)
+	}
+
+	// Test coverage for another supported component (VTODO)
+	todoData := `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VTODO
+UID:67890
+SUMMARY:Task
+END:VTODO
+END:VCALENDAR`
+
+	rTodo := strings.NewReader(todoData)
+	todoSources, todoErr := ReadICalStream(rTodo, "ical", "todo.ics")
+	if todoErr != nil {
+		t.Errorf("ReadICalStream (VTODO) error: %v", todoErr)
+	}
+	if len(todoSources) != 1 {
+		t.Errorf("ReadICalStream (VTODO) expected 1 event, got %d", len(todoSources))
+	}
+
+	// Test handling of an unsupported component type (VFREEBUSY which is VBusy in golang-ical but let's test a genuinely unsupported one if possible, or just VFREEBUSY if it was unsupported, but VBusy is supported. VTIMEZONE and VAlarm are skipped. A custom component is hard to create since golang-ical parses only known components.)
+	// Wait, actually golang-ical parses unknown components into *ics.UnknownComponent!
+	// Let's create an unknown component test:
+	unsupportedData := `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:X-UNKNOWN
+UID:99999
+END:X-UNKNOWN
+END:VCALENDAR`
+	rUnknown := strings.NewReader(unsupportedData)
+	_, unknownErr := ReadICalStream(rUnknown, "ical", "unknown.ics")
+	if unknownErr == nil {
+		t.Errorf("ReadICalStream (unknown component) expected error, got nil")
+	} else if !strings.Contains(unknownErr.Error(), "unsupported component type") {
+		t.Errorf("ReadICalStream (unknown component) expected 'unsupported component type' error, got %v", unknownErr)
 	}
 
 	// Test read error / invalid ical? golang-ical is fairly robust, but we can pass invalid data

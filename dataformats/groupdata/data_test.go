@@ -31,11 +31,11 @@ type mockData struct {
 	entries []pimtrace.Entry
 }
 
-func (m *mockData) Len() int { return len(m.entries) }
-func (m *mockData) Entry(n int) pimtrace.Entry { return m.entries[n] }
-func (m *mockData) Truncate(n int) pimtrace.Data { return nil }
+func (m *mockData) Len() int                                           { return len(m.entries) }
+func (m *mockData) Entry(n int) pimtrace.Entry                         { return m.entries[n] }
+func (m *mockData) Truncate(n int) pimtrace.Data                       { return nil }
 func (m *mockData) SetEntry(n int, entry pimtrace.Entry) pimtrace.Data { return nil }
-func (m *mockData) NewSelf() pimtrace.Data { return nil }
+func (m *mockData) NewSelf() pimtrace.Data                             { return nil }
 
 type mockEntry struct {
 	val pimtrace.Value
@@ -156,6 +156,6 @@ func TestData_Output(t *testing.T) {
 	var d Data = make([]*Row, 0)
 	_ = append(d, &Row{
 		Headers: map[string]int{"a": 0},
-		Row: []pimtrace.Value{pimtrace.SimpleStringValue("a")},
+		Row:     []pimtrace.Value{pimtrace.SimpleStringValue("a")},
 	})
 }

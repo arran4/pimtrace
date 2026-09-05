@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io"
 	_ "github.com/emersion/go-message/charset"
+	"io"
 	"os"
 	"pimtrace"
 	"pimtrace/dataformats"
