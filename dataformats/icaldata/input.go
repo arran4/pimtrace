@@ -23,6 +23,12 @@ func ReadICalStream(f io.Reader, fType string, fName string, ops ...any) ([]*ICa
 			cb = &c.ComponentBase
 		case *ics.VJournal:
 			cb = &c.ComponentBase
+		case *ics.VTimezone:
+			continue
+		case *ics.VAlarm:
+			continue
+		default:
+			return nil, fmt.Errorf("ical stream: unsupported component type %T", c)
 		}
 		header := make(map[string]int, len(cb.Properties))
 		for i, p := range cb.Properties {
