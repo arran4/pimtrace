@@ -2,7 +2,6 @@ package ast
 
 import (
 	"fmt"
-	"log"
 	"pimtrace"
 	"pimtrace/dataformats/groupdata"
 	"pimtrace/dataformats/tabledata"
@@ -362,53 +361,66 @@ type SortTransformer struct {
 	Expression []ValueExpression
 }
 
+type SortPreparedRow struct {
+	Entry         pimtrace.Entry
+	OriginalIndex int
+	Keys          []pimtrace.Value
+}
+
 type SortTransformerSorter struct {
-	SortTransformer *SortTransformer
-	Data            pimtrace.Data
-	Context         *evaluator.Context
+	PreparedRows []SortPreparedRow
 }
 
 func (s *SortTransformerSorter) Len() int {
-	return s.Data.Len()
+	return len(s.PreparedRows)
 }
 
 func (s *SortTransformerSorter) Less(i, j int) bool {
-	for _, e := range s.SortTransformer.Expression {
-		io, jo := s.Data.Entry(i), s.Data.Entry(j)
-		iv, err := e.Execute(io, s.Context)
-		if err != nil {
-			log.Printf("Sort execution error for element i: %v", err)
-		}
-		if iv == nil {
-			iv = &pimtrace.SimpleNilValue{}
-		}
-		jv, err := e.Execute(jo, s.Context)
-		if err != nil {
-			log.Printf("Sort execution error for element j: %v", err)
-		}
-		if jv == nil {
-			jv = &pimtrace.SimpleNilValue{}
-		}
+	for k := 0; k < len(s.PreparedRows[i].Keys); k++ {
+		iv := s.PreparedRows[i].Keys[k]
+		jv := s.PreparedRows[j].Keys[k]
 		if iv.Equal(jv) {
 			continue
 		}
 		return iv.Less(jv)
 	}
-	return i < j
+	return s.PreparedRows[i].OriginalIndex < s.PreparedRows[j].OriginalIndex
 }
 
 func (s *SortTransformerSorter) Swap(i, j int) {
-	io, jo := s.Data.Entry(i), s.Data.Entry(j)
-	s.Data.SetEntry(j, io)
-	s.Data.SetEntry(i, jo)
+	s.PreparedRows[i], s.PreparedRows[j] = s.PreparedRows[j], s.PreparedRows[i]
 }
 
 func (s *SortTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
-	sort.Sort(&SortTransformerSorter{
-		SortTransformer: s,
-		Data:            d,
-		Context:         ctx,
-	})
+	prepared := make([]SortPreparedRow, d.Len())
+	for i := 0; i < d.Len(); i++ {
+		entry := d.Entry(i)
+		keys := make([]pimtrace.Value, len(s.Expression))
+		for k, e := range s.Expression {
+			val, err := e.Execute(entry, ctx)
+			if err != nil {
+				return nil, fmt.Errorf("error evaluating sort expression %s on row %d: %w", e.ColumnName(), i, err)
+			}
+			if val == nil {
+				val = &pimtrace.SimpleNilValue{}
+			}
+			keys[k] = val
+		}
+		prepared[i] = SortPreparedRow{
+			Entry:         entry,
+			OriginalIndex: i,
+			Keys:          keys,
+		}
+	}
+
+	sorter := &SortTransformerSorter{
+		PreparedRows: prepared,
+	}
+	sort.Sort(sorter)
+
+	for i := 0; i < len(sorter.PreparedRows); i++ {
+		d = d.SetEntry(i, sorter.PreparedRows[i].Entry)
+	}
 	return d, nil
 }
 

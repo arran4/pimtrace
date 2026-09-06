@@ -1,9 +1,9 @@
 package fsystest
 
 import (
-	"pimtrace/fsys"
 	"io"
 	"os"
+	"pimtrace/fsys"
 	"testing/fstest"
 )
 
