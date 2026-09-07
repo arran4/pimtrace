@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"pimtrace"
 	"pimtrace/dataformats"
@@ -15,13 +16,19 @@ var (
 	}
 )
 
-func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
+func OutputHandler(p pimtrace.Data, mode, outputPath string, ops ...any) error {
+	var out io.Writer = os.Stdout
+	for _, op := range ops {
+		if o, ok := op.(io.Writer); ok {
+			out = o
+		}
+	}
 	switch mode {
 	case "mailfile":
 		if np, ok := p.(pimtrace.MailFileOutputCapable); ok {
 			switch outputPath {
 			case "-":
-				return np.WriteMailStream(os.Stdin, outputPath)
+				return np.WriteMailStream(out, outputPath)
 			default:
 				return np.WriteMailFile(outputPath)
 			}
@@ -32,7 +39,7 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 		if np, ok := p.(pimtrace.MBoxOutputCapable); ok {
 			switch outputPath {
 			case "-":
-				return np.WriteMBoxStream(os.Stdin, outputPath)
+				return np.WriteMBoxStream(out, outputPath)
 			default:
 				return np.WriteMBoxFile(outputPath)
 			}
@@ -40,5 +47,5 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	}
-	return dataformats.OutputHandler(p, mode, outputPath, customOutputs)
+	return dataformats.OutputHandler(p, mode, outputPath, customOutputs, ops...)
 }

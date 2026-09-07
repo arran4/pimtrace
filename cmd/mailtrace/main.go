@@ -26,7 +26,7 @@ func main() {
 		inputType   = f.String("input-type", "list", "The input type")
 		inputFile   = f.String("input", "-", "Input file or - for stdin")
 		outputType  = f.String("output-type", "list", "The input type")
-		outputFile  = f.String("output", "-", "Output file or - for stdin")
+		outputFile  = f.String("output", "-", "Output file or - for stdout")
 		parser      = f.String("parser", "", "Just use `basic`")
 		progress    = f.Bool("progress", false, "Report progress")
 		versionFlag = f.Bool("version", false, "Prints the version")
@@ -93,7 +93,7 @@ func main() {
 			os.Exit(-1)
 		}
 	}
-	if err := OutputHandler(data, *outputType, *outputFile); err != nil {
+	if err := OutputHandler(data, *outputType, *outputFile, os.Stdout); err != nil {
 		log.Printf("Write Error: %s", err)
 		os.Exit(-1)
 	}
@@ -119,6 +119,6 @@ func PrintQueryHelp(w io.Writer, parser string) {
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "List of supported output types: (Must be supported based on query.)")
 	// TODO dataformats.PrintOutputHelp(w, customOutputs) when updated
-	dataformats.PrintOutputHelp(customOutputs)
+	dataformats.PrintOutputHelp(w, customOutputs)
 	_, _ = fmt.Fprintln(w, "")
 }

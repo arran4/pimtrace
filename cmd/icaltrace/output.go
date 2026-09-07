@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"pimtrace"
 	"pimtrace/dataformats"
@@ -14,13 +15,19 @@ var (
 	}
 )
 
-func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
+func OutputHandler(p pimtrace.Data, mode, outputPath string, ops ...any) error {
+	var out io.Writer = os.Stdout
+	for _, op := range ops {
+		if o, ok := op.(io.Writer); ok {
+			out = o
+		}
+	}
 	switch mode {
 	case "ical":
 		if np, ok := p.(pimtrace.ICalFileOutputCapable); ok {
 			switch outputPath {
 			case "-":
-				return np.WriteICalStream(os.Stdin, outputPath)
+				return np.WriteICalStream(out, outputPath)
 			default:
 				return np.WriteICalFile(outputPath)
 			}
@@ -28,5 +35,5 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string) error {
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	}
-	return dataformats.OutputHandler(p, mode, outputPath, customOutputs)
+	return dataformats.OutputHandler(p, mode, outputPath, customOutputs, ops...)
 }
