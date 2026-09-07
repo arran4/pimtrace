@@ -192,7 +192,7 @@ func TestMailBodyFromPart_Methods(t *testing.T) {
 
 	mb := &MailBodyFromPart{
 		MailBodyGeneral: &MailBodyGeneral{},
-		Part: part,
+		Part:            part,
 	}
 
 	if h := mb.Header(); h.Get("Content-Type") != "text/plain" {

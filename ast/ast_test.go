@@ -5,11 +5,12 @@ import (
 	"embed"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
+	"strings"
 	"testing"
 
+	"fmt"
 	"github.com/arran4/go-evaluator"
 	"github.com/google/go-cmp/cmp"
-	"fmt"
 )
 
 var (
@@ -333,6 +334,133 @@ func TestSortTransformer_Execute(t *testing.T) {
 	}
 }
 
+type mockValueExpression struct {
+	failOnRow int
+	calls     int
+	name      string
+	err       error
+	ret       pimtrace.Value
+}
+
+func (m *mockValueExpression) Evaluate(d interface{}, opts ...any) (any, error) {
+	return nil, nil // not needed for this test
+}
+
+func (m *mockValueExpression) ColumnName() string {
+	return m.name
+}
+
+func (m *mockValueExpression) Execute(entry pimtrace.Entry, ctx *evaluator.Context) (pimtrace.Value, error) {
+	m.calls++
+	val, _ := entry.Get("original_index")
+	if val != nil && val.Integer() != nil {
+		if *val.Integer() == m.failOnRow {
+			return nil, m.err
+		}
+	}
+	return m.ret, nil
+}
+
+func TestSortTransformer_Execute_ErrorsAndTies(t *testing.T) {
+	t.Run("Fails on primary key", func(t *testing.T) {
+		expr := &mockValueExpression{failOnRow: 2, name: "mock-primary", err: fmt.Errorf("eval err primary")}
+		st := SortTransformer{Expression: []ValueExpression{expr}}
+
+		d := tabledata.Data{
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(0)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(3)}},
+		}
+
+		_, err := st.Execute(d, nil)
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		} else {
+			if !strings.Contains(err.Error(), "eval err primary") {
+				t.Errorf("error did not contain wrapped message: %v", err)
+			}
+			if !strings.Contains(err.Error(), "mock-primary") {
+				t.Errorf("error did not contain column name: %v", err)
+			}
+		}
+	})
+
+	t.Run("Fails on secondary key", func(t *testing.T) {
+		expr1 := &mockValueExpression{failOnRow: -1, name: "mock-primary", ret: pimtrace.SimpleIntegerValue(1)}
+		expr2 := &mockValueExpression{failOnRow: 1, name: "mock-secondary", err: fmt.Errorf("eval err secondary")}
+		st := SortTransformer{Expression: []ValueExpression{expr1, expr2}}
+
+		d := tabledata.Data{
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(0)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2)}},
+		}
+
+		_, err := st.Execute(d, nil)
+		if err == nil {
+			t.Errorf("expected error, got nil")
+		} else {
+			if !strings.Contains(err.Error(), "eval err secondary") {
+				t.Errorf("error did not contain wrapped message: %v", err)
+			}
+			if !strings.Contains(err.Error(), "mock-secondary") {
+				t.Errorf("error did not contain column name: %v", err)
+			}
+		}
+	})
+
+	t.Run("Evaluates once per row", func(t *testing.T) {
+		expr := &mockValueExpression{failOnRow: -1, name: "mock-primary", ret: pimtrace.SimpleIntegerValue(0)}
+		st := SortTransformer{Expression: []ValueExpression{expr}}
+
+		d := tabledata.Data{
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(0)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2)}},
+			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(3)}},
+		}
+
+		_, err := st.Execute(d, nil)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if expr.calls != 4 {
+			t.Errorf("expected exactly 4 evaluation calls, got %d", expr.calls)
+		}
+	})
+
+	t.Run("Deterministic tie behavior", func(t *testing.T) {
+		st := SortTransformer{Expression: []ValueExpression{EntryExpression("c.val")}}
+
+		h := map[string]int{"val": 0, "original_index": 1}
+		d := tabledata.Data{
+			{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleIntegerValue(0)}},
+			{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleIntegerValue(1)}},
+			{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleIntegerValue(2)}},
+			{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleIntegerValue(3)}},
+		}
+
+		res, err := st.Execute(d, nil)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if res.Len() != 4 {
+			t.Errorf("expected 4 results, got %d", res.Len())
+		}
+
+		// Verify order is preserved
+		for i := 0; i < 4; i++ {
+			v, _ := res.Entry(i).Get("original_index")
+			if v == nil || v.Integer() == nil || *v.Integer() != i {
+				t.Errorf("expected original index %d at position %d, got %v", i, i, v)
+			}
+		}
+	})
+}
+
 type mockEntry struct {
 	vals map[string]pimtrace.Value
 }
@@ -348,7 +476,7 @@ type filterMockData struct {
 	entries []pimtrace.Entry
 }
 
-func (m *filterMockData) Len() int { return len(m.entries) }
+func (m *filterMockData) Len() int                   { return len(m.entries) }
 func (m *filterMockData) Entry(n int) pimtrace.Entry { return m.entries[n] }
 func (m *filterMockData) Truncate(n int) pimtrace.Data {
 	m.entries = m.entries[:n]
@@ -383,7 +511,7 @@ func TestFilter(t *testing.T) {
 }
 
 type dummyBoolExpr struct {
-	val bool
+	val   bool
 	limit int
 	calls int
 }
