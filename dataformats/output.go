@@ -40,8 +40,16 @@ func OutputHandler(p pimtrace.Data, mode, outputPath string, customOutputs [][2]
 			return fmt.Errorf("unsupported format: %s of %s", mode, reflect.TypeOf(p))
 		}
 	case "count":
-		_, _ = fmt.Fprintln(out, p.Len())
-		return nil
+		switch outputPath {
+		case "-":
+			_, err := fmt.Fprintln(out, p.Len())
+			return err
+		default:
+			return pimtrace.WriteFileWrapper("count", outputPath, func(f io.Writer, _ string) error {
+				_, err := fmt.Fprintln(f, p.Len())
+				return err
+			}, ops...)
+		}
 	case "list":
 		PrintOutputHelp(out, customOutputs)
 		return nil

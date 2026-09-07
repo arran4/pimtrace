@@ -27,7 +27,7 @@ func main() {
 		inputType   = f.String("input-type", "list", "The input type")
 		inputFile   = f.String("input", "-", "Input file or - for stdin")
 		outputType  = f.String("output-type", "list", "The input type")
-		outputFile  = f.String("output", "-", "Output file or - for stdin")
+		outputFile  = f.String("output", "-", "Output file or - for stdout")
 		parser      = f.String("parser", "", "Just use `basic`")
 		versionFlag = f.Bool("version", false, "Prints the version")
 		helpFlag    = f.Bool("help", false, "Prints help")
