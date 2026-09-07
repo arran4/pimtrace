@@ -45,8 +45,10 @@ func TestOutputHandler(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer os.Remove(f.Name())
-		f.Close()
+		defer func() {
+			_ = os.Remove(f.Name())
+		}()
+		_ = f.Close()
 
 		err = dataformats.OutputHandler(data, "csv", f.Name(), customOutputs)
 		if err != nil {
