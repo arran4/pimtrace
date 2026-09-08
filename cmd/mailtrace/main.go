@@ -38,14 +38,14 @@ func main() {
 		PrintQueryHelp(os.Stdout, *parser)
 	}
 
-	if *versionFlag {
-		_, _ = fmt.Println(version, commit, date)
-		return
-	}
-
 	if err := f.Parse(os.Args[1:]); err != nil {
 		log.Printf("Error parsing flags: %s", err)
 		os.Exit(-1)
+	}
+
+	if *versionFlag {
+		_, _ = fmt.Println(version, commit, date)
+		return
 	}
 
 	if *helpFlag || len(os.Args) <= 1 {
