@@ -1,17 +1,14 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
+	"pimtrace"
 	"pimtrace/argparsers/basic"
-	"pimtrace/ast"
+	"pimtrace/cmd/shared"
 	"pimtrace/dataformats"
 	"pimtrace/funcs"
-
-	"github.com/arran4/go-evaluator"
 )
 
 var (
@@ -22,75 +19,21 @@ var (
 )
 
 func main() {
-	f := flag.FlagSet{}
-	var (
-		inputType   = f.String("input-type", "list", "The input type")
-		inputFile   = f.String("input", "-", "Input file or - for stdin")
-		outputType  = f.String("output-type", "list", "The input type")
-		outputFile  = f.String("output", "-", "Output file or - for stdout")
-		parser      = f.String("parser", "", "Just use `basic`")
-		versionFlag = f.Bool("version", false, "Prints the version")
-		helpFlag    = f.Bool("help", false, "Prints help")
-	)
-	f.Usage = func() {
-		_, _ = fmt.Println("Usage: ", os.Args[0], "[Flags]", "[Query]")
-		f.PrintDefaults()
-		PrintQueryHelp(os.Stdout, *parser)
-	}
-
-	if err := f.Parse(os.Args[1:]); err != nil {
-		log.Printf("Error parsing flags: %s", err)
-		os.Exit(-1)
-	}
-
-	if *versionFlag {
-		_, _ = fmt.Println(version, commit, date)
-		return
-	}
-
-	if *helpFlag || len(os.Args) <= 1 {
-		_, _ = fmt.Println("No query found")
-		f.Usage()
-		os.Exit(-1)
-	}
-
-	data, err := InputHandler(*inputType, *inputFile)
-	if err != nil {
-		log.Printf("Read Error: %s", err)
-		os.Exit(-1)
-	}
-
-	var ops ast.Operation
-	switch *parser {
-	case "basic":
-		ops, err = basic.ParseOperations(f.Args())
-		if err != nil {
-			log.Printf("Parse Error: %s", err)
-			os.Exit(-1)
-		}
-	default:
-		log.Printf("Please use -parser=basic parameter, as maybe one day a more advanced parser will be created")
-		os.Exit(-1)
-	}
-
-	if ops != nil {
-		ctx := &evaluator.Context{
-			Functions: map[string]evaluator.Function{
-				"year":  &funcs.YearAdapter{},
-				"month": &funcs.MonthAdapter{},
-				"as":    &funcs.AsAdapter{},
-			},
-		}
-		data, err = ops.Execute(data, ctx)
-		if err != nil {
-			log.Printf("Execute Error: %s", err)
-			os.Exit(-1)
-		}
-	}
-	if err := dataformats.OutputHandler(data, *outputType, *outputFile, customOutputs, os.Stdout); err != nil {
-		log.Printf("Write Error: %s", err)
-		os.Exit(-1)
-	}
+	os.Exit(shared.Run(&shared.Config{
+		Stdout:         os.Stdout,
+		Stderr:         os.Stderr,
+		Stdin:          os.Stdin,
+		Args:           os.Args[1:],
+		Name:           os.Args[0],
+		PrintQueryHelp: PrintQueryHelp,
+		PrintVersion: func(w io.Writer) {
+			_, _ = fmt.Fprintln(w, version, commit, date)
+		},
+		InputHandler: InputHandler,
+		OutputHandler: func(data pimtrace.Data, outputType string, outputFile string, stdout io.Writer) error {
+			return dataformats.OutputHandler(data, outputType, outputFile, customOutputs, stdout)
+		},
+	}))
 }
 
 func PrintQueryHelp(w io.Writer, parser string) {
@@ -105,14 +48,12 @@ func PrintQueryHelp(w io.Writer, parser string) {
 		_ = basic.PrintHelp(w, "csv")
 	}
 	_, _ = fmt.Fprintln(w, "A complete list of functions supported:")
-	// TODO funcs.PrintFunctionList(w) when updated
-	funcs.PrintFunctionList()
+	funcs.PrintFunctionList(w)
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "List of supported input types:")
 	PrintInputHelp(w)
 	_, _ = fmt.Fprintln(w, "")
 	_, _ = fmt.Fprintln(w, "List of supported output types: (Must be supported based on query.)")
-	// TODO dataformats.PrintOutputHelp(w, customOutputs) when updated
 	dataformats.PrintOutputHelp(w, customOutputs)
 	_, _ = fmt.Fprintln(w, "")
 }

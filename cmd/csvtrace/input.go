@@ -12,13 +12,10 @@ import (
 
 func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
 	var w io.Writer = os.Stdout
-	var inputReader io.Reader = os.Stdin
+	var r io.Reader = os.Stdin
 	for _, op := range ops {
 		if o, ok := op.(io.Writer); ok {
 			w = o
-		}
-		if in, ok := op.(io.Reader); ok {
-			inputReader = in
 		}
 	}
 	var rows []*tabledata.Row
@@ -26,7 +23,7 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 	case "csv":
 		switch inputFile {
 		case "-":
-			nm, err := tabledata.ReadCSV(inputReader, inputType, inputFile)
+			nm, err := tabledata.ReadCSV(r, inputType, inputFile)
 			if err != nil {
 				return nil, err
 			}
