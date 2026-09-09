@@ -1,0 +1,9 @@
+<<<<<<< SEARCH
+{{define "notesIntro"}}- String literals consisting of a single word should begin with a dot (`.`).{{end}}
+=======
+{{define "notesIntro"}}- String literals consisting of a single word should begin with a dot (`.`).
+- Complex boolean filters can be composed using `and`, `or`, and `not`.
+- You can group conditions using parentheses `(` and `)`.
+  **Note on Shell Escaping:** Since the shell treats parentheses specially, you must escape or quote them when invoking the CLI, e.g., `\( c.age gt .10 or c.age lt .20 \)` or `"\(" c.age gt .10 or c.age lt .20 "\)"`.
+- Valid comparison operators are: `eq`, `contains`, `icontains`, `gt`, `gte`, `lt`, `lte`.{{end}}
+>>>>>>> REPLACE

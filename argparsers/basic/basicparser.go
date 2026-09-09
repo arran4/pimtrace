@@ -27,6 +27,14 @@ type FilterEquals string
 type FilterContains string
 type FilterIContains string
 type FilterNot string
+type FilterAnd string
+type FilterOr string
+type FilterLParen string
+type FilterRParen string
+type FilterGT string
+type FilterGTE string
+type FilterLT string
+type FilterLTE string
 type Terminator string
 
 var _ ast.ValueExpression = ast.ConstantExpression("")
@@ -39,12 +47,28 @@ func FilterIdentify(s string) (any, error) {
 		return Terminator(s), nil
 	case "not":
 		return FilterNot(s), nil
+	case "and":
+		return FilterAnd(s), nil
+	case "or":
+		return FilterOr(s), nil
+	case "(":
+		return FilterLParen(s), nil
+	case ")":
+		return FilterRParen(s), nil
 	case "eq":
 		return FilterEquals(s), nil
 	case "contains":
 		return FilterContains(s), nil
 	case "icontains":
 		return FilterIContains(s), nil
+	case "gt":
+		return FilterGT(s), nil
+	case "gte":
+		return FilterGTE(s), nil
+	case "lt":
+		return FilterLT(s), nil
+	case "lte":
+		return FilterLTE(s), nil
 	case "h", "header":
 		return ast.EntryExpression(s), nil
 	case "c", "column":
@@ -196,22 +220,125 @@ done:
 }
 
 func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, []string, error) {
-	tks, remain, err := FilterTokenizerScanN(args, 3)
+	return parseOrExpr(args)
+}
+
+func parseOrExpr(args []string) (*evaluator.Query, []string, error) {
+	left, remain, err := parseAndExpr(args)
 	if err != nil {
-		return nil, nil, err
+		return nil, remain, err
 	}
-	if TokenMatcher(tks, FilterNot("")) != nil {
-		var op *evaluator.Query
-		op, remain, err = ParseFilter(args[1:], []ast.Operation{})
+	for len(remain) > 0 {
+		t, err := FilterIdentify(remain[0])
 		if err != nil {
-			return nil, nil, err
+			return nil, remain, err
+		}
+		if _, ok := t.(FilterOr); ok {
+			var right *evaluator.Query
+			right, remain, err = parseAndExpr(remain[1:])
+			if err != nil {
+				return nil, remain, err
+			}
+			left = &evaluator.Query{
+				Expression: &evaluator.OrExpression{
+					Expressions: []evaluator.Query{*left, *right},
+				},
+			}
+		} else {
+			break
+		}
+	}
+	return left, remain, nil
+}
+
+func parseAndExpr(args []string) (*evaluator.Query, []string, error) {
+	left, remain, err := parseUnaryExpr(args)
+	if err != nil {
+		return nil, remain, err
+	}
+	for len(remain) > 0 {
+		t, err := FilterIdentify(remain[0])
+		if err != nil {
+			return nil, remain, err
+		}
+		if _, ok := t.(FilterAnd); ok {
+			var right *evaluator.Query
+			right, remain, err = parseUnaryExpr(remain[1:])
+			if err != nil {
+				return nil, remain, err
+			}
+			left = &evaluator.Query{
+				Expression: &evaluator.AndExpression{
+					Expressions: []evaluator.Query{*left, *right},
+				},
+			}
+		} else {
+			break
+		}
+	}
+	return left, remain, nil
+}
+
+func parseUnaryExpr(args []string) (*evaluator.Query, []string, error) {
+	if len(args) == 0 {
+		return nil, args, ErrParserNothingFound
+	}
+	t, err := FilterIdentify(args[0])
+	if err != nil {
+		return nil, args, err
+	}
+	if _, ok := t.(FilterNot); ok {
+		exp, remain, err := parseUnaryExpr(args[1:])
+		if err != nil {
+			return nil, remain, err
 		}
 		return &evaluator.Query{
 			Expression: &evaluator.NotExpression{
-				Expression: *op,
+				Expression: *exp,
 			},
 		}, remain, nil
 	}
+	return parsePrimaryExpr(args)
+}
+
+func parsePrimaryExpr(args []string) (*evaluator.Query, []string, error) {
+	if len(args) == 0 {
+		return nil, args, ErrParserNothingFound
+	}
+	t, err := FilterIdentify(args[0])
+	if err != nil {
+		return nil, args, err
+	}
+	if _, ok := t.(FilterLParen); ok {
+		q, remain, err := parseOrExpr(args[1:])
+		if err != nil {
+			return nil, remain, err
+		}
+		if len(remain) == 0 {
+			return nil, remain, fmt.Errorf("expected closing parenthesis")
+		}
+		t2, err2 := FilterIdentify(remain[0])
+		if err2 != nil {
+			return nil, remain, err2
+		}
+		if _, ok := t2.(FilterRParen); !ok {
+			return nil, remain, fmt.Errorf("expected closing parenthesis, found %s", remain[0])
+		}
+		return q, remain[1:], nil
+	}
+	return parseComparisonExpr(args)
+}
+
+func parseComparisonExpr(args []string) (*evaluator.Query, []string, error) {
+	tks, remain, err := FilterTokenizerScanN(args, 3)
+	if err != nil {
+		return nil, args, err
+	}
+	if len(tks) < 3 {
+		return nil, args, fmt.Errorf("at %v: %w (not enough tokens for comparison)", tks, ErrParserNothingFound)
+	}
+
+	// Legacy basic fast path for Field + Constant mapping directly to Is/Contains/IContains (skipping ast.Op)
 	if matches := TokenMatcher(tks,
 		[]any{ast.EntryExpression(""), ast.ConstantExpression("")},
 		[]any{FilterEquals(""), FilterContains(""), FilterIContains("")},
@@ -259,15 +386,31 @@ func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, [
 				}, remain, nil
 			}
 		}
+	}
 
+	// For gt, gte, lt, lte, eq, contains, icontains as standard operators
+	// wrapped in ast.Op for general evaluation of LHS and RHS expressions
+	if matches := TokenMatcher(tks,
+		[]any{ast.EntryExpression(""), ast.ConstantExpression(""), &ast.FunctionExpression{}, &ast.EvaluatorFunctionExpression{}},
+		[]any{FilterEquals(""), FilterContains(""), FilterIContains(""), FilterGT(""), FilterGTE(""), FilterLT(""), FilterLTE("")},
+		[]any{ast.EntryExpression(""), ast.ConstantExpression(""), &ast.FunctionExpression{}, &ast.EvaluatorFunctionExpression{}},
+	); len(matches) > 1 {
 		var op string
-		switch /*opMatch :=*/ matches[1].(type) {
+		switch matches[1].(type) {
 		case FilterEquals:
 			op = "eq"
 		case FilterContains:
 			op = "contains"
 		case FilterIContains:
 			op = "icontains"
+		case FilterGT:
+			op = "gt"
+		case FilterGTE:
+			op = "gte"
+		case FilterLT:
+			op = "lt"
+		case FilterLTE:
+			op = "lte"
 		}
 		return &evaluator.Query{
 			Expression: &ast.Op{
@@ -277,7 +420,7 @@ func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, [
 			},
 		}, remain, nil
 	}
-	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
+	return nil, args, fmt.Errorf("at %v: %w (unrecognized comparison format)", tks, ErrParserNothingFound)
 }
 
 func ParseIntoSummary(args []string) (ast.Operation, []string, error) {

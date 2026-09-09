@@ -93,7 +93,11 @@ Conditions are constructed using **operators**:
 | `eq` | Equality check. | `filter h.From eq .admin@example.com` |
 | `contains` | Case-sensitive substring check. | `filter h.Subject contains .Urgent` |
 | `icontains` | Case-insensitive substring check. | `filter h.Subject icontains .urgent` |
+| `gt`, `gte`, `lt`, `lte` | Numeric/Date comparison. | `filter c.Age gt .21` |
+| `and`, `or` | Logical combinations. | `filter c.A eq .X and c.B eq .Y` |
 | `not` | Negates a condition. | `filter not h.Status eq .Closed` |
+
+**Groupings:** You can use parentheses to group complex logic, e.g., `filter \( c.Role eq .Admin or c.Role eq .Manager \) and c.Active eq .true`. Remember to properly escape or quote parentheses (`\(` or `"\("`) since the shell interprets them as special characters.
 
 ### Expressions & Functions
 

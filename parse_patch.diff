@@ -1,0 +1,56 @@
+<<<<<<< SEARCH
+type FilterEquals string
+type FilterContains string
+type FilterIContains string
+type FilterNot string
+type Terminator string
+=======
+type FilterEquals string
+type FilterContains string
+type FilterIContains string
+type FilterNot string
+type FilterAnd string
+type FilterOr string
+type FilterLParen string
+type FilterRParen string
+type FilterGT string
+type FilterGTE string
+type FilterLT string
+type FilterLTE string
+type Terminator string
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+	case "not":
+		return FilterNot(s), nil
+	case "eq":
+		return FilterEquals(s), nil
+	case "contains":
+		return FilterContains(s), nil
+	case "icontains":
+		return FilterIContains(s), nil
+=======
+	case "not":
+		return FilterNot(s), nil
+	case "and":
+		return FilterAnd(s), nil
+	case "or":
+		return FilterOr(s), nil
+	case "(":
+		return FilterLParen(s), nil
+	case ")":
+		return FilterRParen(s), nil
+	case "eq":
+		return FilterEquals(s), nil
+	case "contains":
+		return FilterContains(s), nil
+	case "icontains":
+		return FilterIContains(s), nil
+	case "gt":
+		return FilterGT(s), nil
+	case "gte":
+		return FilterGTE(s), nil
+	case "lt":
+		return FilterLT(s), nil
+	case "lte":
+		return FilterLTE(s), nil
+>>>>>>> REPLACE

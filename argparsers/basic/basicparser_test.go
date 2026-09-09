@@ -224,7 +224,7 @@ func TestParseFilter(t *testing.T) {
 			args:               []string{},
 			statements:         []ast.Operation{},
 			expectedExpression: nil,
-			remaining:          nil,
+			remaining:          []string{},
 			wantErr:            true,
 		},
 		{
@@ -234,6 +234,79 @@ func TestParseFilter(t *testing.T) {
 				Expression: &evaluator.NotExpression{
 					Expression: evaluator.Query{
 						Expression: &evaluator.IsExpression{Field: "user-agent", Value: "Kmail"},
+					},
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
+			name: "Complex precedence expression",
+			args: []string{"h.a", "eq", ".A", "or", "h.b", "eq", ".B", "and", "h.c", "eq", ".C"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.OrExpression{
+					Expressions: []evaluator.Query{
+						{Expression: &evaluator.IsExpression{Field: "a", Value: "A"}},
+						{Expression: &evaluator.AndExpression{
+							Expressions: []evaluator.Query{
+								{Expression: &evaluator.IsExpression{Field: "b", Value: "B"}},
+								{Expression: &evaluator.IsExpression{Field: "c", Value: "C"}},
+							},
+						}},
+					},
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
+			name: "Complex parentheses expression",
+			args: []string{"(", "h.a", "eq", ".A", "or", "h.b", "eq", ".B", ")", "and", "h.c", "eq", ".C"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.AndExpression{
+					Expressions: []evaluator.Query{
+						{Expression: &evaluator.OrExpression{
+							Expressions: []evaluator.Query{
+								{Expression: &evaluator.IsExpression{Field: "a", Value: "A"}},
+								{Expression: &evaluator.IsExpression{Field: "b", Value: "B"}},
+							},
+						}},
+						{Expression: &evaluator.IsExpression{Field: "c", Value: "C"}},
+					},
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
+			name: "Nested not expression",
+			args: []string{"not", "(", "not", "h.a", "eq", ".A", ")"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.NotExpression{
+					Expression: evaluator.Query{
+						Expression: &evaluator.NotExpression{
+							Expression: evaluator.Query{
+								Expression: &evaluator.IsExpression{Field: "a", Value: "A"},
+							},
+						},
+					},
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
+			name: "Comparison expressions",
+			args: []string{"h.a", "gt", ".10", "and", "h.b", "lte", ".20"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.AndExpression{
+					Expressions: []evaluator.Query{
+						{Expression: &ast.Op{Op: "gt", LHS: ast.EntryExpression("h.a"), RHS: ast.ConstantExpression("10")}},
+						{Expression: &ast.Op{Op: "lte", LHS: ast.EntryExpression("h.b"), RHS: ast.ConstantExpression("20")}},
 					},
 				},
 			},
@@ -275,7 +348,7 @@ func TestParseOperations(t *testing.T) {
 			name:              "Empty args go no where - since filter is already provided it's safe to die here",
 			args:              []string{},
 			expectedOperation: nil,
-			remaining:         nil,
+			remaining:         []string{},
 			wantErr:           false,
 		},
 		{

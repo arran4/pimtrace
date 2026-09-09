@@ -8,6 +8,7 @@ import (
 	"pimtrace/funcs"
 	"sort"
 	"strings"
+	"strconv"
 	"unicode"
 
 	"github.com/arran4/go-evaluator"
@@ -89,7 +90,16 @@ func (ve ConstantExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (
 }
 
 func (ve ConstantExpression) Evaluate(d interface{}, opts ...any) (interface{}, error) {
-	return pimtrace.SimpleStringValue(ve), nil
+	// Attempt numeric coercion to emit numeric types instead of string adapters,
+	// so the LHS ComparatorAdapter coerced the LHS pimtrace.Value.
+	if i, err := strconv.ParseInt(string(ve), 10, 64); err == nil {
+		return int(i), nil
+	}
+	if f, err := strconv.ParseFloat(string(ve), 64); err == nil {
+		return f, nil
+	}
+	return string(ve), nil // Or a ComparatorAdapter if we need it to behave like PIMTrace value.
+	// Wait, if RHS is int, ComparatorAdapter knows to coerce! Yes, so we return native Go int here.
 }
 
 type EntryExpression string
@@ -121,16 +131,13 @@ func (ve EntryExpression) Evaluate(d interface{}, opts ...any) (interface{}, err
 		return nil, fmt.Errorf("invalid entry type")
 	}
 
-	// Create adapter
 	ep := NewEntryPathor(eEntry)
+	res := lookup.Reflect(ep).Find(string(ve)).Raw()
 
-	// Use lookup to traverse
-	// We need to pass the path string(ve) which might be "c.date"
-	// lookup.Reflect(ep) returns a Reflector wrapping EntryPathor.
-	// Reflector.Find(path) will call EntryPathor.Find(path) because we implemented Finder interface check in Reflector.
-
-	res := lookup.Reflect(ep).Find(string(ve))
-	return res.Raw(), nil
+	if pv, ok := res.(pimtrace.Value); ok {
+		return &ComparatorAdapter{Value: pv}, nil
+	}
+	return res, nil
 }
 
 type OpFunc func(pimtrace.Value, pimtrace.Value) (bool, error)
@@ -241,16 +248,20 @@ func (fe *FunctionExpression) Evaluate(d interface{}, opts ...any) (interface{},
 	if !ok {
 		return nil, fmt.Errorf("invalid entry type")
 	}
-	// Extract context from opts if possible?
-	// Evaluate signature takes opts.
-	// FunctionExpression.Execute needs ctx.
 	var ctx *evaluator.Context
 	for _, opt := range opts {
 		if c, ok := opt.(*evaluator.Context); ok {
 			ctx = c
 		}
 	}
-	return fe.Execute(eEntry, ctx)
+	res, err := fe.Execute(eEntry, ctx)
+	if err != nil {
+		return nil, err
+	}
+	if res != nil {
+		return &ComparatorAdapter{Value: res}, nil
+	}
+	return nil, nil
 }
 
 var _ ValueExpression = (*FunctionExpression)(nil)
@@ -277,6 +288,9 @@ func (fe *EvaluatorFunctionExpression) Execute(d pimtrace.Entry, ctx *evaluator.
 	}
 	if v, ok := res.(pimtrace.Value); ok {
 		return v, nil
+	}
+	if ca, ok := res.(*ComparatorAdapter); ok {
+		return ca.Value, nil
 	}
 	// Conversion logic if result is not pimtrace.Value
 	return toPimtraceValue(res)

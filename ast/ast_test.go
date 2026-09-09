@@ -677,6 +677,9 @@ func TestEntryExpression_Execute(t *testing.T) {
 	if err != nil {
 		t.Errorf("Evaluate() error = %v", err)
 	}
+	if ca, ok := evalRes.(*ComparatorAdapter); ok {
+		evalRes = ca.Value
+	}
 	if iv, ok := evalRes.(pimtrace.SimpleIntegerValue); !ok || int(iv) != 42 {
 		t.Errorf("Evaluate() result = %v, want 42", evalRes)
 	}
@@ -697,7 +700,10 @@ func TestConstantExpression_Execute(t *testing.T) {
 	if err != nil {
 		t.Errorf("Evaluate() error = %v", err)
 	}
-	if sv, ok := evalRes.(pimtrace.SimpleStringValue); !ok || string(sv) != "test" {
+	if ca, ok := evalRes.(*ComparatorAdapter); ok {
+		evalRes = ca.Value
+	}
+	if sv, ok := evalRes.(string); !ok || string(sv) != "test" {
 		t.Errorf("Evaluate() result = %v, want test", evalRes)
 	}
 }
