@@ -1,0 +1,159 @@
+package shared
+
+import (
+	"flag"
+	"fmt"
+	"io"
+	"os"
+
+	"pimtrace"
+	"pimtrace/argparsers/basic"
+	"pimtrace/ast"
+	"pimtrace/funcs"
+
+	"github.com/arran4/go-evaluator"
+)
+
+type Config struct {
+	Stdout io.Writer
+	Stderr io.Writer
+	Stdin  io.Reader
+
+	Args []string
+
+	Name string
+
+	PrintQueryHelp func(w io.Writer, parser string)
+	PrintVersion   func(w io.Writer)
+	InputHandler   func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error)
+	OutputHandler  func(data pimtrace.Data, outputType string, outputFile string, stdout io.Writer) error
+
+	Progressor bool
+}
+
+func Run(c *Config) int {
+	if c.Stdout == nil {
+		c.Stdout = os.Stdout
+	}
+	if c.Stderr == nil {
+		c.Stderr = os.Stderr
+	}
+	if c.Stdin == nil {
+		c.Stdin = os.Stdin
+	}
+
+	f := flag.NewFlagSet(c.Name, flag.ContinueOnError)
+	f.SetOutput(c.Stderr)
+
+	var (
+		inputType   = f.String("input-type", "list", "The input type")
+		inputFile   = f.String("input", "-", "Input file or - for stdin")
+		outputType  = f.String("output-type", "list", "The input type")
+		outputFile  = f.String("output", "-", "Output file or - for stdout")
+		parser      = f.String("parser", "", "Just use `basic`")
+		versionFlag = f.Bool("version", false, "Prints the version")
+		helpFlag    = f.Bool("help", false, "Prints help")
+		progress    *bool
+	)
+
+	if c.Progressor {
+		progress = f.Bool("progress", false, "Report progress")
+	}
+
+	printUsage := func(w io.Writer) {
+		_, _ = fmt.Fprintln(w, "Usage: ", c.Name, "[Flags]", "[Query]")
+		f.SetOutput(w)
+		f.PrintDefaults()
+		if c.PrintQueryHelp != nil {
+			c.PrintQueryHelp(w, *parser)
+		}
+		f.SetOutput(c.Stderr)
+	}
+
+	// flag package will call f.Usage on -h/--help and then return ErrHelp.
+	// But it will also call it on parsing errors.
+	// To prevent double printing and wrong streams, we set Usage to no-op during Parse
+	// and handle the output explicitly afterwards.
+	f.Usage = func() {}
+
+	if err := f.Parse(c.Args); err != nil {
+		if err == flag.ErrHelp {
+			printUsage(c.Stdout)
+			return 0
+		}
+		_, _ = fmt.Fprintf(c.Stderr, "Error parsing flags: %v\n", err)
+		printUsage(c.Stderr)
+		return 2
+	}
+
+	if *versionFlag {
+		if c.PrintVersion != nil {
+			c.PrintVersion(c.Stdout)
+		}
+		return 0
+	}
+
+	if *helpFlag {
+		printUsage(c.Stdout)
+		return 0
+	}
+
+	if len(c.Args) == 0 {
+		_, _ = fmt.Fprintln(c.Stderr, "No query found")
+		printUsage(c.Stderr)
+		return 2
+	}
+
+	// Since basic parser allows empty trailing tokens, we skip the secondary "f.NArg() == 0" check.
+	// This also resolves a staticcheck SA9003 empty branch warning.
+
+	var iops []any
+	iops = append(iops, struct{ io.Reader }{c.Stdin}) // Ensure stdin injected
+
+	if c.Progressor && progress != nil && *progress {
+		iops = append(iops, "progressor")
+	}
+
+	data, err := c.InputHandler(*inputType, *inputFile, iops...)
+	if err != nil {
+		_, _ = fmt.Fprintf(c.Stderr, "Read Error: %s\n", err)
+		return 1
+	}
+
+	var ops ast.Operation
+	switch *parser {
+	case "basic":
+		ops, err = basic.ParseOperations(f.Args())
+		if err != nil {
+			_, _ = fmt.Fprintf(c.Stderr, "Parse Error: %s\n", err)
+			return 2
+		}
+	default:
+		_, _ = fmt.Fprintln(c.Stderr, "Please use -parser=basic parameter, as maybe one day a more advanced parser will be created")
+		return 2
+	}
+
+	if ops != nil {
+		ctx := &evaluator.Context{
+			Functions: map[string]evaluator.Function{
+				"year":  &funcs.YearAdapter{},
+				"month": &funcs.MonthAdapter{},
+				"as":    &funcs.AsAdapter{},
+			},
+		}
+		data, err = ops.Execute(data, ctx)
+		if err != nil {
+			_, _ = fmt.Fprintf(c.Stderr, "Execute Error: %s\n", err)
+			return 1
+		}
+	}
+
+	if c.OutputHandler != nil {
+		if err := c.OutputHandler(data, *outputType, *outputFile, c.Stdout); err != nil {
+			_, _ = fmt.Fprintf(c.Stderr, "Write Error: %s\n", err)
+			return 1
+		}
+	}
+
+	return 0
+}

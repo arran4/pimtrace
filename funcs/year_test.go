@@ -2,6 +2,7 @@ package funcs
 
 import (
 	"errors"
+	"os"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
 	"strings"
@@ -238,7 +239,7 @@ func TestYear_Run(t *testing.T) {
 }
 
 func TestPrintFunctionList(t *testing.T) {
-	PrintFunctionList()
+	PrintFunctionList(os.Stdout)
 }
 
 func TestArgumentList_String(t *testing.T) {

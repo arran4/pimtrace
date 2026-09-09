@@ -121,8 +121,24 @@ func ReaderStreamMapperOptionProcessor(f io.Reader, ops []any) (io.Reader, []io.
 			}
 		case fsys.FS:
 			// File systems are processed elsewhere, ignore them here
+		case io.Reader:
+			// Injected stdin
+		case io.Writer:
+			// Injected stdout/stderr
+		case string:
+			// "progressor" flag passing
+			if op == "progressor" {
+				var err error
+				ff, err = NewProgressor()(ff)
+				if err != nil {
+					return nil, nil, fmt.Errorf("with ReaderStreamMapper option %d: %w", i, err)
+				}
+				if fc, ok := ff.(io.Closer); ok {
+					closers = append(closers, fc)
+				}
+			}
 		default:
-			return nil, closers, fmt.Errorf("unknown option: %d", i)
+			return nil, closers, fmt.Errorf("unknown option: %T %v", op, op)
 		}
 	}
 	return ff, closers, nil

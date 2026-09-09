@@ -60,6 +60,19 @@ toolname -input <file> -parser basic [QUERY]
 *   `-parser basic`: **Required.** Specifies the query parser to use.
 *   `[QUERY]`: The sequence of operations to perform on the data.
 
+## Exit Codes and Streams
+
+PIMTrace tools follow a consistent contract for exit codes and standard streams:
+
+### Exit Codes
+*   **`0` (Success):** The query executed successfully. Explicit help (`-help`) or version (`-version`) requests also exit with `0`.
+*   **`1` (Runtime Error):** An error occurred while reading input, parsing data, executing the query, or writing output.
+*   **`2` (Usage Error):** Invalid flags, missing required arguments (like the query itself), or invalid query syntax.
+
+### Streams
+*   **`stdout` (Standard Output):** Reserved exclusively for the actual query results, or explicit help/version output. This ensures that the output is safe to pipe to other tools or redirect to files.
+*   **`stderr` (Standard Error):** Used for all diagnostic messages, progress indicators, warnings, and error messages.
+
 ## The Query Language
 
 The "Basic" parser allows you to chain operations together linearly. It reads like a sentence: "Filter this, then put it into a table with these columns, then sort by that."

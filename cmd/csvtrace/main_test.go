@@ -60,4 +60,29 @@ func TestCLIMain_StdoutRegression(t *testing.T) {
 			t.Errorf("stdout did not contain expected CSV data, got: %s", output)
 		}
 	})
+
+	t.Run("missing input file", func(t *testing.T) {
+		cmd := exec.Command(binPath, "-parser", "basic", "-input", "non_existent_file_12345.csv", "-input-type", "csv")
+		var stdoutBuf bytes.Buffer
+		var stderrBuf bytes.Buffer
+		cmd.Stdout = &stdoutBuf
+		cmd.Stderr = &stderrBuf
+
+		err := cmd.Run()
+		if err == nil {
+			t.Fatalf("command execution expected to fail for missing file")
+		}
+
+		if cmd.ProcessState.ExitCode() != 1 {
+			t.Errorf("expected exit code 1 for runtime read error, got %d", cmd.ProcessState.ExitCode())
+		}
+
+		if stdoutBuf.Len() > 0 {
+			t.Errorf("stdout expected empty on failure, got: %s", stdoutBuf.String())
+		}
+
+		if !strings.Contains(stderrBuf.String(), "Read Error:") {
+			t.Errorf("stderr missing 'Read Error:', got: %s", stderrBuf.String())
+		}
+	})
 }
