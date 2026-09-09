@@ -17,6 +17,9 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 		if o, ok := op.(io.Writer); ok {
 			w = o
 		}
+		if o, ok := op.(io.Reader); ok {
+			r = o
+		}
 	}
 	var rows []*tabledata.Row
 	switch inputType {

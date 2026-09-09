@@ -16,7 +16,9 @@ func InputHandler(inputType string, inputFile string, ops ...any) (pimtrace.Data
 	for _, op := range ops {
 		if w, ok := op.(io.Writer); ok && w != nil {
 			out = w
-			break
+		}
+		if o, ok := op.(io.Reader); ok {
+			r = o
 		}
 	}
 
