@@ -95,17 +95,8 @@ func Run(c *Config) int {
 		return 2
 	}
 
-	// if there are no un-parsed trailing arguments AND we are not requesting list help
-	// Wait, in previous revision `c.Args` had the query missing error only when len(c.Args) <= 1, which let flags pass even without query.
-	// But the user test explicitly runs: csvtrace -parser basic -input - -input-type csv -output - -output-type csv
-	// Which has NO trailing arguments (f.NArg() == 0).
-	// So we shouldn't fail if there's no query provided if it's explicitly valid or if we aren't strict about it here.
-	// Let's drop the second query check and rely on parser/InputHandler/OutputHandler logic to succeed on empty queries.
-	if f.NArg() == 0 && (*inputType == "list" || *outputType == "list") {
-		// Just listing input/output formats is completely fine without a query
-	} else if f.NArg() == 0 && *parser != "basic" && *parser != "" {
-		// If they chose a parser but provided no query args? Actually basic parser can parse an empty query into a no-op!
-	}
+	// Since basic parser allows empty trailing tokens, we skip the secondary "f.NArg() == 0" check.
+	// This also resolves a staticcheck SA9003 empty branch warning.
 
 	var iops []any
 	iops = append(iops, c.Stdin) // Ensure stdin injected
