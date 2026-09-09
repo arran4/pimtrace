@@ -147,6 +147,50 @@ func TestRunner(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:       "injected stdin reader regression",
+			args:       []string{"-parser", "basic", "filter", ".1", "eq", ".1"},
+			wantErr:    0,
+			wantStdout: "",
+			wantStderr: "",
+			setupCfg: func(cfg *Config) {
+				cfg.Stdin = strings.NewReader("test input")
+				cfg.InputHandler = func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+					var foundReader io.Reader
+					var foundWriter io.Writer
+
+					for _, op := range ops {
+						if r, ok := op.(io.Reader); ok {
+							foundReader = r
+						}
+						if w, ok := op.(io.Writer); ok {
+							foundWriter = w
+						}
+					}
+
+					if foundReader == nil {
+						return nil, errors.New("injected Stdin reader not found")
+					}
+
+					if foundWriter != nil {
+						// Since we wrapped c.Stdin in an anonymous struct to ONLY implement io.Reader,
+						// it shouldn't also match as an io.Writer.
+						return nil, errors.New("injected Stdin reader incorrectly cast to io.Writer")
+					}
+
+					buf, err := io.ReadAll(foundReader)
+					if err != nil {
+						return nil, fmt.Errorf("failed to read from injected reader: %w", err)
+					}
+
+					if string(buf) != "test input" {
+						return nil, fmt.Errorf("read unexpected input from injected reader: %q", string(buf))
+					}
+
+					return &mockData{}, nil
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -108,7 +108,7 @@ func Run(c *Config) int {
 	// This also resolves a staticcheck SA9003 empty branch warning.
 
 	var iops []any
-	iops = append(iops, c.Stdin) // Ensure stdin injected
+	iops = append(iops, struct{ io.Reader }{c.Stdin}) // Ensure stdin injected
 
 	if c.Progressor && progress != nil && *progress {
 		iops = append(iops, "progressor")
