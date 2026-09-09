@@ -3,10 +3,10 @@ package ast
 import (
 	"fmt"
 	"pimtrace"
+	"strconv"
 	"time"
 
 	"github.com/arran4/go-evaluator"
-	"github.com/araddon/dateparse"
 )
 
 type ComparatorAdapter struct {
@@ -32,7 +32,12 @@ func (c *ComparatorAdapter) Compare(other interface{}) (int, error) {
 	case int:
 		val := c.Value.Integer()
 		if val == nil {
-			return 0, fmt.Errorf("could not coerce %v to integer for comparison", c.Value)
+			if i, err := strconv.ParseInt(c.Value.String(), 10, 64); err == nil {
+				v := int(i)
+				val = &v
+			} else {
+				return 0, fmt.Errorf("could not coerce %q to integer for comparison", c.Value)
+			}
 		}
 		if *val == otherVal {
 			return 0, nil
@@ -45,7 +50,13 @@ func (c *ComparatorAdapter) Compare(other interface{}) (int, error) {
 	case int64:
 		val := c.Value.Integer()
 		if val == nil {
-			return 0, fmt.Errorf("could not coerce %v to integer for comparison", c.Value)
+			// fallback to parsing if simple integer fails
+			if i, err := strconv.ParseInt(c.Value.String(), 10, 64); err == nil {
+				v := int(i)
+				val = &v
+			} else {
+				return 0, fmt.Errorf("could not coerce %q to integer for comparison", c.Value)
+			}
 		}
 		otherInt := int(otherVal)
 		if *val == otherInt {
@@ -59,7 +70,11 @@ func (c *ComparatorAdapter) Compare(other interface{}) (int, error) {
 	case float64:
 		val := c.Value.Float64()
 		if val == nil {
-			return 0, fmt.Errorf("could not coerce %v to float64 for comparison", c.Value)
+			if f, err := strconv.ParseFloat(c.Value.String(), 64); err == nil {
+				val = &f
+			} else {
+				return 0, fmt.Errorf("could not coerce %q to float64 for comparison", c.Value)
+			}
 		}
 		if *val == otherVal {
 			return 0, nil
@@ -106,11 +121,9 @@ func (c *ComparatorAdapter) Compare(other interface{}) (int, error) {
 	case time.Time:
 		val := c.Value.Time()
 		if val == nil {
-			// fallback to dateparse
-			s := c.Value.String()
-			t, err := dateparse.ParseAny(s)
+			t, err := ParseDate(c.Value.String())
 			if err != nil {
-				return 0, fmt.Errorf("could not coerce %v to time.Time for comparison: %w", c.Value, err)
+				return 0, fmt.Errorf("could not coerce %q to time.Time for comparison: %w", c.Value, err)
 			}
 			val = &t
 		}

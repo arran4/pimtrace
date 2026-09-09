@@ -8,7 +8,6 @@ import (
 	"pimtrace/funcs"
 	"sort"
 	"strings"
-	"strconv"
 	"unicode"
 
 	"github.com/arran4/go-evaluator"
@@ -90,16 +89,7 @@ func (ve ConstantExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (
 }
 
 func (ve ConstantExpression) Evaluate(d interface{}, opts ...any) (interface{}, error) {
-	// Attempt numeric coercion to emit numeric types instead of string adapters,
-	// so the LHS ComparatorAdapter coerced the LHS pimtrace.Value.
-	if i, err := strconv.ParseInt(string(ve), 10, 64); err == nil {
-		return int(i), nil
-	}
-	if f, err := strconv.ParseFloat(string(ve), 64); err == nil {
-		return f, nil
-	}
-	return string(ve), nil // Or a ComparatorAdapter if we need it to behave like PIMTrace value.
-	// Wait, if RHS is int, ComparatorAdapter knows to coerce! Yes, so we return native Go int here.
+	return ParseLiteral(string(ve)), nil
 }
 
 type EntryExpression string

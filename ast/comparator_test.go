@@ -4,7 +4,6 @@ import (
 	"pimtrace"
 	"testing"
 	"time"
-
 )
 
 func TestComparatorAdapter(t *testing.T) {

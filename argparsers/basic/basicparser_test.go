@@ -305,8 +305,8 @@ func TestParseFilter(t *testing.T) {
 			expectedExpression: &evaluator.Query{
 				Expression: &evaluator.AndExpression{
 					Expressions: []evaluator.Query{
-						{Expression: &ast.Op{Op: "gt", LHS: ast.EntryExpression("h.a"), RHS: ast.ConstantExpression("10")}},
-						{Expression: &ast.Op{Op: "lte", LHS: ast.EntryExpression("h.b"), RHS: ast.ConstantExpression("20")}},
+						{Expression: &evaluator.ComparisonExpression{Operation: "gt", LHS: ast.EntryExpression("h.a"), RHS: ast.ConstantExpression("10")}},
+						{Expression: &evaluator.ComparisonExpression{Operation: "lte", LHS: ast.EntryExpression("h.b"), RHS: ast.ConstantExpression("20")}},
 					},
 				},
 			},

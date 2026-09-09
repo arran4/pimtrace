@@ -395,29 +395,29 @@ func parseComparisonExpr(args []string) (*evaluator.Query, []string, error) {
 		[]any{FilterEquals(""), FilterContains(""), FilterIContains(""), FilterGT(""), FilterGTE(""), FilterLT(""), FilterLTE("")},
 		[]any{ast.EntryExpression(""), ast.ConstantExpression(""), &ast.FunctionExpression{}, &ast.EvaluatorFunctionExpression{}},
 	); len(matches) > 1 {
-		var op string
+		var exp evaluator.Expression
+		lhsExp := tks[0].(ast.ValueExpression)
+		rhsExp := tks[2].(ast.ValueExpression)
+
 		switch matches[1].(type) {
 		case FilterEquals:
-			op = "eq"
+			exp = &evaluator.ComparisonExpression{Operation: "eq", LHS: lhsExp, RHS: rhsExp}
 		case FilterContains:
-			op = "contains"
+			exp = &ast.Op{Op: "contains", LHS: lhsExp, RHS: rhsExp}
 		case FilterIContains:
-			op = "icontains"
+			exp = &ast.Op{Op: "icontains", LHS: lhsExp, RHS: rhsExp}
 		case FilterGT:
-			op = "gt"
+			exp = &evaluator.ComparisonExpression{Operation: "gt", LHS: lhsExp, RHS: rhsExp}
 		case FilterGTE:
-			op = "gte"
+			exp = &evaluator.ComparisonExpression{Operation: "gte", LHS: lhsExp, RHS: rhsExp}
 		case FilterLT:
-			op = "lt"
+			exp = &evaluator.ComparisonExpression{Operation: "lt", LHS: lhsExp, RHS: rhsExp}
 		case FilterLTE:
-			op = "lte"
+			exp = &evaluator.ComparisonExpression{Operation: "lte", LHS: lhsExp, RHS: rhsExp}
 		}
+
 		return &evaluator.Query{
-			Expression: &ast.Op{
-				Op:  op,
-				LHS: tks[0].(ast.ValueExpression),
-				RHS: tks[2].(ast.ValueExpression),
-			},
+			Expression: exp,
 		}, remain, nil
 	}
 	return nil, args, fmt.Errorf("at %v: %w (unrecognized comparison format)", tks, ErrParserNothingFound)
