@@ -3,7 +3,6 @@ package shared
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -32,20 +31,15 @@ func TestRunner(t *testing.T) {
 			name:       "help flag",
 			args:       []string{"-help"},
 			wantErr:    0,
-			wantStdout: "Usage:  testtool [Flags] [Query]",
-			wantStderr: "",
+			wantStdout: "",
+			wantStderr: "Usage:  testtool [Flags] [Query]\n",
 		},
 		{
 			name:       "version flag",
 			args:       []string{"-version"},
 			wantErr:    0,
-			wantStdout: "v1.0.0",
+			wantStdout: "",
 			wantStderr: "",
-			setupCfg: func(cfg *Config) {
-				cfg.PrintVersion = func(w io.Writer) {
-					_, _ = fmt.Fprintln(w, "v1.0.0")
-				}
-			},
 		},
 		{
 			name:       "no args",

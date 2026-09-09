@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 
 	"pimtrace"
@@ -60,28 +61,19 @@ func Run(c *Config) int {
 		progress = f.Bool("progress", false, "Report progress")
 	}
 
-	printUsage := func(w io.Writer) {
-		_, _ = fmt.Fprintln(w, "Usage: ", c.Name, "[Flags]", "[Query]")
-		f.SetOutput(w)
+	f.Usage = func() {
+		_, _ = fmt.Fprintln(c.Stderr, "Usage: ", c.Name, "[Flags]", "[Query]")
 		f.PrintDefaults()
 		if c.PrintQueryHelp != nil {
-			c.PrintQueryHelp(w, *parser)
+			c.PrintQueryHelp(c.Stdout, *parser)
 		}
-		f.SetOutput(c.Stderr)
-	}
-
-	f.Usage = func() {
-		printUsage(c.Stderr)
 	}
 
 	if err := f.Parse(c.Args); err != nil {
 		if err == flag.ErrHelp {
-			// This branch is rarely hit unless they use `-h` directly and it triggers ErrHelp.
-			printUsage(c.Stdout)
 			return 0
 		}
-		// Write custom error to c.Stderr without global logger, note f.Parse already printed the flag error to f.Output() (c.Stderr)
-		_, _ = fmt.Fprintf(c.Stderr, "Error parsing flags: %v\n", err)
+		log.Printf("Error parsing flags: %s", err)
 		return 2
 	}
 
@@ -93,13 +85,13 @@ func Run(c *Config) int {
 	}
 
 	if *helpFlag {
-		printUsage(c.Stdout)
+		f.Usage()
 		return 0
 	}
 
 	if len(c.Args) == 0 {
 		_, _ = fmt.Fprintln(c.Stderr, "No query found")
-		printUsage(c.Stderr)
+		f.Usage()
 		return 2
 	}
 
