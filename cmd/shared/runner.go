@@ -70,18 +70,19 @@ func Run(c *Config) int {
 		f.SetOutput(c.Stderr)
 	}
 
-	f.Usage = func() {
-		printUsage(c.Stderr)
-	}
+	// flag package will call f.Usage on -h/--help and then return ErrHelp.
+	// But it will also call it on parsing errors.
+	// To prevent double printing and wrong streams, we set Usage to no-op during Parse
+	// and handle the output explicitly afterwards.
+	f.Usage = func() {}
 
 	if err := f.Parse(c.Args); err != nil {
 		if err == flag.ErrHelp {
-			// This branch is rarely hit unless they use `-h` directly and it triggers ErrHelp.
 			printUsage(c.Stdout)
 			return 0
 		}
-		// Write custom error to c.Stderr without global logger, note f.Parse already printed the flag error to f.Output() (c.Stderr)
 		_, _ = fmt.Fprintf(c.Stderr, "Error parsing flags: %v\n", err)
+		printUsage(c.Stderr)
 		return 2
 	}
 

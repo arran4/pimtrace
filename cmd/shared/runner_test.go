@@ -36,6 +36,13 @@ func TestRunner(t *testing.T) {
 			wantStderr: "",
 		},
 		{
+			name:       "short help flag",
+			args:       []string{"-h"},
+			wantErr:    0,
+			wantStdout: "Usage:  testtool [Flags] [Query]",
+			wantStderr: "",
+		},
+		{
 			name:       "version flag",
 			args:       []string{"-version"},
 			wantErr:    0,
@@ -84,7 +91,7 @@ func TestRunner(t *testing.T) {
 			name:       "successful query",
 			args:       []string{"-parser", "basic", "filter", ".1", "eq", ".1"},
 			wantErr:    0,
-			wantStdout: "", // Usually no stdout unless PrintQueryHelp or output handler writes
+			wantStdout: "success output", // Usually no stdout unless PrintQueryHelp or output handler writes
 			wantStderr: "",
 			setupCfg: func(cfg *Config) {
 				cfg.InputHandler = func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
@@ -94,6 +101,49 @@ func TestRunner(t *testing.T) {
 				cfg.OutputHandler = func(data pimtrace.Data, outputType string, outputFile string, stdout io.Writer) error {
 					_, _ = stdout.Write([]byte("success output"))
 					return nil
+				}
+			},
+		},
+		{
+			name:       "malformed query",
+			args:       []string{"-parser", "basic", "filter", "invalid_token"}, // missing arguments to filter
+			wantErr:    2,
+			wantStdout: "",
+			wantStderr: "Parse Error:",
+			setupCfg: func(cfg *Config) {
+				cfg.InputHandler = func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+					return &mockData{}, nil
+				}
+			},
+		},
+		{
+			name:       "exact trailing tokens",
+			args:       []string{"-parser", "basic", "filter", "c.name", "eq", ".a b c"}, // .a b c is passed as one token
+			wantErr:    0,
+			wantStdout: "success output",
+			wantStderr: "",
+			setupCfg: func(cfg *Config) {
+				cfg.InputHandler = func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+					return &mockData{}, nil
+				}
+				cfg.OutputHandler = func(data pimtrace.Data, outputType string, outputFile string, stdout io.Writer) error {
+					_, _ = stdout.Write([]byte("success output"))
+					return nil
+				}
+			},
+		},
+		{
+			name:       "output write failure",
+			args:       []string{"-parser", "basic", "filter", ".1", "eq", ".1"},
+			wantErr:    1,
+			wantStdout: "",
+			wantStderr: "Write Error: mock write error",
+			setupCfg: func(cfg *Config) {
+				cfg.InputHandler = func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+					return &mockData{}, nil
+				}
+				cfg.OutputHandler = func(data pimtrace.Data, outputType string, outputFile string, stdout io.Writer) error {
+					return errors.New("mock write error")
 				}
 			},
 		},
@@ -125,6 +175,14 @@ func TestRunner(t *testing.T) {
 
 			if tt.wantStderr != "" && !strings.Contains(stderr.String(), strings.TrimSpace(tt.wantStderr)) {
 				t.Errorf("Run() stderr = %q, want containing %q", stderr.String(), tt.wantStderr)
+			} else if tt.wantStderr == "" && len(strings.TrimSpace(stderr.String())) > 0 {
+				t.Errorf("Run() stderr expected empty, got %q", stderr.String())
+			}
+
+			if tt.wantStdout != "" && !strings.Contains(stdout.String(), strings.TrimSpace(tt.wantStdout)) {
+				t.Errorf("Run() stdout = %q, want containing %q", stdout.String(), tt.wantStdout)
+			} else if tt.wantStdout == "" && len(strings.TrimSpace(stdout.String())) > 0 {
+				t.Errorf("Run() stdout expected empty, got %q", stdout.String())
 			}
 		})
 	}
