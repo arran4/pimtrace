@@ -233,7 +233,7 @@ func TestParseFilter(t *testing.T) {
 			expectedExpression: &evaluator.Query{
 				Expression: &evaluator.NotExpression{
 					Expression: evaluator.Query{
-						Expression: &evaluator.IsExpression{Field: "user-agent", Value: "Kmail"},
+						Expression: &evaluator.ComparisonExpression{Operation: "eq", LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 					},
 				},
 			},
@@ -285,7 +285,7 @@ func TestParseOperations(t *testing.T) {
 				Expression: &evaluator.Query{
 					Expression: &evaluator.NotExpression{
 						Expression: evaluator.Query{
-							Expression: &evaluator.IsExpression{Field: "user-agent", Value: "Kmail"},
+							Expression: &evaluator.ComparisonExpression{Operation: "eq", LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 						},
 					},
 				},
@@ -302,7 +302,7 @@ func TestParseOperations(t *testing.T) {
 						Expression: &evaluator.Query{
 							Expression: &evaluator.NotExpression{
 								Expression: evaluator.Query{
-									Expression: &evaluator.IContainsExpression{Field: "user-agent", Value: "Kmail"},
+									Expression: &evaluator.ComparisonExpression{Operation: "icontains", LHS: ast.EntryExpression("h.user-agent"), RHS: ast.ConstantExpression("Kmail")},
 								},
 							},
 						},

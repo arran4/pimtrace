@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/arran4/go-evaluator"
+	"github.com/arran4/go-evaluator/parser/simple"
 )
 
 var (
@@ -196,88 +197,277 @@ done:
 }
 
 func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, []string, error) {
-	tks, remain, err := FilterTokenizerScanN(args, 3)
-	if err != nil {
-		return nil, nil, err
+	// First collect all tokens up to terminator
+	var tokens []string
+	var remain []string
+
+	if len(args) == 0 {
+		return nil, nil, ErrParserNothingFound
 	}
-	if TokenMatcher(tks, FilterNot("")) != nil {
-		var op *evaluator.Query
-		op, remain, err = ParseFilter(args[1:], []ast.Operation{})
+
+	for i, arg := range args {
+		t, err := FilterIdentify(arg)
 		if err != nil {
-			return nil, nil, err
+			// Instead of failing entirely on unknown tokens, check if it's a known operator like gt, and, (, )
+			switch strings.ToLower(arg) {
+			case "and", "or", "(", ")", "gt", "gte", "lt", "lte":
+				// It's fine, we will handle it in the token transformer
+			default:
+				return nil, nil, err
+			}
+		} else {
+			if _, isTerminator := t.(Terminator); isTerminator {
+				remain = args[i:]
+				break
+			}
 		}
-		return &evaluator.Query{
-			Expression: &evaluator.NotExpression{
-				Expression: *op,
-			},
-		}, remain, nil
+		tokens = append(tokens, arg)
 	}
-	if matches := TokenMatcher(tks,
-		[]any{ast.EntryExpression(""), ast.ConstantExpression("")},
-		[]any{FilterEquals(""), FilterContains(""), FilterIContains("")},
-		[]any{ast.EntryExpression(""), ast.ConstantExpression("")},
-	); len(matches) > 1 {
-		lhs := tks[0]
-		rhs := tks[2]
-		var field string
-		var value interface{}
 
-		if l, ok := lhs.(ast.EntryExpression); ok {
-			if r, ok := rhs.(ast.ConstantExpression); ok {
-				field = l.ColumnName()
-				value = string(r)
-			}
-		} else if l, ok := lhs.(ast.ConstantExpression); ok {
-			if r, ok := rhs.(ast.EntryExpression); ok {
-				field = r.ColumnName()
-				value = string(l)
+	if remain == nil {
+		remain = []string{}
+	}
+
+	if len(tokens) == 0 {
+		return nil, remain, ErrParserNothingFound
+	}
+
+	// Fast-path fallback for exactly 3 tokens matching old behavior (to avoid fighting the evaluator lexer with unusual leaf forms)
+	if len(tokens) == 3 {
+		t0, e0 := FilterIdentify(tokens[0])
+		t1, e1 := FilterIdentify(tokens[1])
+		t2, e2 := FilterIdentify(tokens[2])
+		if e0 == nil && e1 == nil && e2 == nil {
+			// Check if they are simple expressions without boolean operators
+			isBoolean0 := isBooleanOp(tokens[0])
+			isBoolean1 := isBooleanOp(tokens[1])
+			isBoolean2 := isBooleanOp(tokens[2])
+			if !isBoolean0 && !isBoolean1 && !isBoolean2 {
+				// We can try to use the legacy logic
+				lhs := t0
+				rhs := t2
+				var field string
+				var value interface{}
+
+				if l, ok := lhs.(ast.EntryExpression); ok {
+					if r, ok := rhs.(ast.ConstantExpression); ok {
+						field = l.ColumnName()
+						value = string(r)
+					}
+				} else if l, ok := lhs.(ast.ConstantExpression); ok {
+					if r, ok := rhs.(ast.EntryExpression); ok {
+						field = r.ColumnName()
+						value = string(l)
+					}
+				}
+
+				if field != "" {
+					switch t1.(type) {
+					case FilterEquals:
+						return &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{Operation: "eq", LHS: ast.EntryExpression(field), RHS: ast.ConstantExpression(value.(string))},
+						}, remain, nil
+					case FilterContains:
+						return &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{Operation: "contains", LHS: ast.EntryExpression(field), RHS: ast.ConstantExpression(value.(string))},
+						}, remain, nil
+					case FilterIContains:
+						return &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{Operation: "icontains", LHS: ast.EntryExpression(field), RHS: ast.ConstantExpression(value.(string))},
+						}, remain, nil
+					}
+				}
+
+				// Also handle Op mappings if field is empty
+				var op string
+				switch t1.(type) {
+				case FilterEquals:
+					op = "eq"
+				case FilterContains:
+					op = "contains"
+				case FilterIContains:
+					op = "icontains"
+				}
+				if op != "" {
+					if lhsexp, ok := lhs.(ast.ValueExpression); ok {
+						if rhsexp, ok := rhs.(ast.ValueExpression); ok {
+							return &evaluator.Query{
+								Expression: &evaluator.ComparisonExpression{
+									Operation: op,
+									LHS:       lhsexp,
+									RHS:       rhsexp,
+								},
+							}, remain, nil
+						}
+					}
+				}
 			}
 		}
+	}
 
-		if field != "" {
-			switch matches[1].(type) {
-			case FilterEquals:
-				return &evaluator.Query{
-					Expression: &evaluator.IsExpression{
-						Field: field,
-						Value: value,
-					},
-				}, remain, nil
-			case FilterContains:
-				return &evaluator.Query{
-					Expression: &evaluator.ContainsExpression{
-						Field: field,
-						Value: value,
-					},
-				}, remain, nil
-			case FilterIContains:
-				return &evaluator.Query{
-					Expression: &evaluator.IContainsExpression{
-						Field: field,
-						Value: value,
-					},
-				}, remain, nil
+	// 1. Transform syntax
+	fields := make(map[string]ast.ValueExpression)
+	literals := make(map[string]ast.ConstantExpression)
+	icontainsFields := make(map[string]bool)
+
+	var transformed []string
+	for _, t := range tokens {
+		ident, err := FilterIdentify(t)
+		if err != nil {
+			// handled as operator
+			switch strings.ToLower(t) {
+			case "and", "or", "(", ")":
+				transformed = append(transformed, strings.ToLower(t))
+			case "gt":
+				transformed = append(transformed, ">")
+			case "gte":
+				transformed = append(transformed, ">=")
+			case "lt":
+				transformed = append(transformed, "<")
+			case "lte":
+				transformed = append(transformed, "<=")
 			}
+			continue
 		}
 
-		var op string
-		switch /*opMatch :=*/ matches[1].(type) {
+		switch v := ident.(type) {
+		case FilterNot:
+			transformed = append(transformed, "not")
 		case FilterEquals:
-			op = "eq"
+			transformed = append(transformed, "is")
 		case FilterContains:
-			op = "contains"
+			transformed = append(transformed, "contains")
 		case FilterIContains:
-			op = "icontains"
+			// Map to contains temporarily, but mark the preceding field
+			transformed = append(transformed, "contains")
+			if len(transformed) > 1 {
+				lastField := transformed[len(transformed)-2]
+				if strings.HasPrefix(lastField, "F") {
+					icontainsFields[lastField] = true
+				}
+			}
+		case ast.ConstantExpression:
+			ph := fmt.Sprintf("\"L%d\"", len(literals)) // quoted to parse as string literal securely
+			literals[ph] = v
+			transformed = append(transformed, ph)
+		default:
+			if vexp, ok := ident.(ast.ValueExpression); ok {
+				ph := fmt.Sprintf("F%d", len(fields))
+				fields[ph] = vexp
+				transformed = append(transformed, ph)
+			} else {
+				transformed = append(transformed, t)
+			}
 		}
-		return &evaluator.Query{
-			Expression: &ast.Op{
-				Op:  op,
-				LHS: tks[0].(ast.ValueExpression),
-				RHS: tks[2].(ast.ValueExpression),
-			},
-		}, remain, nil
 	}
-	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
+
+	s := strings.Join(transformed, " ")
+	q, err := simple.Parse(s)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parsing filter expression %q: %w", s, err)
+	}
+
+	// Need to restore placeholders
+	if q.Expression != nil {
+		q.Expression = walkAndRestore(q.Expression, fields, literals, icontainsFields)
+	}
+
+	return &q, remain, nil
+}
+
+func isBooleanOp(t string) bool {
+	l := strings.ToLower(t)
+	return l == "and" || l == "or" || l == "not" || l == "(" || l == ")" || l == "gt" || l == "gte" || l == "lt" || l == "lte"
+}
+
+func walkAndRestore(expr evaluator.Expression, fields map[string]ast.ValueExpression, literals map[string]ast.ConstantExpression, icontainsFields map[string]bool) evaluator.Expression {
+	switch e := expr.(type) {
+	case *evaluator.AndExpression:
+		for i, q := range e.Expressions {
+			e.Expressions[i].Expression = walkAndRestore(q.Expression, fields, literals, icontainsFields)
+		}
+		return e
+	case *evaluator.OrExpression:
+		for i, q := range e.Expressions {
+			e.Expressions[i].Expression = walkAndRestore(q.Expression, fields, literals, icontainsFields)
+		}
+		return e
+	case *evaluator.NotExpression:
+		e.Expression.Expression = walkAndRestore(e.Expression.Expression, fields, literals, icontainsFields)
+		return e
+	case *evaluator.IsExpression:
+		return &evaluator.ComparisonExpression{
+			Operation: "eq",
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	case *evaluator.IsNotExpression:
+		return &evaluator.NotExpression{
+			Expression: evaluator.Query{
+				Expression: &evaluator.ComparisonExpression{
+					Operation: "eq",
+					LHS:       getFieldVal(e.Field, fields),
+					RHS:       getLitVal(e.Value, literals),
+				},
+			},
+		}
+	case *evaluator.ContainsExpression:
+		opName := "contains"
+		if icontainsFields[e.Field] {
+			opName = "icontains"
+		}
+		return &evaluator.ComparisonExpression{
+			Operation: opName,
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	case *evaluator.GreaterThanExpression:
+		return &evaluator.ComparisonExpression{
+			Operation: "gt",
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	case *evaluator.GreaterThanOrEqualExpression:
+		return &evaluator.ComparisonExpression{
+			Operation: "gte",
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	case *evaluator.LessThanExpression:
+		return &evaluator.ComparisonExpression{
+			Operation: "lt",
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	case *evaluator.LessThanOrEqualExpression:
+		return &evaluator.ComparisonExpression{
+			Operation: "lte",
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	default:
+		return expr
+	}
+}
+
+func getFieldVal(field string, fields map[string]ast.ValueExpression) ast.ValueExpression {
+	if v, ok := fields[field]; ok {
+		return v
+	}
+	return ast.EntryExpression(field)
+}
+
+func getLitVal(val interface{}, literals map[string]ast.ConstantExpression) ast.ValueExpression {
+	if s, ok := val.(string); ok {
+		// e.Value comes out of parse/simple.Parse without quotes if it matched a string.
+		// "L0"
+		ph := fmt.Sprintf("\"%s\"", s)
+		if v, ok := literals[ph]; ok {
+			return v
+		}
+		return ast.ConstantExpression(s)
+	}
+	return ast.ConstantExpression(fmt.Sprintf("%v", val))
 }
 
 func ParseIntoSummary(args []string) (ast.Operation, []string, error) {
