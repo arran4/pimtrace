@@ -294,7 +294,7 @@ func toPimtraceValue(v interface{}) (pimtrace.Value, error) {
 	case int64:
 		return pimtrace.SimpleIntegerValue(int(val)), nil
 	case float64:
-		return pimtrace.SimpleIntegerValue(int(val)), nil // Lossy? pimtrace seems to use int mostly
+		return pimtrace.SimpleFloatValue(val), nil
 	case string:
 		return pimtrace.SimpleStringValue(val), nil
 	case []interface{}:

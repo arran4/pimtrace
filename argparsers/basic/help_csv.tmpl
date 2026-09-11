@@ -4,6 +4,14 @@
 	filter not c.job icontains .Software
 	Explanation: Filters all rows where the `job` column does not contain `Software`.
 
+	filter c.pay gt .50000 and c.job eq .Developer
+	Explanation: Filters rows based on numeric comparisons and logical AND.
+	Available comparison operators: eq, contains, icontains, gt, gte, lt, lte. Available boolean operators: and, or, not.
+	Precedence: 'not' binds most tightly, followed by 'and', then 'or' ('and' binds more tightly than 'or').
+	Parentheses can be used for grouping e.g., \( A or B \) and C (note: escape or quote parentheses in shell, e.g. '\(' '\)' or "(" ")").
+	Relational operators (gt, gte, lt, lte) perform typed numeric or chronological date comparisons.
+	Once numeric/date relational coercion is selected, operands that cannot be coerced will produce an error.
+
 2. Selecting Components (Tabular Conversion)
 	into table c.job f.year[c.startdate] f.month[c.startdate]
 	Explanation: This extracts specific fields from the rows and converts them into a tabular format for viewing.

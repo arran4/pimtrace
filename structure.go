@@ -211,6 +211,67 @@ func (s SimpleIntegerValue) String() string {
 
 var _ Value = SimpleIntegerValue(0)
 
+type SimpleFloatValue float64
+
+func (s SimpleFloatValue) Truthy() bool {
+	return s != 0
+}
+
+func (s SimpleFloatValue) Elements() int {
+	return 1
+}
+
+func (s SimpleFloatValue) Length() int {
+	return 1
+}
+
+func (s SimpleFloatValue) Array() []Value {
+	return []Value{s}
+}
+
+func (s SimpleFloatValue) StringArray() []string {
+	return []string{s.String()}
+}
+
+func (s SimpleFloatValue) Less(jv Value) bool {
+	if jf := jv.Float64(); jf != nil {
+		return float64(s) < *jf
+	}
+	return strings.Compare(s.String(), jv.String()) < 0
+}
+
+func (s SimpleFloatValue) Equal(jv Value) bool {
+	if jf := jv.Float64(); jf != nil {
+		return float64(s) == *jf
+	}
+	return s.String() == jv.String()
+}
+
+func (s SimpleFloatValue) Time() *time.Time {
+	ut := time.Unix(int64(s), 0)
+	return &ut
+}
+
+func (s SimpleFloatValue) Integer() *int {
+	si := int(s)
+	return &si
+}
+
+func (s SimpleFloatValue) Float64() *float64 {
+	sf := float64(s)
+	return &sf
+}
+
+func (s SimpleFloatValue) Type() Type {
+	return Float
+}
+
+func (s SimpleFloatValue) String() string {
+	return strconv.FormatFloat(float64(s), 'f', -1, 64)
+}
+
+var _ Value = SimpleFloatValue(0)
+
 type SimpleArrayValue []Value
 
 func (s SimpleArrayValue) Truthy() bool {
@@ -295,6 +356,7 @@ const (
 	Integer
 	Array
 	Nil
+	Float
 )
 
 func (t Type) String() string {
@@ -303,6 +365,8 @@ func (t Type) String() string {
 		return "String"
 	case Integer:
 		return "Integer"
+	case Float:
+		return "Float"
 	case Array:
 		return "Array"
 	}

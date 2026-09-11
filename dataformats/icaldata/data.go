@@ -53,8 +53,14 @@ func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 	case "sz", "sized":
 		return pimtrace.SimpleIntegerValue(len(s.ComponentBase.Properties)), nil
 	case "p", "property":
-		ks = ks[1:]
-		fallthrough
+		if len(ks) < 2 || ks[1] == "" {
+			return nil, fmt.Errorf("iCal get %w, %s", ErrHeaderError, key)
+		}
+		i, ok := s.Header[ks[1]]
+		if !ok {
+			return nil, fmt.Errorf("iCal get %w, %s", ErrHeaderError, key)
+		}
+		return pimtrace.SimpleStringValue(s.ComponentBase.Properties[i].Value), nil
 	default:
 		if len(ks) > 1 {
 			i, ok := s.Header[ks[0]]
