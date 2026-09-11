@@ -53,7 +53,13 @@ func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 	case "sz", "sized":
 		return pimtrace.SimpleIntegerValue(len(s.ComponentBase.Properties)), nil
 	case "p", "property":
-		ks = ks[1:]
+		if len(ks) > 1 {
+			i, ok := s.Header[ks[1]]
+			if !ok {
+				return nil, fmt.Errorf("iCal get %w, %s", ErrHeaderError, key)
+			}
+			return pimtrace.SimpleStringValue(s.ComponentBase.Properties[i].Value), nil
+		}
 		fallthrough
 	default:
 		if len(ks) > 1 {
@@ -62,6 +68,12 @@ func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 				return nil, fmt.Errorf("iCal get %w, %s", ErrHeaderError, key)
 			}
 			return pimtrace.SimpleStringValue(s.ComponentBase.Properties[i].Value), nil
+		}
+		if len(ks) == 1 {
+			i, ok := s.Header[ks[0]]
+			if ok {
+				return pimtrace.SimpleStringValue(s.ComponentBase.Properties[i].Value), nil
+			}
 		}
 		return nil, fmt.Errorf("iCal get %w, %s", ErrKeyNotFound, key)
 	}

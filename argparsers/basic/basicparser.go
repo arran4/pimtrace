@@ -48,6 +48,8 @@ func FilterIdentify(s string) (any, error) {
 		return FilterIContains(s), nil
 	case "h", "header":
 		return ast.EntryExpression(s), nil
+	case "p", "property":
+		return ast.EntryExpression(s), nil
 	case "c", "column":
 		return ast.EntryExpression(s), nil
 	case "":
@@ -68,6 +70,8 @@ func IntoIdentify(args []string) (any, []string, error) {
 		return Terminator(args[0]), args[0:], nil
 	case "h", "header":
 		return ast.EntryExpression(args[0]), args[1:], nil
+	case "p", "property":
+		return ast.EntryExpression(args[0]), args[1:], nil
 	case "c", "column":
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "f", "func":
@@ -87,6 +91,8 @@ func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
 	ss := strings.SplitN(args[0], ".", 2)
 	switch ss[0] {
 	case "h", "header":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "p", "property":
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "c", "column":
 		return ast.EntryExpression(args[0]), args[1:], nil
@@ -422,28 +428,28 @@ func walkAndRestore(expr evaluator.Expression, fields map[string]ast.ValueExpres
 			RHS:       getLitVal(e.Value, literals),
 		}
 	case *evaluator.GreaterThanExpression:
-		return &evaluator.ComparisonExpression{
-			Operation: "gt",
-			LHS:       getFieldVal(e.Field, fields),
-			RHS:       getLitVal(e.Value, literals),
+		return &ast.SafeComparisonExpression{
+			Operator: ">",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
 		}
 	case *evaluator.GreaterThanOrEqualExpression:
-		return &evaluator.ComparisonExpression{
-			Operation: "gte",
-			LHS:       getFieldVal(e.Field, fields),
-			RHS:       getLitVal(e.Value, literals),
+		return &ast.SafeComparisonExpression{
+			Operator: ">=",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
 		}
 	case *evaluator.LessThanExpression:
-		return &evaluator.ComparisonExpression{
-			Operation: "lt",
-			LHS:       getFieldVal(e.Field, fields),
-			RHS:       getLitVal(e.Value, literals),
+		return &ast.SafeComparisonExpression{
+			Operator: "<",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
 		}
 	case *evaluator.LessThanOrEqualExpression:
-		return &evaluator.ComparisonExpression{
-			Operation: "lte",
-			LHS:       getFieldVal(e.Field, fields),
-			RHS:       getLitVal(e.Value, literals),
+		return &ast.SafeComparisonExpression{
+			Operator: "<=",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
 		}
 	default:
 		return expr

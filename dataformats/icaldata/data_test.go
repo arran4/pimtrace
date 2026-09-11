@@ -102,9 +102,11 @@ func TestICalWithSource_Get(t *testing.T) {
 	}
 
 	// short key
-	_, err = r.Get("SUMMARY")
-	if err == nil {
-		t.Errorf("Get(SUMMARY) expected error (too short)")
+	v, err = r.Get("SUMMARY")
+	if err != nil {
+		t.Errorf("Get(SUMMARY) unexpected error: %v", err)
+	} else if v.String() != "Meeting" {
+		t.Errorf("Get(SUMMARY) = %v, want 'Meeting'", v)
 	}
 }
 

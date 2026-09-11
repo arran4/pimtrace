@@ -89,7 +89,7 @@ func (ve ConstantExpression) Execute(d pimtrace.Entry, ctx *evaluator.Context) (
 }
 
 func (ve ConstantExpression) Evaluate(d interface{}, opts ...any) (interface{}, error) {
-	return pimtrace.SimpleStringValue(ve), nil
+	return ComparatorAdapter{Value: pimtrace.SimpleStringValue(ve)}, nil
 }
 
 type EntryExpression string
@@ -130,6 +130,9 @@ func (ve EntryExpression) Evaluate(d interface{}, opts ...any) (interface{}, err
 	// Reflector.Find(path) will call EntryPathor.Find(path) because we implemented Finder interface check in Reflector.
 
 	res := lookup.Reflect(ep).Find(string(ve))
+	if val, ok := res.Raw().(pimtrace.Value); ok {
+		return ComparatorAdapter{Value: val}, nil
+	}
 	return res.Raw(), nil
 }
 
@@ -250,7 +253,11 @@ func (fe *FunctionExpression) Evaluate(d interface{}, opts ...any) (interface{},
 			ctx = c
 		}
 	}
-	return fe.Execute(eEntry, ctx)
+	val, err := fe.Execute(eEntry, ctx)
+	if err != nil {
+		return nil, err
+	}
+	return ComparatorAdapter{Value: val}, nil
 }
 
 var _ ValueExpression = (*FunctionExpression)(nil)
