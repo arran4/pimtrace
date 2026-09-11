@@ -257,12 +257,12 @@ func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, [
 
 				if l, ok := lhs.(ast.EntryExpression); ok {
 					if r, ok := rhs.(ast.ConstantExpression); ok {
-						field = l.ColumnName()
+						field = string(l)
 						value = string(r)
 					}
 				} else if l, ok := lhs.(ast.ConstantExpression); ok {
 					if r, ok := rhs.(ast.EntryExpression); ok {
-						field = r.ColumnName()
+						field = string(r)
 						value = string(l)
 					}
 				}

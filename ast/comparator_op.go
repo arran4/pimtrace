@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/arran4/go-evaluator"
+	"pimtrace"
 )
 
 type SafeComparisonExpression struct {
@@ -20,6 +21,13 @@ func (c *SafeComparisonExpression) Evaluate(d interface{}, opts ...any) (bool, e
 	rv, err := c.Right.Evaluate(d, opts...)
 	if err != nil {
 		return false, err
+	}
+
+	if pv, ok := lv.(pimtrace.Value); ok {
+		lv = ComparatorAdapter{Value: pv}
+	}
+	if pv, ok := rv.(pimtrace.Value); ok {
+		rv = ComparatorAdapter{Value: pv}
 	}
 
 	res, err := evaluator.Compare(lv, rv)
