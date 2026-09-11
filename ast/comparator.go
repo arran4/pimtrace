@@ -4,9 +4,50 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"pimtrace"
 )
+
+type comparisonMode int
+
+const (
+	modeLexical comparisonMode = iota
+	modeNumeric
+	modeDate
+)
+
+func determineComparisonMode(a, b pimtrace.Value) comparisonMode {
+	isNumA := isNumeric(a)
+	isNumB := isNumeric(b)
+
+	_, dateErrA := pimtrace.CoerceDate(a)
+	isDateA := dateErrA == nil
+	_, dateErrB := pimtrace.CoerceDate(b)
+	isDateB := dateErrB == nil
+
+	// If both operands are date-coercible and at least one operand provides a non-numeric date signal,
+	// use DATE comparison.
+	// E.g. "20200102" vs "2020-01-03", "20200102" vs RFC3339 date, "2020-01-01" vs "2020-01-03".
+	if isDateA && isDateB && (!isNumA || !isNumB) {
+		return modeDate
+	}
+
+	// Otherwise, if either operand establishes numeric mode, require both operands to coerce
+	// numerically and compare numerically.
+	if isNumA || isNumB {
+		return modeNumeric
+	}
+
+	// Otherwise, if either operand establishes date mode, require both operands to coerce as dates
+	// or return a useful date coercion error.
+	if isDateA || isDateB {
+		return modeDate
+	}
+
+	// Only use lexical string ordering when neither typed mode is established.
+	return modeLexical
+}
 
 type ComparatorAdapter struct {
 	Value pimtrace.Value
@@ -35,6 +76,14 @@ func (c ComparatorAdapter) Compare(other interface{}) (int, error) {
 			otherVal = pimtrace.SimpleFloatValue(v)
 		case float32:
 			otherVal = pimtrace.SimpleFloatValue(float64(v))
+		case time.Time:
+			otherVal = pimtrace.SimpleStringValue(v.Format(time.RFC3339Nano))
+		case *time.Time:
+			if v != nil {
+				otherVal = pimtrace.SimpleStringValue(v.Format(time.RFC3339Nano))
+			} else {
+				otherVal = &pimtrace.SimpleNilValue{}
+			}
 		default:
 			return 0, fmt.Errorf("unable to compare against %T", o)
 		}
@@ -44,31 +93,14 @@ func (c ComparatorAdapter) Compare(other interface{}) (int, error) {
 		otherVal = &pimtrace.SimpleNilValue{}
 	}
 
-	cIsNumeric := isNumeric(c.Value)
-	oIsNumeric := isNumeric(otherVal)
-
-	if cIsNumeric && !oIsNumeric {
-		on, err := toNumeric(otherVal)
-		if err != nil {
-			return 0, fmt.Errorf("numeric comparison failed: RHS %q cannot be coerced: %v", otherVal.String(), err)
-		}
-		return compareNumeric(c.Value, on)
-	} else if oIsNumeric && !cIsNumeric {
-		cn, err := toNumeric(c.Value)
-		if err != nil {
-			return 0, fmt.Errorf("numeric comparison failed: LHS %q cannot be coerced: %v", c.Value.String(), err)
-		}
-		return compareNumeric(cn, otherVal)
-	} else if cIsNumeric && oIsNumeric {
-		return compareNumeric(c.Value, otherVal)
-	}
-
-	ct, cErr := pimtrace.CoerceDate(c.Value)
-	ot, oErr := pimtrace.CoerceDate(otherVal)
-	if cErr == nil || oErr == nil {
+	mode := determineComparisonMode(c.Value, otherVal)
+	switch mode {
+	case modeDate:
+		ct, cErr := pimtrace.CoerceDate(c.Value)
 		if cErr != nil {
 			return 0, fmt.Errorf("date comparison failed: LHS %q cannot be coerced: %v", c.Value.String(), cErr)
 		}
+		ot, oErr := pimtrace.CoerceDate(otherVal)
 		if oErr != nil {
 			return 0, fmt.Errorf("date comparison failed: RHS %q cannot be coerced: %v", otherVal.String(), oErr)
 		}
@@ -79,9 +111,24 @@ func (c ComparatorAdapter) Compare(other interface{}) (int, error) {
 			return 1, nil
 		}
 		return 0, nil
-	}
 
-	return strings.Compare(c.Value.String(), otherVal.String()), nil
+	case modeNumeric:
+		cn, err := toNumeric(c.Value)
+		if err != nil {
+			return 0, fmt.Errorf("numeric comparison failed: LHS %q cannot be coerced: %v", c.Value.String(), err)
+		}
+		on, err := toNumeric(otherVal)
+		if err != nil {
+			return 0, fmt.Errorf("numeric comparison failed: RHS %q cannot be coerced: %v", otherVal.String(), err)
+		}
+		return compareNumeric(cn, on)
+
+	case modeLexical:
+		return strings.Compare(c.Value.String(), otherVal.String()), nil
+
+	default:
+		return strings.Compare(c.Value.String(), otherVal.String()), nil
+	}
 }
 
 func getFloat64(v pimtrace.Value) *float64 {
