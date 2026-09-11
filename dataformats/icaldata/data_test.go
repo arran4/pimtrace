@@ -321,3 +321,40 @@ END:VCALENDAR`
 	// golang-ical parses line by line and might just return an empty calendar or error
 	_, _ = ReadICalStream(rBad, "ical", "bad.ics") // Just hitting it for coverage
 }
+
+func TestICalWithSource_AllDayDatePropertyExtraction(t *testing.T) {
+	allDayData := `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//arran4//golang-ical//EN
+BEGIN:VEVENT
+UID:event-all-day-test
+SUMMARY:All Day Test
+DTSTART;VALUE=DATE:20200102
+DTEND;VALUE=DATE:20200103
+END:VEVENT
+END:VCALENDAR`
+
+	sources, err := ReadICalStream(strings.NewReader(allDayData), "ical", "all_day.ics")
+	if err != nil {
+		t.Fatalf("ReadICalStream error: %v", err)
+	}
+	if len(sources) != 1 {
+		t.Fatalf("expected 1 event, got %d", len(sources))
+	}
+
+	val, err := sources[0].Get("p.DTSTART")
+	if err != nil {
+		t.Fatalf("Get('p.DTSTART') error: %v", err)
+	}
+	if val.String() != "20200102" {
+		t.Errorf("expected '20200102', got %q", val.String())
+	}
+
+	valEnd, err := sources[0].Get("p.DTEND")
+	if err != nil {
+		t.Fatalf("Get('p.DTEND') error: %v", err)
+	}
+	if valEnd.String() != "20200103" {
+		t.Errorf("expected '20200103', got %q", valEnd.String())
+	}
+}

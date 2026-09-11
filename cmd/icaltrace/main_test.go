@@ -206,3 +206,126 @@ func TestCLIMain_ICalDateRangeFilteringAcceptance(t *testing.T) {
 		}
 	})
 }
+
+func TestCLIMain_ICalAllDayEventAcceptance(t *testing.T) {
+	dir := t.TempDir()
+	binPath := filepath.Join(dir, "icaltrace")
+
+	buildCmd := exec.Command("go", "build", "-o", binPath, ".")
+	if err := buildCmd.Run(); err != nil {
+		t.Fatalf("failed to build icaltrace for all-day acceptance tests: %v", err)
+	}
+
+	allDayFixture := "BEGIN:VCALENDAR\r\n" +
+		"VERSION:2.0\r\n" +
+		"PRODID:-//arran4//golang-ical//EN\r\n" +
+		"BEGIN:VEVENT\r\n" +
+		"UID:event-all-day-early\r\n" +
+		"SUMMARY:Early All-Day Event\r\n" +
+		"DTSTART;VALUE=DATE:20191231\r\n" +
+		"DTEND;VALUE=DATE:20200101\r\n" +
+		"END:VEVENT\r\n" +
+		"BEGIN:VEVENT\r\n" +
+		"UID:event-all-day-target\r\n" +
+		"SUMMARY:All Day Target\r\n" +
+		"DTSTART;VALUE=DATE:20200102\r\n" +
+		"DTEND;VALUE=DATE:20200103\r\n" +
+		"END:VEVENT\r\n" +
+		"BEGIN:VEVENT\r\n" +
+		"UID:event-all-day-late\r\n" +
+		"SUMMARY:Late All-Day Event\r\n" +
+		"DTSTART;VALUE=DATE:20200105\r\n" +
+		"DTEND;VALUE=DATE:20200106\r\n" +
+		"END:VEVENT\r\n" +
+		"END:VCALENDAR\r\n"
+
+	runICal := func(query ...string) (stdout string, stderr string, exitCode int, err error) {
+		tmpFile := filepath.Join(t.TempDir(), "allday.ics")
+		if writeErr := os.WriteFile(tmpFile, []byte(allDayFixture), 0644); writeErr != nil {
+			t.Fatalf("failed to write ics fixture: %v", writeErr)
+		}
+
+		args := append([]string{
+			"-parser", "basic",
+			"-input", tmpFile,
+			"-input-type", "ical",
+			"-output", "-",
+			"-output-type", "ical",
+		}, query...)
+
+		cmd := exec.Command(binPath, args...)
+		var outBuf, errBuf bytes.Buffer
+		cmd.Stdout = &outBuf
+		cmd.Stderr = &errBuf
+		cmdErr := cmd.Run()
+		code := 0
+		if cmd.ProcessState != nil {
+			code = cmd.ProcessState.ExitCode()
+		}
+		return outBuf.String(), errBuf.String(), code, cmdErr
+	}
+
+	t.Run("all-day date range selects exactly target event", func(t *testing.T) {
+		stdout, stderr, code, err := runICal("filter", "p.DTSTART", "gt", ".2020-01-01", "and", "p.DTSTART", "lt", ".2020-01-03")
+		if err != nil {
+			t.Fatalf("run failed: %v, stderr: %s", err, stderr)
+		}
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+
+		if !strings.Contains(stdout, "UID:event-all-day-target") {
+			t.Errorf("stdout expected to contain target event UID:event-all-day-target, got:\n%s", stdout)
+		}
+		if !strings.Contains(stdout, "SUMMARY:All Day Target") {
+			t.Errorf("stdout expected to contain target event SUMMARY:All Day Target, got:\n%s", stdout)
+		}
+
+		if strings.Contains(stdout, "UID:event-all-day-early") || strings.Contains(stdout, "SUMMARY:Early All-Day Event") {
+			t.Errorf("stdout unexpectedly contained early event, got:\n%s", stdout)
+		}
+		if strings.Contains(stdout, "UID:event-all-day-late") || strings.Contains(stdout, "SUMMARY:Late All-Day Event") {
+			t.Errorf("stdout unexpectedly contained late event, got:\n%s", stdout)
+		}
+	})
+
+	t.Run("all-day inclusive boundary using compact DATE", func(t *testing.T) {
+		stdout, stderr, code, err := runICal("filter", "p.DTSTART", "gte", ".20200102", "and", "p.DTSTART", "lte", ".20200102")
+		if err != nil {
+			t.Fatalf("run failed: %v, stderr: %s", err, stderr)
+		}
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+
+		if !strings.Contains(stdout, "UID:event-all-day-target") {
+			t.Errorf("stdout expected to contain target event UID:event-all-day-target, got:\n%s", stdout)
+		}
+		if strings.Contains(stdout, "UID:event-all-day-early") {
+			t.Errorf("stdout unexpectedly contained early event, got:\n%s", stdout)
+		}
+		if strings.Contains(stdout, "UID:event-all-day-late") {
+			t.Errorf("stdout unexpectedly contained late event, got:\n%s", stdout)
+		}
+	})
+
+	t.Run("all-day upper boundary using compact DATE", func(t *testing.T) {
+		stdout, stderr, code, err := runICal("filter", "p.DTSTART", "lte", ".20200102")
+		if err != nil {
+			t.Fatalf("run failed: %v, stderr: %s", err, stderr)
+		}
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+
+		if !strings.Contains(stdout, "UID:event-all-day-early") {
+			t.Errorf("stdout expected to contain early event UID:event-all-day-early, got:\n%s", stdout)
+		}
+		if !strings.Contains(stdout, "UID:event-all-day-target") {
+			t.Errorf("stdout expected to contain target event UID:event-all-day-target, got:\n%s", stdout)
+		}
+		if strings.Contains(stdout, "UID:event-all-day-late") {
+			t.Errorf("stdout unexpectedly contained late event UID:event-all-day-late, got:\n%s", stdout)
+		}
+	})
+}
