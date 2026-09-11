@@ -489,39 +489,55 @@ func (m *filterMockData) SetEntry(n int, entry pimtrace.Entry) pimtrace.Data {
 func (m *filterMockData) NewSelf() pimtrace.Data { return &filterMockData{} }
 
 func TestFilter(t *testing.T) {
-	d := &filterMockData{entries: []pimtrace.Entry{
-		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("yes")}},
-		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("no")}},
-		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("yes")}},
-		&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("error")}},
-	}}
+	t.Run("filter keeps matching entries", func(t *testing.T) {
+		d := &filterMockData{entries: []pimtrace.Entry{
+			&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("yes")}},
+			&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("no")}},
+			&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("yes")}},
+		}}
 
-	// Because of evaluator behavior we just use dummy expressions
-	res, err := Filter(d, &evaluator.Query{
-		Expression: &dummyBoolExpr{val: true, limit: 2},
-	}, nil)
+		res, err := Filter(d, &evaluator.Query{
+			Expression: &dummyBoolExpr{val: true, limit: 2},
+		}, nil)
 
-	if err != nil {
-		t.Errorf("Filter() error = %v", err)
-	}
+		if err != nil {
+			t.Fatalf("Filter() error = %v", err)
+		}
 
-	if res.Len() != 2 {
-		t.Errorf("Filter() expected 2 results, got %d", res.Len())
-	}
+		if res.Len() != 2 {
+			t.Errorf("Filter() expected 2 results, got %d", res.Len())
+		}
+	})
+
+	t.Run("filter propagates evaluation error", func(t *testing.T) {
+		d := &filterMockData{entries: []pimtrace.Entry{
+			&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("yes")}},
+			&mockEntry{vals: map[string]pimtrace.Value{"keep": pimtrace.SimpleStringValue("error")}},
+		}}
+
+		_, err := Filter(d, &evaluator.Query{
+			Expression: &dummyBoolExpr{val: true, failOn: 2},
+		}, nil)
+
+		if err == nil {
+			t.Errorf("Filter() expected error on evaluation failure, got nil")
+		}
+	})
 }
 
 type dummyBoolExpr struct {
-	val   bool
-	limit int
-	calls int
+	val    bool
+	limit  int
+	failOn int
+	calls  int
 }
 
 func (m *dummyBoolExpr) Evaluate(d interface{}, opts ...any) (bool, error) {
 	m.calls++
-	if m.calls == 4 {
+	if m.failOn > 0 && m.calls == m.failOn {
 		return false, fmt.Errorf("error case")
 	}
-	return m.val && m.calls <= m.limit, nil
+	return m.val && (m.limit == 0 || m.calls <= m.limit), nil
 }
 
 func TestOps(t *testing.T) {
@@ -639,7 +655,7 @@ func TestToPimtraceValue(t *testing.T) {
 		t.Errorf("toPimtraceValue(int64) failed")
 	}
 
-	if v, _ := toPimtraceValue(float64(42.5)); v.Type() != pimtrace.Integer {
+	if v, _ := toPimtraceValue(float64(42.5)); v.Type() != pimtrace.Float {
 		t.Errorf("toPimtraceValue(float64) failed")
 	}
 

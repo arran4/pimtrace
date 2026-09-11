@@ -6,8 +6,11 @@
 
 	filter h.date gt .2022-01-01 and h.date lt .2022-12-31
 	Explanation: Filters all emails using date range comparisons and logical AND.
-	Available comparison operators: eq, gt, gte, lt, lte. Available boolean operators: and, or, not. Parentheses can be used for grouping e.g., \( A or B \) and C (note shell escaping).
-	Values that cannot be coerced to numeric or date will fall back to zero-value logical evaluation.
+	Available comparison operators: eq, contains, icontains, gt, gte, lt, lte. Available boolean operators: and, or, not.
+	Precedence: 'not' binds most tightly, followed by 'and', then 'or' ('and' binds more tightly than 'or').
+	Parentheses can be used for grouping e.g., \( A or B \) and C (note: escape or quote parentheses in shell, e.g. '\(' '\)' or "(" ")").
+	Relational operators (gt, gte, lt, lte) perform typed numeric or chronological date comparisons.
+	Once numeric/date relational coercion is selected, operands that cannot be coerced will produce an error.
 
 2. Selecting Components (Tabular Conversion)
 	into table h.user-agent h.subject f.year[h.date] f.month[h.date]

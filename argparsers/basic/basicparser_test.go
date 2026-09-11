@@ -1,6 +1,8 @@
 package basic
 
 import (
+	"fmt"
+	"pimtrace"
 	"pimtrace/ast"
 	"pimtrace/dataformats/maildata"
 	"reflect"
@@ -664,4 +666,337 @@ func TestParseExpressions_MoreParams(t *testing.T) {
 			}
 		})
 	}
+}
+
+type testMockEntry map[string]pimtrace.Value
+
+func (m testMockEntry) Get(key string) (pimtrace.Value, error) {
+	if v, ok := m[key]; ok {
+		return v, nil
+	}
+	return nil, fmt.Errorf("field %q not found", key)
+}
+
+func TestParserEvaluatorAcceptance(t *testing.T) {
+	t.Run("relational operators map and evaluate correctly", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			op       string
+			expected string
+			inputVal string
+			wantRes  bool
+		}{
+			{"gt true", "gt", ">", "10", true},
+			{"gt false", "gt", ">", "5", false},
+			{"gte true equal", "gte", ">=", "5", true},
+			{"gte true greater", "gte", ">=", "10", true},
+			{"gte false", "gte", ">=", "2", false},
+			{"lt true", "lt", "<", "2", true},
+			{"lt false", "lt", "<", "5", false},
+			{"lte true equal", "lte", "<=", "5", true},
+			{"lte true less", "lte", "<=", "2", true},
+			{"lte false", "lte", "<=", "10", false},
+		}
+
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				q, remain, err := ParseFilter([]string{"c.val", tc.op, ".5"}, nil)
+				if err != nil {
+					t.Fatalf("ParseFilter error: %v", err)
+				}
+				if len(remain) != 0 {
+					t.Errorf("expected empty remain, got %v", remain)
+				}
+				safeComp, ok := q.Expression.(*ast.SafeComparisonExpression)
+				if !ok {
+					t.Fatalf("expected *ast.SafeComparisonExpression, got %T", q.Expression)
+				}
+				if safeComp.Operator != tc.expected {
+					t.Errorf("expected operator %q, got %q", tc.expected, safeComp.Operator)
+				}
+
+				res, err := q.Evaluate(testMockEntry{"c.val": pimtrace.SimpleStringValue(tc.inputVal)})
+				if err != nil {
+					t.Fatalf("Evaluate error: %v", err)
+				}
+				if res != tc.wantRes {
+					t.Errorf("Evaluate() = %v, want %v", res, tc.wantRes)
+				}
+			})
+		}
+	})
+
+	t.Run("A or B and C uses evaluator precedence", func(t *testing.T) {
+		// Evaluator precedence: and binds more tightly than or.
+		// Expression: c.a eq .1 or c.b eq .1 and c.c eq .1
+		// Evaluates as: c.a eq .1 or (c.b eq .1 and c.c eq .1)
+		q, _, err := ParseFilter([]string{"c.a", "eq", ".1", "or", "c.b", "eq", ".1", "and", "c.c", "eq", ".1"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+
+		// Case 1: a=1, b=0, c=0 -> 1 or (0 and 0) = true (if left-associative it would be (1 or 0) and 0 = false)
+		res1, err := q.Evaluate(testMockEntry{
+			"c.a": pimtrace.SimpleStringValue("1"),
+			"c.b": pimtrace.SimpleStringValue("0"),
+			"c.c": pimtrace.SimpleStringValue("0"),
+		})
+		if err != nil {
+			t.Fatalf("Evaluate error: %v", err)
+		}
+		if !res1 {
+			t.Errorf("expected true for a=1,b=0,c=0 due to and-over-or precedence, got false")
+		}
+
+		// Case 2: a=0, b=1, c=0 -> 0 or (1 and 0) = false
+		res2, err := q.Evaluate(testMockEntry{
+			"c.a": pimtrace.SimpleStringValue("0"),
+			"c.b": pimtrace.SimpleStringValue("1"),
+			"c.c": pimtrace.SimpleStringValue("0"),
+		})
+		if err != nil {
+			t.Fatalf("Evaluate error: %v", err)
+		}
+		if res2 {
+			t.Errorf("expected false for a=0,b=1,c=0, got true")
+		}
+	})
+
+	t.Run("parentheses override precedence", func(t *testing.T) {
+		// Expression: ( c.a eq .1 or c.b eq .1 ) and c.c eq .1
+		q, _, err := ParseFilter([]string{"(", "c.a", "eq", ".1", "or", "c.b", "eq", ".1", ")", "and", "c.c", "eq", ".1"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+
+		// With a=1, b=0, c=0: (1 or 0) and 0 = false (overridden precedence!)
+		res, err := q.Evaluate(testMockEntry{
+			"c.a": pimtrace.SimpleStringValue("1"),
+			"c.b": pimtrace.SimpleStringValue("0"),
+			"c.c": pimtrace.SimpleStringValue("0"),
+		})
+		if err != nil {
+			t.Fatalf("Evaluate error: %v", err)
+		}
+		if res {
+			t.Errorf("expected false when parentheses group (a or b) and c with c=0, got true")
+		}
+
+		// With a=1, b=0, c=1: (1 or 0) and 1 = true
+		resTrue, err := q.Evaluate(testMockEntry{
+			"c.a": pimtrace.SimpleStringValue("1"),
+			"c.b": pimtrace.SimpleStringValue("0"),
+			"c.c": pimtrace.SimpleStringValue("1"),
+		})
+		if err != nil {
+			t.Fatalf("Evaluate error: %v", err)
+		}
+		if !resTrue {
+			t.Errorf("expected true with c=1, got false")
+		}
+	})
+
+	t.Run("nested not", func(t *testing.T) {
+		qDouble, _, err := ParseFilter([]string{"not", "not", "c.val", "eq", ".hello"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+		res, err := qDouble.Evaluate(testMockEntry{"c.val": pimtrace.SimpleStringValue("hello")})
+		if err != nil || !res {
+			t.Errorf("not not matching value: res=%v, err=%v", res, err)
+		}
+		resFalse, err := qDouble.Evaluate(testMockEntry{"c.val": pimtrace.SimpleStringValue("world")})
+		if err != nil || resFalse {
+			t.Errorf("not not non-matching value: res=%v, err=%v", resFalse, err)
+		}
+
+		qTriple, _, err := ParseFilter([]string{"not", "not", "not", "c.val", "eq", ".hello"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+		resTriple, err := qTriple.Evaluate(testMockEntry{"c.val": pimtrace.SimpleStringValue("hello")})
+		if err != nil || resTriple {
+			t.Errorf("not not not matching value: res=%v, err=%v", resTriple, err)
+		}
+	})
+
+	t.Run("mixed icontains and relational boolean composition", func(t *testing.T) {
+		q, _, err := ParseFilter([]string{"c.title", "icontains", ".Report", "and", "c.amount", "gt", ".100"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+
+		match, err := q.Evaluate(testMockEntry{
+			"c.title":  pimtrace.SimpleStringValue("Monthly report Q3"),
+			"c.amount": pimtrace.SimpleStringValue("250.50"),
+		})
+		if err != nil || !match {
+			t.Errorf("expected match, got match=%v err=%v", match, err)
+		}
+
+		noMatchAmount, err := q.Evaluate(testMockEntry{
+			"c.title":  pimtrace.SimpleStringValue("Monthly report Q3"),
+			"c.amount": pimtrace.SimpleStringValue("50"),
+		})
+		if err != nil || noMatchAmount {
+			t.Errorf("expected no match on amount, got match=%v err=%v", noMatchAmount, err)
+		}
+
+		noMatchTitle, err := q.Evaluate(testMockEntry{
+			"c.title":  pimtrace.SimpleStringValue("Monthly invoice"),
+			"c.amount": pimtrace.SimpleStringValue("250"),
+		})
+		if err != nil || noMatchTitle {
+			t.Errorf("expected no match on title, got match=%v err=%v", noMatchTitle, err)
+		}
+	})
+
+	t.Run("invalid typed coercion returns error through SafeComparisonExpression", func(t *testing.T) {
+		qNum, _, err := ParseFilter([]string{"c.val", "gt", ".10"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+		_, err = qNum.Evaluate(testMockEntry{"c.val": pimtrace.SimpleStringValue("apple")})
+		if err == nil {
+			t.Errorf("expected error on invalid numeric coercion, got nil")
+		}
+
+		qDate, _, err := ParseFilter([]string{"c.dt", "gt", ".2020-01-01"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+		_, err = qDate.Evaluate(testMockEntry{"c.dt": pimtrace.SimpleStringValue("invalid-date")})
+		if err == nil {
+			t.Errorf("expected error on invalid date coercion, got nil")
+		}
+	})
+
+	t.Run("legacy textual 01 vs 1 equality remains textual", func(t *testing.T) {
+		// Legacy 3-token eq
+		q3, _, err := ParseFilter([]string{"c.code", "eq", ".1"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+		res3, err := q3.Evaluate(testMockEntry{"c.code": pimtrace.SimpleStringValue("01")})
+		if err != nil {
+			t.Fatalf("Evaluate error: %v", err)
+		}
+		if res3 {
+			t.Errorf("01 eq .1 should be false textually in 3-token path, got true")
+		}
+
+		// Compound eq path
+		qCompound, _, err := ParseFilter([]string{"c.code", "eq", ".1", "and", "c.other", "eq", ".x"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+		resCompound, err := qCompound.Evaluate(testMockEntry{
+			"c.code":  pimtrace.SimpleStringValue("01"),
+			"c.other": pimtrace.SimpleStringValue("x"),
+		})
+		if err != nil {
+			t.Fatalf("Evaluate error: %v", err)
+		}
+		if resCompound {
+			t.Errorf("01 eq .1 should be false textually in compound path, got true")
+		}
+	})
+
+	t.Run("full c.*, h.*, p.* identifiers survive placeholder transformation/restoration", func(t *testing.T) {
+		q, _, err := ParseFilter([]string{
+			"c.total_amount", "gt", ".50",
+			"and", "h.User-Agent", "eq", ".curl",
+			"and", "p.DTSTART", "gt", ".2020-01-01",
+		}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+
+		// Evaluate against an entry with these full keys
+		entry := testMockEntry{
+			"c.total_amount": pimtrace.SimpleStringValue("100"),
+			"h.User-Agent":   pimtrace.SimpleStringValue("curl"),
+			"p.DTSTART":      pimtrace.SimpleStringValue("2020-05-01"),
+		}
+		match, err := q.Evaluate(entry)
+		if err != nil {
+			t.Fatalf("Evaluate error: %v", err)
+		}
+		if !match {
+			t.Errorf("expected match with preserved full identifiers")
+		}
+	})
+
+	t.Run("cross-check with directly constructed go-evaluator expression", func(t *testing.T) {
+		// PIMTrace filter: c.a eq .1 or c.b eq .1 and c.c gt .5
+		qParsed, _, err := ParseFilter([]string{"c.a", "eq", ".1", "or", "c.b", "eq", ".1", "and", "c.c", "gt", ".5"}, nil)
+		if err != nil {
+			t.Fatalf("ParseFilter error: %v", err)
+		}
+
+		// Directly constructed go-evaluator equivalent:
+		// OrExpression:
+		//   [0]: ComparisonExpression (c.a eq 1)
+		//   [1]: AndExpression:
+		//          [0]: ComparisonExpression (c.b eq 1)
+		//          [1]: SafeComparisonExpression (c.c > 5)
+		directExpr := &evaluator.OrExpression{
+			Expressions: []evaluator.Query{
+				{
+					Expression: &evaluator.ComparisonExpression{
+						Operation: "eq",
+						LHS:       ast.EntryExpression("c.a"),
+						RHS:       ast.ConstantExpression("1"),
+					},
+				},
+				{
+					Expression: &evaluator.AndExpression{
+						Expressions: []evaluator.Query{
+							{
+								Expression: &evaluator.ComparisonExpression{
+									Operation: "eq",
+									LHS:       ast.EntryExpression("c.b"),
+									RHS:       ast.ConstantExpression("1"),
+								},
+							},
+							{
+								Expression: &ast.SafeComparisonExpression{
+									Operator: ">",
+									Left:     ast.EntryExpression("c.c"),
+									Right:    ast.ConstantExpression("5"),
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		// Truth table comparison across all combinations
+		aVals := []string{"0", "1"}
+		bVals := []string{"0", "1"}
+		cVals := []string{"2", "10"}
+
+		for _, a := range aVals {
+			for _, b := range bVals {
+				for _, c := range cVals {
+					entry := testMockEntry{
+						"c.a": pimtrace.SimpleStringValue(a),
+						"c.b": pimtrace.SimpleStringValue(b),
+						"c.c": pimtrace.SimpleStringValue(c),
+					}
+
+					parsedRes, parsedErr := qParsed.Evaluate(entry)
+					directRes, directErr := directExpr.Evaluate(entry)
+
+					if (parsedErr != nil) != (directErr != nil) {
+						t.Errorf("error mismatch for a=%s,b=%s,c=%s: parsedErr=%v directErr=%v", a, b, c, parsedErr, directErr)
+					}
+					if parsedRes != directRes {
+						t.Errorf("result mismatch for a=%s,b=%s,c=%s: parsed=%v direct=%v", a, b, c, parsedRes, directRes)
+					}
+				}
+			}
+		}
+	})
 }

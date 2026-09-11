@@ -20,7 +20,7 @@ func Filter(d pimtrace.Data, expression *evaluator.Query, ctx *evaluator.Context
 		e := d.Entry(i + o)
 		keep, err := expression.Evaluate(evaluatorEntryWrapper{e}, ctx)
 		if err != nil {
-			keep = false
+			return nil, err
 		}
 		if o > 0 {
 			d.SetEntry(i, e)

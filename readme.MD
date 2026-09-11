@@ -86,14 +86,32 @@ The "Basic" parser allows you to chain operations together linearly. It reads li
 
 ### Filter Conditions
 
-Conditions are constructed using **operators**:
+Conditions are constructed using **comparison operators** and combined using **boolean operators**:
 
 | Operator | Description | Example |
 | :--- | :--- | :--- |
-| `eq` | Equality check. | `filter h.From eq .admin@example.com` |
+| `eq` | Textual equality check. | `filter h.From eq .admin@example.com` |
 | `contains` | Case-sensitive substring check. | `filter h.Subject contains .Urgent` |
 | `icontains` | Case-insensitive substring check. | `filter h.Subject icontains .urgent` |
-| `not` | Negates a condition. | `filter not h.Status eq .Closed` |
+| `gt` | Greater than (numeric or chronological date). | `filter c.Amount gt .50` |
+| `gte` | Greater than or equal (numeric or chronological date). | `filter c.Amount gte .50` |
+| `lt` | Less than (numeric or chronological date). | `filter p.DTSTART lt .2020-01-03` |
+| `lte` | Less than or equal (numeric or chronological date). | `filter p.DTSTART lte .2020-01-03` |
+
+#### Boolean Composition and Grouping
+
+*   **`and`**: Logical AND. Binds more tightly than `or`.
+*   **`or`**: Logical OR.
+*   **`not`**: Unary logical NOT. Binds most tightly.
+*   **Precedence**: `not` > `and` > `or`. In an expression like `A or B and C`, `B and C` is evaluated first.
+*   **Parentheses / Grouping**: Use `(` and `)` to override default precedence: `( A or B ) and C`.
+*   **Shell Quoting / Escaping**: In shells such as Bash or Zsh, unquoted parentheses trigger subshell syntax. Escape them with backslashes (e.g. `\(`, `\)`) or pass them quoted (e.g. `'('`, `')'`).
+
+#### Typed Comparison & Coercion Rules
+
+*   Relational operators (`gt`, `gte`, `lt`, `lte`) perform typed numeric (integer/decimal) or chronological date comparisons.
+*   Legacy equality (`eq`) and substring operators (`contains`, `icontains`) remain textual (e.g., `"01"` and `"1"` are not equal under `eq`).
+*   **Invalid Coercion Behavior**: Once numeric or date relational comparison is selected, operands must successfully coerce to the expected type. If an operand cannot be coerced (e.g. comparing invalid text like `apple` or an empty string against a number or date), evaluation produces an explicit error rather than silently falling back to lexical ordering or zero values.
 
 ### Expressions & Functions
 

@@ -9,7 +9,7 @@ func TestComparatorAdapter(t *testing.T) {
 	tests := []struct {
 		name    string
 		a       pimtrace.Value
-		b       pimtrace.Value
+		b       any
 		want    int
 		wantErr bool
 	}{
@@ -76,11 +76,46 @@ func TestComparatorAdapter(t *testing.T) {
 			want:    0,
 			wantErr: true,
 		},
+		{
+			name:    "float64 input without integer truncation: 10.25 < 10.5",
+			a:       pimtrace.SimpleStringValue("10.25"),
+			b:       float64(10.5),
+			want:    -1,
+			wantErr: false,
+		},
+		{
+			name:    "float64 input without integer truncation: 10.5 > 10.25",
+			a:       pimtrace.SimpleStringValue("10.5"),
+			b:       float64(10.25),
+			want:    1,
+			wantErr: false,
+		},
+		{
+			name:    "SimpleFloatValue vs SimpleFloatValue: 10.25 < 10.5",
+			a:       pimtrace.SimpleFloatValue(10.25),
+			b:       pimtrace.SimpleFloatValue(10.5),
+			want:    -1,
+			wantErr: false,
+		},
+		{
+			name:    "SimpleFloatValue vs float64: 10.25 == 10.25",
+			a:       pimtrace.SimpleFloatValue(10.25),
+			b:       float64(10.25),
+			want:    0,
+			wantErr: false,
+		},
+		{
+			name:    "SimpleFloatValue vs SimpleIntegerValue: 2.5 > 2",
+			a:       pimtrace.SimpleFloatValue(2.5),
+			b:       pimtrace.SimpleIntegerValue(2),
+			want:    1,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := ComparatorAdapter{Value: tt.a}
-			got, err := c.Compare(ComparatorAdapter{Value: tt.b})
+			got, err := c.Compare(tt.b)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Compare() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -120,6 +155,34 @@ func TestComparatorAdapterDates(t *testing.T) {
 			b:       pimtrace.SimpleStringValue("2020-01-02 00:00:00"),
 			want:    -1,
 			wantErr: false,
+		},
+		{
+			name:    "valid date vs invalid text -> error",
+			a:       pimtrace.SimpleStringValue("2020-01-01"),
+			b:       pimtrace.SimpleStringValue("apple"),
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "invalid text vs valid date -> error",
+			a:       pimtrace.SimpleStringValue("apple"),
+			b:       pimtrace.SimpleStringValue("2020-01-01"),
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "empty vs date -> error",
+			a:       pimtrace.SimpleStringValue(""),
+			b:       pimtrace.SimpleStringValue("2020-01-01"),
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "date vs empty -> error",
+			a:       pimtrace.SimpleStringValue("2020-01-01"),
+			b:       pimtrace.SimpleStringValue(""),
+			want:    0,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

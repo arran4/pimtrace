@@ -95,18 +95,55 @@ func TestICalWithSource_Get(t *testing.T) {
 		t.Errorf("Get(SUMMARY.val) = %v, want Meeting", v)
 	}
 
+	// p.DTSTART
+	v, err = r.Get("p.DTSTART")
+	if err != nil {
+		t.Errorf("Get(p.DTSTART) error: %v", err)
+	}
+	if sv, ok := v.(pimtrace.SimpleStringValue); !ok || string(sv) != "20231027T100000Z" {
+		t.Errorf("Get(p.DTSTART) = %v, want 20231027T100000Z", v)
+	}
+
+	// property.DTSTART
+	v, err = r.Get("property.DTSTART")
+	if err != nil {
+		t.Errorf("Get(property.DTSTART) error: %v", err)
+	}
+	if sv, ok := v.(pimtrace.SimpleStringValue); !ok || string(sv) != "20231027T100000Z" {
+		t.Errorf("Get(property.DTSTART) = %v, want 20231027T100000Z", v)
+	}
+
+	// p.SUMMARY
+	v, err = r.Get("p.SUMMARY")
+	if err != nil {
+		t.Errorf("Get(p.SUMMARY) error: %v", err)
+	}
+	if sv, ok := v.(pimtrace.SimpleStringValue); !ok || string(sv) != "Meeting" {
+		t.Errorf("Get(p.SUMMARY) = %v, want Meeting", v)
+	}
+
+	// malformed p.
+	_, err = r.Get("p.")
+	if err == nil {
+		t.Errorf("Get(p.) expected error for malformed key")
+	}
+
+	// bare p
+	_, err = r.Get("p")
+	if err == nil {
+		t.Errorf("Get(p) expected error for too short key")
+	}
+
 	// missing property
 	_, err = r.Get("NONEXISTENT.val")
 	if err == nil {
 		t.Errorf("Get(NONEXISTENT.val) expected error")
 	}
 
-	// short key
-	v, err = r.Get("SUMMARY")
-	if err != nil {
-		t.Errorf("Get(SUMMARY) unexpected error: %v", err)
-	} else if v.String() != "Meeting" {
-		t.Errorf("Get(SUMMARY) = %v, want 'Meeting'", v)
+	// bare SUMMARY should retain previous error (too short / key not found)
+	_, err = r.Get("SUMMARY")
+	if err == nil {
+		t.Errorf("Get(SUMMARY) expected error (bare property unsupported)")
 	}
 }
 
