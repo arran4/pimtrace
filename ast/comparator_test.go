@@ -1,8 +1,8 @@
 package ast
 
 import (
-	"testing"
 	"pimtrace"
+	"testing"
 )
 
 func TestComparatorAdapter(t *testing.T) {

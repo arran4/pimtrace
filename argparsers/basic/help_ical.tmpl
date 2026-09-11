@@ -4,6 +4,11 @@
 	filter not p.SUMMARY icontains .Report
 	Explanation: Filters all events without a SUMMARY containing 'Report'.
 
+	filter p.DTSTART gt .2022-01-01 and p.DTSTART lt .2022-12-31
+	Explanation: Filters all events using date range comparisons and logical AND.
+	Available comparison operators: eq, gt, gte, lt, lte. Available boolean operators: and, or, not. Parentheses can be used for grouping e.g., \( A or B \) and C (note shell escaping).
+	Values that cannot be coerced to numeric or date will fall back to zero-value logical evaluation.
+
 2. Selecting Components (Tabular Conversion)
 	into table p.LOCATION f.year[p.DUE] f.month[p.DUE]
 	Explanation: This extracts specific fields from the events and converts them into a tabular format for viewing.

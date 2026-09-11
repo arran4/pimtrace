@@ -84,78 +84,75 @@ func (c ComparatorAdapter) Compare(other interface{}) (int, error) {
 }
 
 func isNumeric(v pimtrace.Value) bool {
-    switch v.(type) {
-    case pimtrace.SimpleIntegerValue:
-        return true
-    }
+	switch v.(type) {
+	case pimtrace.SimpleIntegerValue:
+		return true
+	}
 
-    s := strings.TrimSpace(v.String())
-    if s == "" {
-        return false
-    }
+	s := strings.TrimSpace(v.String())
+	if s == "" {
+		return false
+	}
 
-    val := pimtrace.SimpleStringValue(s)
-    if val.Float64() != nil {
-        return true
-    }
-    return false
+	val := pimtrace.SimpleStringValue(s)
+	return val.Float64() != nil
 }
 
 func toNumeric(v pimtrace.Value) (pimtrace.Value, error) {
-    s := strings.TrimSpace(v.String())
-    if s == "" {
-        return nil, fmt.Errorf("empty string")
-    }
+	s := strings.TrimSpace(v.String())
+	if s == "" {
+		return nil, fmt.Errorf("empty string")
+	}
 
-    if isNumeric(v) {
-        return pimtrace.SimpleStringValue(s), nil
-    }
+	if isNumeric(v) {
+		return pimtrace.SimpleStringValue(s), nil
+	}
 
-    val := pimtrace.SimpleStringValue(s)
-    if val.Float64() != nil {
-        return val, nil
-    }
-    return nil, fmt.Errorf("not numeric")
+	val := pimtrace.SimpleStringValue(s)
+	if val.Float64() != nil {
+		return val, nil
+	}
+	return nil, fmt.Errorf("not numeric")
 }
 
 func compareNumeric(a, b pimtrace.Value) (int, error) {
-    sa := strings.TrimSpace(a.String())
-    sb := strings.TrimSpace(b.String())
-    va := pimtrace.SimpleStringValue(sa)
-    vb := pimtrace.SimpleStringValue(sb)
+	sa := strings.TrimSpace(a.String())
+	sb := strings.TrimSpace(b.String())
+	va := pimtrace.SimpleStringValue(sa)
+	vb := pimtrace.SimpleStringValue(sb)
 
-    af := va.Float64()
-    bf := vb.Float64()
+	af := va.Float64()
+	bf := vb.Float64()
 
-    if af == nil || bf == nil {
-        return 0, fmt.Errorf("failed to get float64 value")
-    }
+	if af == nil || bf == nil {
+		return 0, fmt.Errorf("failed to get float64 value")
+	}
 
-    if *af < *bf {
-        return -1, nil
-    }
-    if *af > *bf {
-        return 1, nil
-    }
-    return 0, nil
+	if *af < *bf {
+		return -1, nil
+	}
+	if *af > *bf {
+		return 1, nil
+	}
+	return 0, nil
 }
 
 func isDate(v pimtrace.Value) bool {
-    if v.Time() != nil {
-        return true
-    }
-    t := parseDateFallback(v.String())
-    return t != nil
+	if v.Time() != nil {
+		return true
+	}
+	t := parseDateFallback(v.String())
+	return t != nil
 }
 
 func parseDateFallback(s string) *time.Time {
-    s = strings.TrimSpace(s)
-    if s == "" {
-        return nil
-    }
-    t, err := dateparse.ParseAny(s)
-    if err == nil {
-        return &t
-    }
-    return nil
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	t, err := dateparse.ParseAny(s)
+	if err == nil {
+		return &t
+	}
+	return nil
 }

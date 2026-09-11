@@ -135,6 +135,20 @@ csvtrace -input expenses.csv -parser basic \
   into table c.Date c.Amount
 ```
 
+**Task:** Show me all large expenses (over $50).
+```bash
+csvtrace -input expenses.csv -parser basic \
+  filter c.Amount gt .50 \
+  into table c.Category c.Amount
+```
+
+**Task:** Complex conditions using AND, OR, grouping and NOT. (Note shell escaping for parentheses).
+```bash
+csvtrace -input expenses.csv -parser basic \
+  filter \( c.Category eq .Food or c.Category eq .Travel \) and not c.Amount lt .10 \
+  into table c.Date c.Category c.Amount
+```
+
 **Task:** How much did I spend on each category?
 ```bash
 csvtrace -input expenses.csv -parser basic \
