@@ -1,0 +1,713 @@
+package basic
+
+import (
+	"fmt"
+	"pimtrace/ast"
+	"pimtrace/dataformats/maildata"
+	"reflect"
+	"regexp"
+	"strings"
+
+	"github.com/arran4/go-evaluator"
+	"github.com/arran4/go-evaluator/parser/simple"
+)
+
+var (
+	ErrParserNothingFound        = fmt.Errorf("no token found")
+	ErrParserUnknownToken        = fmt.Errorf("unknown token")
+	ErrUnknownExpression         = fmt.Errorf("unknown expression")
+	ErrParserFault               = fmt.Errorf("parser fault")
+	ErrUnknownIntoStatement      = fmt.Errorf("unknown into")
+	ErrIntoNotImplemented        = fmt.Errorf("into not implemented")
+	ErrInvalidFunctionExpression = fmt.Errorf("invalid function expression")
+)
+
+// EvaluatorFunctions removed for thread safety
+
+type FilterEquals string
+type FilterContains string
+type FilterIContains string
+type FilterNot string
+type Terminator string
+
+var _ ast.ValueExpression = ast.ConstantExpression("")
+var _ ast.ValueExpression = ast.EntryExpression("")
+
+func FilterIdentify(s string) (any, error) {
+	ss := strings.SplitN(s, ".", 2)
+	switch ss[0] {
+	case "into", "filter", "where", "sort":
+		return Terminator(s), nil
+	case "not":
+		return FilterNot(s), nil
+	case "eq":
+		return FilterEquals(s), nil
+	case "contains":
+		return FilterContains(s), nil
+	case "icontains":
+		return FilterIContains(s), nil
+	case "h", "header":
+		return ast.EntryExpression(s), nil
+	case "p", "property":
+		return ast.EntryExpression(s), nil
+	case "c", "column":
+		return ast.EntryExpression(s), nil
+	case "":
+		if strings.HasPrefix(s, ".") {
+			return ast.ConstantExpression(ss[1]), nil
+		}
+	}
+	return nil, fmt.Errorf("filter tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
+}
+
+func IntoIdentify(args []string) (any, []string, error) {
+	if len(args) == 0 {
+		return nil, args, nil
+	}
+	ss := strings.SplitN(args[0], ".", 2)
+	switch ss[0] {
+	case "into", "filter", "where", "sort", "calculate":
+		return Terminator(args[0]), args[0:], nil
+	case "h", "header":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "p", "property":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "c", "column":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "f", "func":
+		return ParseFunctionExpression(args)
+	case "":
+		if strings.HasPrefix(args[0], ".") {
+			return ast.ConstantExpression(ss[1]), args[1:], nil
+		}
+	}
+	return nil, nil, fmt.Errorf("into tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
+}
+
+func FunctionParameterExpressionIdentify(args []string) (any, []string, error) {
+	if len(args) == 0 {
+		return nil, args, nil
+	}
+	ss := strings.SplitN(args[0], ".", 2)
+	switch ss[0] {
+	case "h", "header":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "p", "property":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "c", "column":
+		return ast.EntryExpression(args[0]), args[1:], nil
+	case "f", "func":
+		return ParseFunctionExpression(args)
+	case "":
+		if strings.HasPrefix(args[0], ".") {
+			return ast.ConstantExpression(ss[1]), args[1:], nil
+		}
+	}
+	return nil, nil, fmt.Errorf("function param tokenizer: %w: %s", ErrParserUnknownToken, ss[0])
+}
+
+var fere = regexp.MustCompile(`^(f|func)\.([^[]+)(\[([^]]+)\])?$`)
+
+func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, error) {
+	m := fere.FindStringSubmatch(args[0])
+	if len(m) == 5 {
+		var params []ast.ValueExpression
+		if len(m[3]) > 0 {
+			var err error
+			params, err = ParseExpressions(m[4])
+			if err != nil {
+				return nil, nil, fmt.Errorf("parameter parse error: %w", err)
+			}
+		}
+
+		// Check if it is an Evaluator Function (standard list or heuristic)
+		// We hardcode known evaluator functions here or rely on runtime resolution.
+		if isEvaluatorFunction(m[2]) {
+			// Convert params to []evaluator.Term
+			var terms []evaluator.Term
+			for _, p := range params {
+				terms = append(terms, p)
+			}
+			return &ast.EvaluatorFunctionExpression{
+				Function: m[2],
+				FunctionExpression: evaluator.FunctionExpression{
+					// Func is resolved at runtime via Context
+					Args: terms,
+				},
+			}, args[1:], nil
+		}
+
+		return &ast.FunctionExpression{
+			Function: m[2],
+			Args:     params,
+		}, args[1:], nil
+	}
+	return nil, nil, fmt.Errorf("%w: %s", ErrInvalidFunctionExpression, args[0])
+}
+
+func ParseExpressions(s string) ([]ast.ValueExpression, error) {
+	css := strings.SplitN(s, ",", 2)
+	var results []ast.ValueExpression
+	for len(css) > 0 {
+		var err error
+		var v any
+		v, css, err = FunctionParameterExpressionIdentify(css)
+		if err != nil {
+			return nil, err
+		}
+		switch v := v.(type) {
+		case ast.ValueExpression:
+			results = append(results, v)
+		default:
+			return nil, fmt.Errorf("%w: %s", ErrParserUnknownToken, css[0])
+		}
+	}
+	return results, nil
+}
+
+func FilterTokenizerScanN(args []string, n int) ([]any, []string, error) {
+	i := 0
+	r := []any{}
+done:
+	for ; i < n && i < len(args); i++ {
+		t, err := FilterIdentify(args[i])
+		if err != nil {
+			return nil, nil, err
+		}
+		switch t.(type) {
+		case Terminator:
+			break done
+		}
+		r = append(r, t)
+	}
+	return r, args[i:], nil
+}
+
+func IntoTokenizerScan(args []string) ([]any, []string, error) {
+	var r []any
+done:
+	for len(args) > 0 {
+		var err error
+		var t any
+		t, args, err = IntoIdentify(args)
+		if err != nil {
+			return nil, nil, err
+		}
+		switch t.(type) {
+		case Terminator:
+			break done
+		}
+		r = append(r, t)
+	}
+	return r, args, nil
+}
+
+func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, []string, error) {
+	// First collect all tokens up to terminator
+	var tokens []string
+	var remain []string
+
+	if len(args) == 0 {
+		return nil, nil, ErrParserNothingFound
+	}
+
+	for i, arg := range args {
+		t, err := FilterIdentify(arg)
+		if err != nil {
+			// Instead of failing entirely on unknown tokens, check if it's a known operator like gt, and, (, )
+			switch strings.ToLower(arg) {
+			case "and", "or", "(", ")", "gt", "gte", "lt", "lte":
+				// It's fine, we will handle it in the token transformer
+			default:
+				return nil, nil, err
+			}
+		} else {
+			if _, isTerminator := t.(Terminator); isTerminator {
+				remain = args[i:]
+				break
+			}
+		}
+		tokens = append(tokens, arg)
+	}
+
+	if remain == nil {
+		remain = []string{}
+	}
+
+	if len(tokens) == 0 {
+		return nil, remain, ErrParserNothingFound
+	}
+
+	// Fast-path fallback for exactly 3 tokens matching old behavior (to avoid fighting the evaluator lexer with unusual leaf forms)
+	if len(tokens) == 3 {
+		t0, e0 := FilterIdentify(tokens[0])
+		t1, e1 := FilterIdentify(tokens[1])
+		t2, e2 := FilterIdentify(tokens[2])
+		if e0 == nil && e1 == nil && e2 == nil {
+			// Check if they are simple expressions without boolean operators
+			isBoolean0 := isBooleanOp(tokens[0])
+			isBoolean1 := isBooleanOp(tokens[1])
+			isBoolean2 := isBooleanOp(tokens[2])
+			if !isBoolean0 && !isBoolean1 && !isBoolean2 {
+				// We can try to use the legacy logic
+				lhs := t0
+				rhs := t2
+				var field string
+				var value interface{}
+
+				if l, ok := lhs.(ast.EntryExpression); ok {
+					if r, ok := rhs.(ast.ConstantExpression); ok {
+						field = string(l)
+						value = string(r)
+					}
+				} else if l, ok := lhs.(ast.ConstantExpression); ok {
+					if r, ok := rhs.(ast.EntryExpression); ok {
+						field = string(r)
+						value = string(l)
+					}
+				}
+
+				if field != "" {
+					switch t1.(type) {
+					case FilterEquals:
+						return &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{Operation: "eq", LHS: ast.EntryExpression(field), RHS: ast.ConstantExpression(value.(string))},
+						}, remain, nil
+					case FilterContains:
+						return &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{Operation: "contains", LHS: ast.EntryExpression(field), RHS: ast.ConstantExpression(value.(string))},
+						}, remain, nil
+					case FilterIContains:
+						return &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{Operation: "icontains", LHS: ast.EntryExpression(field), RHS: ast.ConstantExpression(value.(string))},
+						}, remain, nil
+					}
+				}
+
+				// Also handle Op mappings if field is empty
+				var op string
+				switch t1.(type) {
+				case FilterEquals:
+					op = "eq"
+				case FilterContains:
+					op = "contains"
+				case FilterIContains:
+					op = "icontains"
+				}
+				if op != "" {
+					if lhsexp, ok := lhs.(ast.ValueExpression); ok {
+						if rhsexp, ok := rhs.(ast.ValueExpression); ok {
+							return &evaluator.Query{
+								Expression: &evaluator.ComparisonExpression{
+									Operation: op,
+									LHS:       lhsexp,
+									RHS:       rhsexp,
+								},
+							}, remain, nil
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 1. Transform syntax
+	fields := make(map[string]ast.ValueExpression)
+	literals := make(map[string]ast.ConstantExpression)
+	icontainsFields := make(map[string]bool)
+
+	var transformed []string
+	for _, t := range tokens {
+		ident, err := FilterIdentify(t)
+		if err != nil {
+			// handled as operator
+			switch strings.ToLower(t) {
+			case "and", "or", "(", ")":
+				transformed = append(transformed, strings.ToLower(t))
+			case "gt":
+				transformed = append(transformed, ">")
+			case "gte":
+				transformed = append(transformed, ">=")
+			case "lt":
+				transformed = append(transformed, "<")
+			case "lte":
+				transformed = append(transformed, "<=")
+			}
+			continue
+		}
+
+		switch v := ident.(type) {
+		case FilterNot:
+			transformed = append(transformed, "not")
+		case FilterEquals:
+			transformed = append(transformed, "is")
+		case FilterContains:
+			transformed = append(transformed, "contains")
+		case FilterIContains:
+			// Map to contains temporarily, but mark the preceding field
+			transformed = append(transformed, "contains")
+			if len(transformed) > 1 {
+				lastField := transformed[len(transformed)-2]
+				if strings.HasPrefix(lastField, "F") {
+					icontainsFields[lastField] = true
+				}
+			}
+		case ast.ConstantExpression:
+			ph := fmt.Sprintf("\"L%d\"", len(literals)) // quoted to parse as string literal securely
+			literals[ph] = v
+			transformed = append(transformed, ph)
+		default:
+			if vexp, ok := ident.(ast.ValueExpression); ok {
+				ph := fmt.Sprintf("F%d", len(fields))
+				fields[ph] = vexp
+				transformed = append(transformed, ph)
+			} else {
+				transformed = append(transformed, t)
+			}
+		}
+	}
+
+	s := strings.Join(transformed, " ")
+	q, err := simple.Parse(s)
+	if err != nil {
+		return nil, nil, fmt.Errorf("parsing filter expression %q: %w", s, err)
+	}
+
+	// Need to restore placeholders
+	if q.Expression != nil {
+		q.Expression = walkAndRestore(q.Expression, fields, literals, icontainsFields)
+	}
+
+	return &q, remain, nil
+}
+
+func isBooleanOp(t string) bool {
+	l := strings.ToLower(t)
+	return l == "and" || l == "or" || l == "not" || l == "(" || l == ")" || l == "gt" || l == "gte" || l == "lt" || l == "lte"
+}
+
+func walkAndRestore(expr evaluator.Expression, fields map[string]ast.ValueExpression, literals map[string]ast.ConstantExpression, icontainsFields map[string]bool) evaluator.Expression {
+	switch e := expr.(type) {
+	case *evaluator.AndExpression:
+		for i, q := range e.Expressions {
+			e.Expressions[i].Expression = walkAndRestore(q.Expression, fields, literals, icontainsFields)
+		}
+		return e
+	case *evaluator.OrExpression:
+		for i, q := range e.Expressions {
+			e.Expressions[i].Expression = walkAndRestore(q.Expression, fields, literals, icontainsFields)
+		}
+		return e
+	case *evaluator.NotExpression:
+		e.Expression.Expression = walkAndRestore(e.Expression.Expression, fields, literals, icontainsFields)
+		return e
+	case *evaluator.IsExpression:
+		return &evaluator.ComparisonExpression{
+			Operation: "eq",
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	case *evaluator.IsNotExpression:
+		return &evaluator.NotExpression{
+			Expression: evaluator.Query{
+				Expression: &evaluator.ComparisonExpression{
+					Operation: "eq",
+					LHS:       getFieldVal(e.Field, fields),
+					RHS:       getLitVal(e.Value, literals),
+				},
+			},
+		}
+	case *evaluator.ContainsExpression:
+		opName := "contains"
+		if icontainsFields[e.Field] {
+			opName = "icontains"
+		}
+		return &evaluator.ComparisonExpression{
+			Operation: opName,
+			LHS:       getFieldVal(e.Field, fields),
+			RHS:       getLitVal(e.Value, literals),
+		}
+	case *evaluator.GreaterThanExpression:
+		return &ast.SafeComparisonExpression{
+			Operator: ">",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
+		}
+	case *evaluator.GreaterThanOrEqualExpression:
+		return &ast.SafeComparisonExpression{
+			Operator: ">=",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
+		}
+	case *evaluator.LessThanExpression:
+		return &ast.SafeComparisonExpression{
+			Operator: "<",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
+		}
+	case *evaluator.LessThanOrEqualExpression:
+		return &ast.SafeComparisonExpression{
+			Operator: "<=",
+			Left:     getFieldVal(e.Field, fields),
+			Right:    getLitVal(e.Value, literals),
+		}
+	default:
+		return expr
+	}
+}
+
+func getFieldVal(field string, fields map[string]ast.ValueExpression) ast.ValueExpression {
+	if v, ok := fields[field]; ok {
+		return v
+	}
+	return ast.EntryExpression(field)
+}
+
+func getLitVal(val interface{}, literals map[string]ast.ConstantExpression) ast.ValueExpression {
+	if s, ok := val.(string); ok {
+		// e.Value comes out of parse/simple.Parse without quotes if it matched a string.
+		// "L0"
+		ph := fmt.Sprintf("\"%s\"", s)
+		if v, ok := literals[ph]; ok {
+			return v
+		}
+		return ast.ConstantExpression(s)
+	}
+	return ast.ConstantExpression(fmt.Sprintf("%v", val))
+}
+
+func ParseIntoSummary(args []string) (ast.Operation, []string, error) {
+	results, remain, err := ParseIntoTable(args)
+	if err != nil {
+		return nil, nil, fmt.Errorf("summary table: %w", err)
+	}
+	table := &ast.GroupTransformer{
+		Columns: results.(*ast.TableTransformer).Columns,
+	}
+	if len(remain) > 0 {
+		switch remain[0] {
+		case "calculate":
+			remain = remain[1:]
+		}
+		c := &ast.CompoundStatement{
+			Statements: []ast.Operation{
+				table,
+			},
+		}
+		var tks []any
+		tks, remain, err = IntoTokenizerScan(remain)
+		if err != nil {
+			return nil, nil, fmt.Errorf("summary table: %w", err)
+		}
+		t := &ast.TableTransformer{}
+		for _, origC := range table.Columns {
+			t.Columns = append(t.Columns, &ast.ColumnExpression{
+				Name:      origC.Name,
+				Operation: ast.EntryExpression("c." + origC.Name),
+			})
+		}
+	done:
+		for _, tkn := range tks {
+			switch tkn := tkn.(type) {
+			case ast.ValueExpression:
+				t.Columns = append(t.Columns, &ast.ColumnExpression{
+					Name:      tkn.ColumnName(),
+					Operation: tkn,
+				})
+			case Terminator:
+				break done
+			default:
+				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
+			}
+		}
+		if len(t.Columns) > len(table.Columns) {
+			c.Statements = append(c.Statements, t)
+		}
+		results = c.Simplify()
+	}
+	return results, remain, nil
+}
+
+func ParseIntoTable(args []string) (ast.Operation, []string, error) {
+	tks, remain, err := IntoTokenizerScan(args)
+	if err != nil {
+		return nil, nil, fmt.Errorf("table: %w", err)
+	}
+	if len(tks) > 0 {
+		var expressions []*ast.ColumnExpression
+	done:
+		for _, tkn := range tks {
+			switch tkn := tkn.(type) {
+			case ast.ValueExpression:
+				expressions = append(expressions, &ast.ColumnExpression{
+					Name:      tkn.ColumnName(),
+					Operation: tkn,
+				})
+			case Terminator:
+				break done
+			default:
+				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
+			}
+		}
+		result := &ast.TableTransformer{
+			Columns: expressions,
+		}
+		return result, remain, nil
+	}
+	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
+}
+
+func ParseSort(args []string) (ast.Operation, []string, error) {
+	tks, remain, err := IntoTokenizerScan(args)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(tks) > 0 {
+		var expressions []ast.ValueExpression
+	done:
+		for _, tkn := range tks {
+			switch tkn := tkn.(type) {
+			case ast.ValueExpression:
+				expressions = append(expressions, tkn)
+			case Terminator:
+				break done
+			default:
+				return nil, nil, fmt.Errorf("at %v: %w: unexpected token type %s", tks, ErrParserFault, reflect.TypeOf(tkn))
+			}
+		}
+		result := &ast.SortTransformer{
+			Expression: expressions,
+		}
+		return result, remain, nil
+	}
+	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
+}
+
+func TokenMatcher(inputTokens []any, matchTokens ...any) []any {
+	var result []any = nil
+	for i := 0; i < len(matchTokens); i++ {
+		var m any = nil
+		if i >= len(inputTokens) && i < len(matchTokens) {
+			return nil
+		}
+		switch reflect.TypeOf(matchTokens[i]).Kind() {
+		case reflect.Slice:
+			for _, stt := range (matchTokens[i]).([]any) {
+				if reflect.TypeOf(inputTokens[i]) == reflect.TypeOf(stt) {
+					stt := stt
+					m = stt
+					break
+				}
+			}
+			if m == nil {
+				return result
+			}
+		case reflect.String:
+			if reflect.TypeOf(inputTokens[i]) != reflect.TypeOf(matchTokens[i]) {
+				return nil
+			}
+			m = matchTokens[i]
+		}
+		result = append(result, m)
+	}
+	if result == nil {
+		result = make([]any, 0)
+	}
+	return result
+}
+
+func ParseFilters(args []string) (ast.Operation, []string, error) {
+	result := &ast.CompoundStatement{}
+	p := args
+	for len(p) > 0 {
+		switch p[0] {
+		case "into":
+			return result.Simplify(), p, nil
+		case "filter", "where":
+			p = p[1:]
+			fallthrough
+		default:
+			boolExp, remain, err := ParseFilter(p[:], result.Statements)
+			if err != nil {
+				return nil, nil, err
+			}
+			p = remain
+			statement := &ast.FilterStatement{
+				Expression: boolExp,
+			}
+			result.Statements = append(result.Statements, statement)
+		}
+	}
+	return result.Simplify(), p, nil
+}
+
+func ParseInto(args []string) (ast.Operation, []string, error) {
+	p := args
+	if len(p) > 0 {
+		switch p[0] {
+		case "into":
+			p = p[1:]
+		}
+	}
+	if len(p) > 0 {
+		switch p[0] {
+		case "mbox":
+			return &maildata.MBoxOutput{}, p[1:], nil
+		case "summary":
+			return ParseIntoSummary(p[1:])
+		case "table":
+			return ParseIntoTable(p[1:])
+		}
+	}
+	return nil, nil, ErrUnknownIntoStatement
+}
+
+func ParseOperations(args []string) (ast.Operation, error) {
+	result := &ast.CompoundStatement{}
+	p := args
+	for len(p) > 0 {
+		l := len(p)
+		switch p[0] {
+		case "filter":
+			op, remain, err := ParseFilters(p[1:])
+			if err != nil {
+				return nil, fmt.Errorf("parse filters: %w", err)
+			}
+			p = remain
+			if op != nil {
+				result.Statements = append(result.Statements, op)
+			}
+		case "into":
+			op, remain, err := ParseInto(p[1:])
+			if err != nil {
+				return nil, fmt.Errorf("parse into: %w", err)
+			}
+			p = remain
+			if op != nil {
+				result.Statements = append(result.Statements, op)
+			}
+		case "sort":
+			op, remain, err := ParseSort(p[1:])
+			if err != nil {
+				return nil, fmt.Errorf("parse sort: %w", err)
+			}
+			p = remain
+			if op != nil {
+				result.Statements = append(result.Statements, op)
+			}
+		default:
+			return nil, fmt.Errorf("%w: %s", ErrUnknownExpression, p[0])
+		}
+		if len(p) == l {
+			return nil, ErrParserFault
+		}
+	}
+	return result.Simplify(), nil
+}
+func isEvaluatorFunction(name string) bool {
+	switch name {
+	case "year", "month", "as":
+		return true
+	}
+	return false
+}
