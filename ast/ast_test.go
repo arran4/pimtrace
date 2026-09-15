@@ -955,6 +955,9 @@ func TestSortTransformer_Execute_NilBehavior(t *testing.T) {
 
 	stDesc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.val"), Direction: Descending}}}
 	resDesc, err := stDesc.Execute(d, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// Descending should be "B" > "A" > nil
 	if resDesc.Entry(0).(*tabledata.Row).Row[0].String() != "B" {
