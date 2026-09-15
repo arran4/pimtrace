@@ -8,7 +8,11 @@ Specifically, queries allow you to:
 
 You can construct queries progressively. Here are examples of how to build them:{{end}}
 
-{{define "sortIntro"}}	Explanation: This sorts the resulting data based on the specified fields.{{end}}
+{{define "sortIntro"}}	Explanation: This sorts the resulting data based on the specified fields.
+	You can specify the sort direction with `asc` (ascending, default) or `desc` (descending).
+	Example: `sort c.Category asc c.Amount desc`
+	Missing values (nil) are ordered before strings (i.e. empty string semantics).
+	You can also limit the number of rows output by appending `limit N` (e.g. `limit 10`).{{end}}
 
 {{define "comboIntro"}}	Operations can be chained together sequentially to achieve complex data processing:{{end}}
 

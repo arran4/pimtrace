@@ -110,7 +110,7 @@ func TestCompoundStatement_Execute(t *testing.T) {
 						{Name: "Name", Operation: EntryExpression("h.name")},
 					},
 				},
-				&SortTransformer{[]ValueExpression{EntryExpression("c.Name")}},
+				&SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.Name"), Direction: Ascending}}},
 			}},
 			data: LoadData1("testdata/data10.csv"),
 			want: tabledata.Data{
@@ -185,10 +185,10 @@ func TestCompoundStatement_Execute(t *testing.T) {
 					},
 				},
 				&SortTransformer{
-					Expression: []ValueExpression{
-						EntryExpression("c.Year"),
-						EntryExpression("c.Month"),
-						EntryExpression("c.Count"),
+					Keys: []SortKey{
+						{Expression: EntryExpression("c.Year"), Direction: Ascending},
+						{Expression: EntryExpression("c.Month"), Direction: Ascending},
+						{Expression: EntryExpression("c.Count"), Direction: Ascending},
 					},
 				},
 			}},
@@ -278,7 +278,7 @@ func TestSortTransformer_Execute(t *testing.T) {
 	}{
 		{
 			name:            "Year-Date",
-			SortTransformer: SortTransformer{Expression: []ValueExpression{EntryExpression("c.year-date")}},
+			SortTransformer: SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.year-date"), Direction: Ascending}}},
 			d: tabledata.Data{
 				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2023), pimtrace.SimpleIntegerValue(2190)}},
 				{Headers: yearDateHeader, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2022), pimtrace.SimpleIntegerValue(15664)}},
@@ -364,7 +364,7 @@ func (m *mockValueExpression) Execute(entry pimtrace.Entry, ctx *evaluator.Conte
 func TestSortTransformer_Execute_ErrorsAndTies(t *testing.T) {
 	t.Run("Fails on primary key", func(t *testing.T) {
 		expr := &mockValueExpression{failOnRow: 2, name: "mock-primary", err: fmt.Errorf("eval err primary")}
-		st := SortTransformer{Expression: []ValueExpression{expr}}
+		st := SortTransformer{Keys: []SortKey{{Expression: expr, Direction: Ascending}}}
 
 		d := tabledata.Data{
 			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(0)}},
@@ -389,7 +389,10 @@ func TestSortTransformer_Execute_ErrorsAndTies(t *testing.T) {
 	t.Run("Fails on secondary key", func(t *testing.T) {
 		expr1 := &mockValueExpression{failOnRow: -1, name: "mock-primary", ret: pimtrace.SimpleIntegerValue(1)}
 		expr2 := &mockValueExpression{failOnRow: 1, name: "mock-secondary", err: fmt.Errorf("eval err secondary")}
-		st := SortTransformer{Expression: []ValueExpression{expr1, expr2}}
+		st := SortTransformer{Keys: []SortKey{
+			{Expression: expr1, Direction: Ascending},
+			{Expression: expr2, Direction: Ascending},
+		}}
 
 		d := tabledata.Data{
 			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(0)}},
@@ -412,7 +415,7 @@ func TestSortTransformer_Execute_ErrorsAndTies(t *testing.T) {
 
 	t.Run("Evaluates once per row", func(t *testing.T) {
 		expr := &mockValueExpression{failOnRow: -1, name: "mock-primary", ret: pimtrace.SimpleIntegerValue(0)}
-		st := SortTransformer{Expression: []ValueExpression{expr}}
+		st := SortTransformer{Keys: []SortKey{{Expression: expr, Direction: Ascending}}}
 
 		d := tabledata.Data{
 			{Headers: map[string]int{"original_index": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(0)}},
@@ -432,7 +435,7 @@ func TestSortTransformer_Execute_ErrorsAndTies(t *testing.T) {
 	})
 
 	t.Run("Deterministic tie behavior", func(t *testing.T) {
-		st := SortTransformer{Expression: []ValueExpression{EntryExpression("c.val")}}
+		st := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.val"), Direction: Ascending}}}
 
 		h := map[string]int{"val": 0, "original_index": 1}
 		d := tabledata.Data{
@@ -866,5 +869,158 @@ func TestEntryPathor_Find(t *testing.T) {
 	p2 := ep.Find("nonexistent")
 	if p2 == nil {
 		t.Errorf("Find(nonexistent) should not be nil but Invalidor")
+	}
+}
+
+func TestSortTransformer_Execute_Directions(t *testing.T) {
+	stDesc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.val"), Direction: Descending}}}
+
+	h := map[string]int{"val": 0, "original_index": 1}
+	d := tabledata.Data{
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleIntegerValue(0)}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2), pimtrace.SimpleIntegerValue(1)}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(3), pimtrace.SimpleIntegerValue(2)}},
+	}
+
+	resDesc, err := stDesc.Execute(d, nil)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if *resDesc.Entry(0).(*tabledata.Row).Row[0].Integer() != 3 {
+		t.Errorf("expected 3, got %d", *resDesc.Entry(0).(*tabledata.Row).Row[0].Integer())
+	}
+	if *resDesc.Entry(2).(*tabledata.Row).Row[0].Integer() != 1 {
+		t.Errorf("expected 1, got %d", *resDesc.Entry(2).(*tabledata.Row).Row[0].Integer())
+	}
+}
+
+func TestLimitTransformer_Execute(t *testing.T) {
+	d := tabledata.Data{
+		{Headers: map[string]int{"val": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1)}},
+		{Headers: map[string]int{"val": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2)}},
+		{Headers: map[string]int{"val": 0}, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(3)}},
+	}
+
+	tests := []struct {
+		name    string
+		limit   int
+		wantLen int
+		wantErr bool
+	}{
+		{"limit 0", 0, 0, false},
+		{"limit 1", 1, 1, false},
+		{"limit 2", 2, 2, false},
+		{"limit 3 (== len)", 3, 3, false},
+		{"limit 4 (> len)", 4, 3, false},
+		{"limit -1 (error)", -1, 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lt := &LimitTransformer{Limit: tt.limit}
+			res, err := lt.Execute(d, nil)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LimitTransformer.Execute() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && res.Len() != tt.wantLen {
+				t.Errorf("expected len %d, got %d", tt.wantLen, res.Len())
+			}
+		})
+	}
+}
+
+func TestSortTransformer_Execute_NilBehavior(t *testing.T) {
+	d := tabledata.Data{
+		{Headers: map[string]int{"val": 0}, Row: []pimtrace.Value{pimtrace.SimpleStringValue("B")}},
+		{Headers: map[string]int{"val": 0}, Row: []pimtrace.Value{&pimtrace.SimpleNilValue{}}},
+		{Headers: map[string]int{"val": 0}, Row: []pimtrace.Value{pimtrace.SimpleStringValue("A")}},
+	}
+
+	stAsc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.val"), Direction: Ascending}}}
+	resAsc, err := stAsc.Execute(d, nil)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	// SimpleNilValue < SimpleStringValue is true, and SimpleStringValue < SimpleNilValue is false.
+	// So nil < "A" < "B"
+	if resAsc.Entry(0).(*tabledata.Row).Row[0].Type() != pimtrace.Nil {
+		t.Errorf("Expected Nil first in Ascending sort, got %v", resAsc.Entry(0).(*tabledata.Row).Row[0])
+	}
+	if resAsc.Entry(2).(*tabledata.Row).Row[0].String() != "B" {
+		t.Errorf("Expected 'B' last in Ascending sort, got %v", resAsc.Entry(2).(*tabledata.Row).Row[0])
+	}
+
+	stDesc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.val"), Direction: Descending}}}
+	resDesc, err := stDesc.Execute(d, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Descending should be "B" > "A" > nil
+	if resDesc.Entry(0).(*tabledata.Row).Row[0].String() != "B" {
+		t.Errorf("Expected 'B' first in Descending sort, got %v", resDesc.Entry(0).(*tabledata.Row).Row[0])
+	}
+	if resDesc.Entry(2).(*tabledata.Row).Row[0].Type() != pimtrace.Nil {
+		t.Errorf("Expected Nil last in Descending sort, got %v", resDesc.Entry(2).(*tabledata.Row).Row[0])
+	}
+}
+
+func TestSortTransformer_Execute_AggregateCountDescending(t *testing.T) {
+	// Let's create an aggregate data table to test with Count descending.
+	h := map[string]int{"count": 0, "name": 1}
+	d := tabledata.Data{
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(5), pimtrace.SimpleStringValue("A")}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(20), pimtrace.SimpleStringValue("B")}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(10), pimtrace.SimpleStringValue("C")}},
+	}
+
+	stDesc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.count"), Direction: Descending}}}
+	resDesc, err := stDesc.Execute(d, nil)
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if *resDesc.Entry(0).(*tabledata.Row).Row[0].Integer() != 20 {
+		t.Errorf("Expected 20 first in Descending count sort, got %v", resDesc.Entry(0).(*tabledata.Row).Row[0])
+	}
+	if *resDesc.Entry(2).(*tabledata.Row).Row[0].Integer() != 5 {
+		t.Errorf("Expected 5 last in Descending count sort, got %v", resDesc.Entry(2).(*tabledata.Row).Row[0])
+	}
+}
+
+func TestSortTransformer_Execute_MixedDirection(t *testing.T) {
+	h := map[string]int{"val": 0, "name": 1}
+	d := tabledata.Data{
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleStringValue("B")}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2), pimtrace.SimpleStringValue("C")}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleStringValue("A")}},
+	}
+
+	stMixed := SortTransformer{Keys: []SortKey{
+		{Expression: EntryExpression("c.val"), Direction: Ascending},
+		{Expression: EntryExpression("c.name"), Direction: Descending},
+	}}
+	resMixed, err := stMixed.Execute(d, nil)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	// Sort order should be:
+	// val=1, name="B"
+	// val=1, name="A"
+	// val=2, name="C"
+
+	if resMixed.Entry(0).(*tabledata.Row).Row[1].String() != "B" {
+		t.Errorf("Expected 'B' first, got %v", resMixed.Entry(0).(*tabledata.Row).Row[1])
+	}
+	if resMixed.Entry(1).(*tabledata.Row).Row[1].String() != "A" {
+		t.Errorf("Expected 'A' second, got %v", resMixed.Entry(1).(*tabledata.Row).Row[1])
+	}
+	if resMixed.Entry(2).(*tabledata.Row).Row[1].String() != "C" {
+		t.Errorf("Expected 'C' third, got %v", resMixed.Entry(2).(*tabledata.Row).Row[1])
 	}
 }

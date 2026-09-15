@@ -6,6 +6,7 @@ import (
 	"pimtrace/dataformats/maildata"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/arran4/go-evaluator"
@@ -66,8 +67,16 @@ func IntoIdentify(args []string) (any, []string, error) {
 	}
 	ss := strings.SplitN(args[0], ".", 2)
 	switch ss[0] {
-	case "into", "filter", "where", "sort", "calculate":
+	case "into", "filter", "where", "sort", "calculate", "limit":
 		return Terminator(args[0]), args[0:], nil
+	case "asc":
+		if len(ss) == 1 {
+			return ast.Ascending, args[1:], nil
+		}
+	case "desc":
+		if len(ss) == 1 {
+			return ast.Descending, args[1:], nil
+		}
 	case "h", "header":
 		return ast.EntryExpression(args[0]), args[1:], nil
 	case "p", "property":
@@ -563,12 +572,20 @@ func ParseSort(args []string) (ast.Operation, []string, error) {
 		return nil, nil, err
 	}
 	if len(tks) > 0 {
-		var expressions []ast.ValueExpression
+		var keys []ast.SortKey
 	done:
 		for _, tkn := range tks {
 			switch tkn := tkn.(type) {
 			case ast.ValueExpression:
-				expressions = append(expressions, tkn)
+				keys = append(keys, ast.SortKey{
+					Expression: tkn,
+					Direction:  ast.Ascending,
+				})
+			case ast.SortDirection:
+				if len(keys) == 0 {
+					return nil, nil, fmt.Errorf("at %v: %w: unexpected sort direction without preceding key", tks, ErrParserFault)
+				}
+				keys[len(keys)-1].Direction = tkn
 			case Terminator:
 				break done
 			default:
@@ -576,11 +593,23 @@ func ParseSort(args []string) (ast.Operation, []string, error) {
 			}
 		}
 		result := &ast.SortTransformer{
-			Expression: expressions,
+			Keys: keys,
 		}
 		return result, remain, nil
 	}
 	return nil, nil, fmt.Errorf("at %v: %w", tks, ErrParserNothingFound)
+}
+
+func ParseLimit(args []string) (ast.Operation, []string, error) {
+	if len(args) == 0 {
+		return nil, nil, fmt.Errorf("limit requires a number")
+	}
+	limitStr := args[0]
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid limit value %q: %w", limitStr, err)
+	}
+	return &ast.LimitTransformer{Limit: limit}, args[1:], nil
 }
 
 func TokenMatcher(inputTokens []any, matchTokens ...any) []any {
@@ -690,6 +719,15 @@ func ParseOperations(args []string) (ast.Operation, error) {
 			op, remain, err := ParseSort(p[1:])
 			if err != nil {
 				return nil, fmt.Errorf("parse sort: %w", err)
+			}
+			p = remain
+			if op != nil {
+				result.Statements = append(result.Statements, op)
+			}
+		case "limit":
+			op, remain, err := ParseLimit(p[1:])
+			if err != nil {
+				return nil, fmt.Errorf("parse limit: %w", err)
 			}
 			p = remain
 			if op != nil {

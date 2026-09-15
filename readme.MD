@@ -204,7 +204,7 @@ mailtrace -input inbox.mbox -input-type mbox -parser basic \
 ```bash
 mailtrace -input inbox.mbox -input-type mbox -parser basic \
   into summary h.From calculate f.count \
-  sort f.count
+  sort f.count desc limit 10
 ```
 
 ### 3. ICalTrace: Calendar Stats

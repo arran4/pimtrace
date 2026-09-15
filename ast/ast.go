@@ -357,8 +357,27 @@ func (t *TableTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pim
 
 var _ Operation = (*TableTransformer)(nil)
 
+type SortDirection int
+
+const (
+	Ascending SortDirection = iota
+	Descending
+)
+
+func (s SortDirection) String() string {
+	if s == Descending {
+		return "desc"
+	}
+	return "asc"
+}
+
+type SortKey struct {
+	Expression ValueExpression
+	Direction  SortDirection
+}
+
 type SortTransformer struct {
-	Expression []ValueExpression
+	Keys []SortKey
 }
 
 type SortPreparedRow struct {
@@ -369,6 +388,7 @@ type SortPreparedRow struct {
 
 type SortTransformerSorter struct {
 	PreparedRows []SortPreparedRow
+	Directions   []SortDirection
 }
 
 func (s *SortTransformerSorter) Len() int {
@@ -381,6 +401,9 @@ func (s *SortTransformerSorter) Less(i, j int) bool {
 		jv := s.PreparedRows[j].Keys[k]
 		if iv.Equal(jv) {
 			continue
+		}
+		if s.Directions[k] == Descending {
+			return jv.Less(iv)
 		}
 		return iv.Less(jv)
 	}
@@ -395,11 +418,11 @@ func (s *SortTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimt
 	prepared := make([]SortPreparedRow, d.Len())
 	for i := 0; i < d.Len(); i++ {
 		entry := d.Entry(i)
-		keys := make([]pimtrace.Value, len(s.Expression))
-		for k, e := range s.Expression {
-			val, err := e.Execute(entry, ctx)
+		keys := make([]pimtrace.Value, len(s.Keys))
+		for k, sk := range s.Keys {
+			val, err := sk.Expression.Execute(entry, ctx)
 			if err != nil {
-				return nil, fmt.Errorf("error evaluating sort expression %s on row %d: %w", e.ColumnName(), i, err)
+				return nil, fmt.Errorf("error evaluating sort expression %s on row %d: %w", sk.Expression.ColumnName(), i, err)
 			}
 			if val == nil {
 				val = &pimtrace.SimpleNilValue{}
@@ -413,8 +436,14 @@ func (s *SortTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimt
 		}
 	}
 
+	dirs := make([]SortDirection, len(s.Keys))
+	for i, sk := range s.Keys {
+		dirs[i] = sk.Direction
+	}
+
 	sorter := &SortTransformerSorter{
 		PreparedRows: prepared,
+		Directions:   dirs,
 	}
 	sort.Sort(sorter)
 
@@ -425,6 +454,22 @@ func (s *SortTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimt
 }
 
 var _ Operation = (*SortTransformer)(nil)
+
+type LimitTransformer struct {
+	Limit int
+}
+
+func (l *LimitTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pimtrace.Data, error) {
+	if l.Limit < 0 {
+		return nil, fmt.Errorf("limit cannot be negative")
+	}
+	if l.Limit < d.Len() {
+		d = d.Truncate(l.Limit)
+	}
+	return d, nil
+}
+
+var _ Operation = (*LimitTransformer)(nil)
 
 type GroupTransformer struct {
 	Columns []*ColumnExpression
