@@ -363,11 +363,23 @@ func TestParseSort(t *testing.T) {
 			name: "Basic sort",
 			args: []string{"c.name", "into", "mbox"},
 			expectedOperation: &ast.SortTransformer{
-				Expression: []ast.ValueExpression{
-					ast.EntryExpression("c.name"),
+				Keys: []ast.SortKey{
+					{Expression: ast.EntryExpression("c.name"), Direction: ast.Ascending},
 				},
 			},
 			remaining: []string{"into", "mbox"},
+			wantErr:   false,
+		},
+		{
+			name: "Sort with explicit asc and desc",
+			args: []string{"c.name", "asc", "c.date", "desc", "into", "table"},
+			expectedOperation: &ast.SortTransformer{
+				Keys: []ast.SortKey{
+					{Expression: ast.EntryExpression("c.name"), Direction: ast.Ascending},
+					{Expression: ast.EntryExpression("c.date"), Direction: ast.Descending},
+				},
+			},
+			remaining: []string{"into", "table"},
 			wantErr:   false,
 		},
 	}
@@ -999,4 +1011,76 @@ func TestParserEvaluatorAcceptance(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestParseLimit(t *testing.T) {
+	tests := []struct {
+		name              string
+		args              []string
+		expectedOperation ast.Operation
+		remaining         []string
+		wantErr           bool
+	}{
+		{
+			name:              "Basic limit",
+			args:              []string{"10", "into", "mbox"},
+			expectedOperation: &ast.LimitTransformer{Limit: 10},
+			remaining:         []string{"into", "mbox"},
+			wantErr:           false,
+		},
+		{
+			name:    "Missing limit argument",
+			args:    []string{},
+			wantErr: true,
+		},
+		{
+			name:    "Invalid limit value",
+			args:    []string{"notanumber"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op, remain, err := ParseLimit(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseLimit() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr {
+				if !reflect.DeepEqual(op, tt.expectedOperation) {
+					t.Errorf("ParseLimit() operation = %v, want %v", op, tt.expectedOperation)
+				}
+				if !reflect.DeepEqual(remain, tt.remaining) {
+					t.Errorf("ParseLimit() remain = %v, want %v", remain, tt.remaining)
+				}
+			}
+		})
+	}
+}
+
+func TestParseSort_Malformed(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr bool
+	}{
+		{
+			name:    "Sort desc without key",
+			args:    []string{"desc", "into", "table"},
+			wantErr: true,
+		},
+		{
+			name:    "Sort asc without key",
+			args:    []string{"asc"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := ParseSort(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseSort() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }
