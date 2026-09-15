@@ -59,13 +59,13 @@ func (s *ICalWithSource) getPropertyValue(prop string, index int) (pimtrace.Valu
 				if err2 == nil {
 					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
 				}
-				err = err2
+				return nil, err2
 			case "DTEND":
 				dt, err2 := ve.GetEndAt()
 				if err2 == nil {
 					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
 				}
-				err = err2
+				return nil, err2
 			default:
 			}
 			_ = err
@@ -77,13 +77,13 @@ func (s *ICalWithSource) getPropertyValue(prop string, index int) (pimtrace.Valu
 				if err2 == nil {
 					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
 				}
-				err = err2
+				return nil, err2
 			case "DUE":
 				dt, err2 := vt.GetDueAt()
 				if err2 == nil {
 					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
 				}
-				err = err2
+				return nil, err2
 			default:
 			}
 			_ = err

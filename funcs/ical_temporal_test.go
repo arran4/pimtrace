@@ -82,3 +82,28 @@ func TestIcalTemporal(t *testing.T) {
 		t.Errorf("hour returned %v, expected 10", v)
 	}
 }
+
+func TestIcalTemporal_Malformed(t *testing.T) {
+	f, err := os.Open("testdata/timezone_bad.ics")
+	if err != nil {
+		t.Fatalf("Failed to open fixture: %v", err)
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	stream, err := icaldata.ReadICalStream(f, "test", "test_bad.ics")
+	if err != nil {
+		t.Fatalf("Failed to read ICAL stream: %v", err)
+	}
+
+	if len(stream) == 0 {
+		t.Fatalf("Failed to find VEVENT rows")
+	}
+
+	event := stream[0]
+	_, err = event.Get("p.DTSTART")
+	if err == nil {
+		t.Fatalf("Expected an error for malformed TZID but got none")
+	}
+}

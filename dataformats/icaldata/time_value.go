@@ -49,13 +49,13 @@ func (s ICalTimeValue) Time() *time.Time {
 }
 
 func (s ICalTimeValue) Integer() *int {
-	i := int(s.T.Unix())
-	return &i
+	// Behave like the original string value for numeric coercions.
+	// Only return Integer if OriginalString is actually numeric.
+	return pimtrace.SimpleStringValue(s.String()).Integer()
 }
 
 func (s ICalTimeValue) Float64() *float64 {
-	f := float64(s.T.Unix())
-	return &f
+	return pimtrace.SimpleStringValue(s.String()).Float64()
 }
 
 func (s ICalTimeValue) Type() pimtrace.Type {
