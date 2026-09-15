@@ -510,3 +510,4 @@ func (g *GroupTransformer) Execute(d pimtrace.Data, ctx *evaluator.Context) (pim
 }
 
 var _ Operation = (*GroupTransformer)(nil)
+// Resolves #57
