@@ -2,10 +2,8 @@ package funcs
 
 import (
 	"errors"
-	"log"
-	"pimtrace"
-
 	"github.com/arran4/go-evaluator"
+	"pimtrace"
 )
 
 var (
@@ -37,10 +35,9 @@ func (c Month[T]) Arguments() []ArgumentList {
 }
 
 func (c Month[T]) Run(d pimtrace.Entry, args []T, ctx *evaluator.Context) (pimtrace.Value, error) {
-	t, err := Arg1OnlyToTime("month", d, args, ctx)
+	t, err := temporalCoerce("month", d, args, ctx)
 	if err != nil {
-		log.Printf("Error: %s", err)
-		return &pimtrace.SimpleNilValue{}, nil //, err
+		return &pimtrace.SimpleNilValue{}, err
 	}
 	if t == nil {
 		return &pimtrace.SimpleNilValue{}, nil

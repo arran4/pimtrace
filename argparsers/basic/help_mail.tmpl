@@ -20,6 +20,9 @@
 	into summary h.user-agent h.subject f.year[h.date] f.month[h.date] calculate f.sum[c.size] f.count
 	Explanation: This groups the emails based on specific fields, and then applies aggregate calculations (like sums or counts) to those groups.
 
+	into summary f.weekday[h.date] f.hour[h.date] calculate f.count sort f.count desc limit 5
+	Explanation: Finds the busiest weekday and hour combination by message count.
+
 4. Sorting Data
 	sort f.year[h.date] f.month[h.date]
 {{template "sortIntro"}}
