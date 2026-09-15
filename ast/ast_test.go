@@ -939,7 +939,10 @@ func TestSortTransformer_Execute_NilBehavior(t *testing.T) {
 	}
 
 	stAsc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.val"), Direction: Ascending}}}
-	resAsc, _ := stAsc.Execute(d, nil)
+	resAsc, err := stAsc.Execute(d, nil)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
 
 	// SimpleNilValue < SimpleStringValue is true, and SimpleStringValue < SimpleNilValue is false.
 	// So nil < "A" < "B"
@@ -951,7 +954,7 @@ func TestSortTransformer_Execute_NilBehavior(t *testing.T) {
 	}
 
 	stDesc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.val"), Direction: Descending}}}
-	resDesc, _ := stDesc.Execute(d, nil)
+	resDesc, err := stDesc.Execute(d, nil)
 
 	// Descending should be "B" > "A" > nil
 	if resDesc.Entry(0).(*tabledata.Row).Row[0].String() != "B" {
@@ -972,8 +975,49 @@ func TestSortTransformer_Execute_AggregateCountDescending(t *testing.T) {
 	}
 
 	stDesc := SortTransformer{Keys: []SortKey{{Expression: EntryExpression("c.count"), Direction: Descending}}}
-	resDesc, _ := stDesc.Execute(d, nil)
+	resDesc, err := stDesc.Execute(d, nil)
+
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
 
 	if *resDesc.Entry(0).(*tabledata.Row).Row[0].Integer() != 20 {
+		t.Errorf("Expected 20 first in Descending count sort, got %v", resDesc.Entry(0).(*tabledata.Row).Row[0])
+	}
+	if *resDesc.Entry(2).(*tabledata.Row).Row[0].Integer() != 5 {
+		t.Errorf("Expected 5 last in Descending count sort, got %v", resDesc.Entry(2).(*tabledata.Row).Row[0])
+	}
+}
+
+func TestSortTransformer_Execute_MixedDirection(t *testing.T) {
+	h := map[string]int{"val": 0, "name": 1}
+	d := tabledata.Data{
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleStringValue("B")}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(2), pimtrace.SimpleStringValue("C")}},
+		{Headers: h, Row: []pimtrace.Value{pimtrace.SimpleIntegerValue(1), pimtrace.SimpleStringValue("A")}},
+	}
+
+	stMixed := SortTransformer{Keys: []SortKey{
+		{Expression: EntryExpression("c.val"), Direction: Ascending},
+		{Expression: EntryExpression("c.name"), Direction: Descending},
+	}}
+	resMixed, err := stMixed.Execute(d, nil)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	// Sort order should be:
+	// val=1, name="B"
+	// val=1, name="A"
+	// val=2, name="C"
+
+	if resMixed.Entry(0).(*tabledata.Row).Row[1].String() != "B" {
+		t.Errorf("Expected 'B' first, got %v", resMixed.Entry(0).(*tabledata.Row).Row[1])
+	}
+	if resMixed.Entry(1).(*tabledata.Row).Row[1].String() != "A" {
+		t.Errorf("Expected 'A' second, got %v", resMixed.Entry(1).(*tabledata.Row).Row[1])
+	}
+	if resMixed.Entry(2).(*tabledata.Row).Row[1].String() != "C" {
+		t.Errorf("Expected 'C' third, got %v", resMixed.Entry(2).(*tabledata.Row).Row[1])
 	}
 }
