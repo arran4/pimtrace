@@ -1,7 +1,6 @@
 package funcs
 
 import (
-	"github.com/arran4/golang-ical"
 	"os"
 	"pimtrace"
 	"pimtrace/dataformats/icaldata"
@@ -10,58 +9,76 @@ import (
 )
 
 func TestIcalTemporal(t *testing.T) {
-	// The requirement is that the `.ics` fixture containing VTIMEZONE and a timezone-bearing VEVENT
-	// should be exercised through the actual PIMTrace / golang-ical ingestion path.
-	// Where golang-ical already provides parsed time semantics, use those APIs rather than reparsing raw iCalendar strings.
-
 	f, err := os.Open("testdata/timezone.ics")
 	if err != nil {
 		t.Fatalf("Failed to open fixture: %v", err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	stream, err := icaldata.ReadICalStream(f, "test", "test.ics")
 	if err != nil {
 		t.Fatalf("Failed to read ICAL stream: %v", err)
 	}
 
-	if len(stream) == 0 {
-		t.Fatalf("Failed to find VEVENT row")
+	if len(stream) < 2 {
+		t.Fatalf("Failed to find VEVENT rows")
 	}
 
-	event := stream[0]
-	ve, ok := event.Component.(*ics.VEvent)
-	if !ok {
-		t.Fatalf("Component is not a VEvent")
-	}
-
-	dtstart, err := ve.GetStartAt()
+	// 2023-10-27T10:30:00 America/New_York (EDT, UTC-4) -> 14:30 UTC
+	eventEDT := stream[0]
+	dtstartEDT, err := eventEDT.Get("p.DTSTART")
 	if err != nil {
-		t.Fatalf("Failed to parse start at: %v", err)
+		t.Fatalf("Failed to get DTSTART: %v", err)
 	}
 
-	// 2023-10-27T10:30:00 America/New_York (EDT/EST crossover context, EDT is -0400 on Oct 27)
-	// New York is EDT (UTC-4) in Oct 2023. So 10:30 EDT == 14:30 UTC.
-	if !dtstart.Equal(time.Date(2023, 10, 27, 14, 30, 0, 0, time.UTC)) {
-		t.Errorf("golang-ical GetStartAt() returned %v, expected 2023-10-27 14:30:00 UTC", dtstart)
-	}
-
-	// We pass the parsed time to our temporal function through the Unix timestamp representation to verify
-	// the shared coercion policy preserves it without modifying its global CoerceDate behavior.
-	// This also simulates a valid Value extraction where the time is pre-parsed.
-	t1, err := temporalCoerce("test", event, []ValueExpression{
-		mockValueExpression{val: pimtrace.SimpleIntegerValue(int(dtstart.Unix()))},
+	expectedEDT := time.Date(2023, 10, 27, 10, 30, 0, 0, time.FixedZone("EDT", -4*3600))
+	tEDT, err := temporalCoerce("test", eventEDT, []ValueExpression{
+		mockValueExpression{val: dtstartEDT},
 	}, nil)
-
 	if err != nil {
 		t.Fatalf("temporalCoerce failed: %v", err)
 	}
-
-	if t1 == nil {
+	if tEDT == nil {
 		t.Fatalf("temporalCoerce returned nil")
 	}
+	if !tEDT.Equal(expectedEDT) {
+		t.Errorf("temporalCoerce returned %v, expected %v", tEDT, expectedEDT)
+	}
 
-	if !t1.Equal(dtstart) {
-		t.Errorf("temporalCoerce returned %v, expected %v", t1, dtstart)
+	// 2023-11-10T10:30:00 America/New_York (EST, UTC-5) -> 15:30 UTC
+	eventEST := stream[1]
+	dtstartEST, err := eventEST.Get("p.DTSTART")
+	if err != nil {
+		t.Fatalf("Failed to get DTSTART: %v", err)
+	}
+
+	expectedEST := time.Date(2023, 11, 10, 10, 30, 0, 0, time.FixedZone("EST", -5*3600))
+	tEST, err := temporalCoerce("test", eventEST, []ValueExpression{
+		mockValueExpression{val: dtstartEST},
+	}, nil)
+	if err != nil {
+		t.Fatalf("temporalCoerce failed: %v", err)
+	}
+	if tEST == nil {
+		t.Fatalf("temporalCoerce returned nil")
+	}
+	if !tEST.Equal(expectedEST) {
+		t.Errorf("temporalCoerce returned %v, expected %v", tEST, expectedEST)
+	}
+
+	// Check hour on EDT
+	hr := Hour[ValueExpression]{}
+	res, err := hr.Run(eventEDT, []ValueExpression{
+		mockValueExpression{val: dtstartEDT},
+	}, nil)
+	if err != nil {
+		t.Fatalf("hour function failed: %v", err)
+	}
+	if v, ok := res.(pimtrace.SimpleIntegerValue); !ok {
+		t.Errorf("hour returned %v, expected SimpleIntegerValue", res)
+	} else if int(v) != 10 {
+		t.Errorf("hour returned %v, expected 10", v)
 	}
 }

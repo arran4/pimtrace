@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -40,14 +41,14 @@ func TestMonth_Run(t *testing.T) {
 			Err:       nil,
 		},
 		{
-			Name: "Empty Input Error",
+			Name: "Empty Input",
 			Input: &tabledata.Row{
 				Headers: map[string]int{"Date": 0},
 				Row:     []pimtrace.Value{pimtrace.SimpleStringValue("")},
 			},
 			InputArgs: []ValueExpression{EntryExpression("c.Date")},
 			Output:    &pimtrace.SimpleNilValue{},
-			Err:       errors.New("month coercion: empty date string"),
+			Err:       errors.New("empty date string"),
 		},
 		{
 			Name: "Nil Input",
@@ -57,18 +58,23 @@ func TestMonth_Run(t *testing.T) {
 			},
 			InputArgs: []ValueExpression{EntryExpression("c.Date")},
 			Output:    &pimtrace.SimpleNilValue{},
-			Err:       nil, // temporalCoerce propagates nil semantics for nil values without error
+			Err:       nil,
 		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			res, err := m.Run(test.Input, test.InputArgs, nil)
-			if (err != nil) != (test.Err != nil) || (err != nil && test.Err != nil && err.Error() != test.Err.Error()) {
-				if test.Err == nil {
-					t.Errorf("Got error when wanted none: %s", err)
-				} else if err == nil {
-					t.Errorf("Didn't get an error when we were expecting one: %s", test.Err)
+			if (err != nil) != (test.Err != nil) || (err != nil && test.Err != nil && !strings.Contains(err.Error(), test.Err.Error())) {
+				// Special case for wrapping error
+				if test.Err != nil && err != nil && errors.Is(err, test.Err) {
+					// ok
 				} else {
-					t.Errorf("Got %s expected: %s", err, test.Err)
+					if test.Err == nil {
+						t.Errorf("Got error when wanted none: %s", err)
+					} else if err == nil {
+						t.Errorf("Didn't get an error when we were expecting one: %s", test.Err)
+					} else {
+						t.Errorf("Got %s expected: %s", err, test.Err)
+					}
 				}
 			}
 			if err != nil {

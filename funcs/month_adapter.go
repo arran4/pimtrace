@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"pimtrace"
 	"time"
+
+	"github.com/araddon/dateparse"
+	"github.com/goodsign/monday"
 )
 
 type MonthAdapter struct{}
 
-func (y *MonthAdapter) Call(args ...interface{}) (interface{}, error) {
+func (m *MonthAdapter) Call(args ...interface{}) (interface{}, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("expected 1 argument")
 	}
@@ -18,41 +21,42 @@ func (y *MonthAdapter) Call(args ...interface{}) (interface{}, error) {
 		return nil, nil
 	}
 
-	var t *time.Time
+	var t time.Time
 	var err error
 
 	switch v := arg.(type) {
 	case int:
-		vt := time.Unix(int64(v), 0)
-		t = &vt
+		t = time.Unix(int64(v), 0)
 	case int64:
-		vt := time.Unix(v, 0)
-		t = &vt
+		t = time.Unix(v, 0)
 	case string:
 		if v == "" {
 			return nil, fmt.Errorf("empty string")
 		}
-		t, err = pimtrace.ParseDate(v)
+		// Simplified parsing compared to YearAdapter for brevity/directness,
+		// but should ideally match logic. Resusing common logic would be better.
+		// For now implementing basic parsing.
+		t, err = dateparse.ParseAny(v)
 		if err != nil {
-			return nil, err
+			// Try monday
+			var layout string
+			layout, err = dateparse.ParseFormat(v)
+			if err == nil {
+				t, err = monday.NewLocaleDetector().Parse(layout, v)
+			}
 		}
-	case pimtrace.SimpleNilValue:
-		return nil, nil
-	case *pimtrace.SimpleNilValue:
-		return nil, nil
+		if err != nil {
+			return nil, fmt.Errorf("parse error: %w", err)
+		}
 	case pimtrace.Value:
 		if i := v.Integer(); i != nil {
-			vt := time.Unix(int64(*i), 0)
-			t = &vt
+			t = time.Unix(int64(*i), 0)
 		} else {
-			return y.Call(v.String())
+			return m.Call(v.String())
 		}
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)
 	}
 
-	if t == nil {
-		return nil, nil
-	}
 	return pimtrace.SimpleIntegerValue(int(t.Month())), nil
 }
