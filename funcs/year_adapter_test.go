@@ -12,7 +12,9 @@ func TestYearAdapter_ICalTimeValue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to open fixture: %v", err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	stream, err := icaldata.ReadICalStream(f, "test", "test.ics")
 	if err != nil {
