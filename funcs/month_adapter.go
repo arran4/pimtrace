@@ -40,14 +40,37 @@ func (y *MonthAdapter) Call(args ...interface{}) (interface{}, error) {
 		return nil, nil
 	case *pimtrace.SimpleNilValue:
 		return nil, nil
+	case pimtrace.SimpleIntegerValue:
+		i := v.Integer()
+		vt := time.Unix(int64(*i), 0)
+		t = &vt
+	case pimtrace.SimpleStringValue:
+		if v.String() == "" {
+			return nil, fmt.Errorf("empty string")
+		}
+		t, err = pimtrace.ParseDate(v.String())
+		if err != nil {
+			return nil, err
+		}
 	case pimtrace.Value:
-		if vt := v.Time(); vt != nil {
-			t = vt
-		} else if i := v.Integer(); i != nil {
-			vt := time.Unix(int64(*i), 0)
-			t = &vt
+		if v.Type() == pimtrace.Integer {
+			i := v.Integer()
+			if i != nil {
+				vt := time.Unix(int64(*i), 0)
+				t = &vt
+			}
+		} else if v.Type() != pimtrace.Float && v.Time() != nil {
+			t = v.Time()
+		} else if v.Type() == pimtrace.String {
+			if v.String() == "" {
+				return nil, fmt.Errorf("empty string")
+			}
+			t, err = pimtrace.ParseDate(v.String())
+			if err != nil {
+				return nil, err
+			}
 		} else {
-			return y.Call(v.String())
+			return nil, fmt.Errorf("unsupported type %T", v)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported type %T", v)

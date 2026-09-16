@@ -337,6 +337,21 @@ func TestYearAdapter_Call(t *testing.T) {
 		t.Errorf("Call(nil arg) expected nil, got %v", res)
 	}
 
+		// Test SimpleStringValue with compact iCalendar DATE "20231027" -> 2023
+	res, err = ya.Call(pimtrace.SimpleStringValue("20231027"))
+	if err != nil {
+		t.Errorf("Call(pimtrace.SimpleStringValue) error = %v", err)
+	}
+	if v, ok := res.(pimtrace.SimpleIntegerValue); !ok || int(v) != 2023 {
+		t.Errorf("Call(pimtrace.SimpleStringValue) expected 2023, got %v", res)
+	}
+
+	// Test SimpleFloatValue remains unsupported
+	_, err = ya.Call(pimtrace.SimpleFloatValue(123.45))
+	if err == nil {
+		t.Errorf("Call(pimtrace.SimpleFloatValue) expected error")
+	}
+
 	// Test unsupported type
 	_, err = ya.Call(1.23)
 	if err == nil {
@@ -420,6 +435,21 @@ func TestMonthAdapter_Call(t *testing.T) {
 	}
 	if res != nil {
 		t.Errorf("Call(nil arg) expected nil, got %v", res)
+	}
+
+		// Test SimpleStringValue with compact iCalendar DATE "20231027" -> 10
+	res, err = ma.Call(pimtrace.SimpleStringValue("20231027"))
+	if err != nil {
+		t.Errorf("Call(pimtrace.SimpleStringValue) error = %v", err)
+	}
+	if v, ok := res.(pimtrace.SimpleIntegerValue); !ok || int(v) != 10 {
+		t.Errorf("Call(pimtrace.SimpleStringValue) expected 10, got %v", res)
+	}
+
+	// Test SimpleFloatValue remains unsupported
+	_, err = ma.Call(pimtrace.SimpleFloatValue(123.45))
+	if err == nil {
+		t.Errorf("Call(pimtrace.SimpleFloatValue) expected error")
 	}
 
 	// Test unsupported type
