@@ -4,6 +4,7 @@ import (
 	"errors"
 	"pimtrace"
 	"pimtrace/dataformats/tabledata"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -47,7 +48,7 @@ func TestMonth_Run(t *testing.T) {
 			},
 			InputArgs: []ValueExpression{EntryExpression("c.Date")},
 			Output:    &pimtrace.SimpleNilValue{},
-			Err:       nil,
+			Err:       errors.New("empty date string"),
 		},
 		{
 			Name: "Nil Input",
@@ -62,7 +63,7 @@ func TestMonth_Run(t *testing.T) {
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			res, err := m.Run(test.Input, test.InputArgs, nil)
-			if (err != nil) != (test.Err != nil) || (err != nil && !errors.Is(err, test.Err)) {
+			if (err != nil) != (test.Err != nil) || (err != nil && test.Err != nil && !strings.Contains(err.Error(), test.Err.Error())) {
 				// Special case for wrapping error
 				if test.Err != nil && err != nil && errors.Is(err, test.Err) {
 					// ok

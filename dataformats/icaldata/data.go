@@ -47,6 +47,53 @@ func (s *ICalWithSource) StringArray(header []string) (result []string) {
 	return
 }
 
+func (s *ICalWithSource) getPropertyValue(prop string, index int) (pimtrace.Value, error) {
+	// If it's a date/time property, try to use parsed time semantics from golang-ical to preserve TZID
+	origValue := s.ComponentBase.Properties[index].Value
+	if prop == "DTSTART" || prop == "DTEND" || prop == "DUE" || prop == "EXDATE" || prop == "RDATE" || prop == "RECURRENCE-ID" || prop == "DTSTAMP" || prop == "CREATED" || prop == "LAST-MODIFIED" {
+		if ve, ok := s.Component.(*ics.VEvent); ok {
+			var err error
+			switch prop {
+			case "DTSTART":
+				dt, err2 := ve.GetStartAt()
+				if err2 == nil {
+					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
+				}
+				return nil, err2
+			case "DTEND":
+				dt, err2 := ve.GetEndAt()
+				if err2 == nil {
+					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
+				}
+				return nil, err2
+			default:
+			}
+			_ = err
+		} else if vt, ok := s.Component.(*ics.VTodo); ok {
+			var err error
+			switch prop {
+			case "DTSTART":
+				dt, err2 := vt.GetStartAt()
+				if err2 == nil {
+					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
+				}
+				return nil, err2
+			case "DUE":
+				dt, err2 := vt.GetDueAt()
+				if err2 == nil {
+					return ICalTimeValue{T: dt, OriginalString: origValue}, nil
+				}
+				return nil, err2
+			default:
+			}
+			_ = err
+		}
+	}
+
+	// Default to returning the raw string value
+	return pimtrace.SimpleStringValue(origValue), nil
+}
+
 func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 	ks := strings.SplitN(key, ".", 2)
 	switch ks[0] {
@@ -60,14 +107,14 @@ func (s *ICalWithSource) Get(key string) (pimtrace.Value, error) {
 		if !ok {
 			return nil, fmt.Errorf("iCal get %w, %s", ErrHeaderError, key)
 		}
-		return pimtrace.SimpleStringValue(s.ComponentBase.Properties[i].Value), nil
+		return s.getPropertyValue(ks[1], i)
 	default:
 		if len(ks) > 1 {
 			i, ok := s.Header[ks[0]]
 			if !ok {
 				return nil, fmt.Errorf("iCal get %w, %s", ErrHeaderError, key)
 			}
-			return pimtrace.SimpleStringValue(s.ComponentBase.Properties[i].Value), nil
+			return s.getPropertyValue(ks[0], i)
 		}
 		return nil, fmt.Errorf("iCal get %w, %s", ErrKeyNotFound, key)
 	}

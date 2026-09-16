@@ -20,6 +20,9 @@
 	into summary p.LOCATION f.year[p.DUE] f.month[p.DUE] calculate f.count
 	Explanation: This groups the events based on specific fields, and then applies aggregate calculations (like sums or counts) to those groups.
 
+	into summary f.weekday[p.DTSTART] f.hour[p.DTSTART] calculate f.count sort f.count desc limit 5
+	Explanation: Finds the busiest weekday and hour combination by event count.
+
 4. Sorting Data
 	sort f.year[p.DUE] f.month[p.DUE]
 {{template "sortIntro"}}
