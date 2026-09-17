@@ -38,6 +38,9 @@ func main() {
 				args = append(args, aff.String())
 			}
 			fn := fmt.Sprintf("f.%s[%s]", fun.Name(), strings.Join(args, ","))
+			if len(args) == 0 {
+				fn = fmt.Sprintf("f.%s", fun.Name())
+			}
 			_, _ = fmt.Fprintf(f, "| `%s` | %s |\n", fn, af.Description)
 		}
 	}

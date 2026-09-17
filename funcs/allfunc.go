@@ -63,6 +63,7 @@ func Functions[T ValueExpression]() map[string]Function[T] {
 		Weekday[T]{},
 		Hour[T]{},
 		Date[T]{},
+		Duration[T]{},
 	} {
 		m[f.Name()] = f
 	}

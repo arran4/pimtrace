@@ -329,3 +329,94 @@ func TestCLIMain_ICalAllDayEventAcceptance(t *testing.T) {
 		}
 	})
 }
+
+func TestCLIMain_ICalDurationFilteringAcceptance(t *testing.T) {
+	dir := t.TempDir()
+	binPath := filepath.Join(dir, "icaltrace")
+
+	buildCmd := exec.Command("go", "build", "-o", binPath, ".")
+	if err := buildCmd.Run(); err != nil {
+		t.Fatalf("failed to build icaltrace for acceptance tests: %v", err)
+	}
+
+	icsFixture := "BEGIN:VCALENDAR\r\n" +
+		"VERSION:2.0\r\n" +
+		"PRODID:-//arran4//golang-ical//EN\r\n" +
+		"BEGIN:VEVENT\r\n" +
+		"UID:event-short\r\n" +
+		"SUMMARY:Short Meeting\r\n" +
+		"DTSTART:20231027T100000Z\r\n" +
+		"DTEND:20231027T103000Z\r\n" +
+		"END:VEVENT\r\n" +
+		"BEGIN:VEVENT\r\n" +
+		"UID:event-long\r\n" +
+		"SUMMARY:Long Meeting\r\n" +
+		"DTSTART:20231027T100000Z\r\n" +
+		"DTEND:20231027T120000Z\r\n" +
+		"END:VEVENT\r\n" +
+		"END:VCALENDAR\r\n"
+
+	for _, tc := range []struct {
+		name    string
+		args    []string
+		want    []string
+		notWant []string
+	}{
+		{
+			name: "Filter by duration greater than",
+			args: []string{"-parser", "basic", "-input-type", "ical", "-input", "-", "-output-type", "table", "into", "table", "p.UID", "f.duration", "filter", "c.duration", "gt", ".3600"},
+			want: []string{
+				"event-long",
+				"7200",
+			},
+			notWant: []string{
+				"event-short",
+				"1800",
+			},
+		},
+		{
+			name: "Sort descending by duration with limit",
+			args: []string{"-parser", "basic", "-input-type", "ical", "-input", "-", "-output-type", "table", "sort", "f.duration", "desc", "limit", "1", "into", "table", "p.UID", "f.duration"},
+			want: []string{
+				"event-long",
+				"7200",
+			},
+			notWant: []string{
+				"event-short",
+				"1800",
+			},
+		},
+		{
+			name: "Sum of durations",
+			args: []string{"-parser", "basic", "-input-type", "ical", "-input", "-", "-output-type", "table", "into", "summary", "f.date[p.DTSTART]", "calculate", "f.sum[f.duration]"},
+			want: []string{
+				"9000",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := exec.Command(binPath, tc.args...)
+			cmd.Stdin = bytes.NewReader([]byte(icsFixture))
+
+			var out bytes.Buffer
+			cmd.Stdout = &out
+			cmd.Stderr = &out
+
+			if err := cmd.Run(); err != nil {
+				t.Fatalf("cmd execution failed: %v\nOutput: %s", err, out.String())
+			}
+
+			outputStr := out.String()
+			for _, w := range tc.want {
+				if !strings.Contains(outputStr, w) {
+					t.Errorf("expected output to contain %q\nOutput: %s", w, outputStr)
+				}
+			}
+			for _, nw := range tc.notWant {
+				if strings.Contains(outputStr, nw) {
+					t.Errorf("did not expect output to contain %q\nOutput: %s", nw, outputStr)
+				}
+			}
+		})
+	}
+}
