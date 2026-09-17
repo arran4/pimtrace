@@ -244,3 +244,50 @@ END:VCALENDAR`
 		t.Fatalf("unexpected output: %v", val)
 	}
 }
+
+func TestDurationMalformed(t *testing.T) {
+	icsStr := `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:1
+DTSTART:20231027T100000Z
+DURATION:NOT-A-DURATION
+END:VEVENT
+END:VCALENDAR`
+	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
+	icw := &icaldata.ICalWithSource{
+		Component:     cal.Events()[0],
+		ComponentBase: &cal.Events()[0].ComponentBase,
+	}
+
+	durFunc := Duration[ValueExpression]{}
+	_, err := durFunc.Run(icw, nil, nil)
+	if err == nil {
+		t.Fatalf("expected error for malformed DURATION but got none")
+	}
+	if !strings.Contains(err.Error(), "golang-ical does not expose a safe public way to interpret a DURATION property") {
+		t.Fatalf("unexpected error message: %v", err)
+	}
+}
+
+func TestDurationInvalidTimezone(t *testing.T) {
+	icsStr := `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:1
+DTSTART;TZID=Invalid/Timezone:20231027T100000
+DTEND;TZID=Invalid/Timezone:20231027T113000
+END:VEVENT
+END:VCALENDAR`
+	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
+	icw := &icaldata.ICalWithSource{
+		Component:     cal.Events()[0],
+		ComponentBase: &cal.Events()[0].ComponentBase,
+	}
+
+	durFunc := Duration[ValueExpression]{}
+	_, err := durFunc.Run(icw, nil, nil)
+	if err == nil {
+		t.Fatalf("expected error for invalid timezone but got none")
+	}
+}

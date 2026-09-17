@@ -388,7 +388,7 @@ func TestCLIMain_ICalDurationFilteringAcceptance(t *testing.T) {
 		},
 		{
 			name: "Sum of durations",
-			args: []string{"-parser", "basic", "-input-type", "ical", "-input", "-", "-output-type", "table", "into", "summary", "f.date[p.DTSTART]", "calculate", "f.sum[f.duration]"},
+			args: []string{"-parser", "basic", "-input-type", "ical", "-input", "-", "-output-type", "table", "into", "summary", "f.date[p.DTSTART]", "calculate", "f.sum[f.duration]", "sort", "c.date-DTSTART", "asc", "into", "table", "c.date-DTSTART", "c.sum-duration"},
 			want: []string{
 				"9000",
 			},

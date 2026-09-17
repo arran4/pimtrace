@@ -237,7 +237,7 @@ Find the 5 longest meetings:
 
 ```bash
 icaltrace -input calendar.ics -parser basic \
-  sort desc f.duration limit 5 \
+  sort f.duration desc limit 5 \
   into table p.SUMMARY f.duration
 ```
 
@@ -254,8 +254,8 @@ Get total meeting time (in seconds) per day:
 ```bash
 icaltrace -input calendar.ics -parser basic \
   into summary f.date[p.DTSTART] calculate f.sum[f.duration] \
-  sort c.date asc \
-  into table c.date c.sum
+  sort c.date-DTSTART asc \
+  into table c.date-DTSTART c.sum-duration
 ```
 
 ## Supported Formats
