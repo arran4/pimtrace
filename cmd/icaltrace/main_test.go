@@ -420,3 +420,87 @@ func TestCLIMain_ICalDurationFilteringAcceptance(t *testing.T) {
 		})
 	}
 }
+func TestCLIMain_ICalFilterFunctionDirectAcceptance(t *testing.T) {
+	dir := t.TempDir()
+	binPath := filepath.Join(dir, "icaltrace")
+
+	buildCmd := exec.Command("go", "build", "-o", binPath, ".")
+	if err := buildCmd.Run(); err != nil {
+		t.Fatalf("failed to build icaltrace for acceptance tests: %v", err)
+	}
+
+	icsFixture := "BEGIN:VCALENDAR\r\n" +
+		"VERSION:2.0\r\n" +
+		"PRODID:-//arran4//golang-ical//EN\r\n" +
+		"BEGIN:VEVENT\r\n" +
+		"UID:event-short\r\n" +
+		"SUMMARY:Short Meeting\r\n" +
+		"DTSTART:20231027T100000Z\r\n" +
+		"DTEND:20231027T103000Z\r\n" +
+		"END:VEVENT\r\n" +
+		"BEGIN:VEVENT\r\n" +
+		"UID:event-long\r\n" +
+		"SUMMARY:Long Meeting\r\n" +
+		"DTSTART:20221027T100000Z\r\n" +
+		"DTEND:20221027T120000Z\r\n" +
+		"END:VEVENT\r\n" +
+		"END:VCALENDAR\r\n"
+
+	tmpFile := filepath.Join(dir, "input.ics")
+	if err := os.WriteFile(tmpFile, []byte(icsFixture), 0644); err != nil {
+		t.Fatalf("failed to write fixture: %v", err)
+	}
+
+	runICal := func(query ...string) (string, string, int, error) {
+		args := append([]string{
+			"-parser", "basic",
+			"-input", tmpFile,
+			"-input-type", "ical",
+			"-output", "-",
+			"-output-type", "ical",
+		}, query...)
+
+		cmd := exec.Command(binPath, args...)
+		var outBuf, errBuf bytes.Buffer
+		cmd.Stdout = &outBuf
+		cmd.Stderr = &errBuf
+		cmdErr := cmd.Run()
+		code := 0
+		if cmd.ProcessState != nil {
+			code = cmd.ProcessState.ExitCode()
+		}
+		return outBuf.String(), errBuf.String(), code, cmdErr
+	}
+
+	t.Run("Direct duration filter", func(t *testing.T) {
+		stdout, stderr, code, err := runICal("filter", "f.duration", "gt", ".3600")
+		if err != nil {
+			t.Fatalf("run failed: %v, stderr: %s", err, stderr)
+		}
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+		if !strings.Contains(stdout, "UID:event-long") {
+			t.Errorf("expected to find long event, got: %s", stdout)
+		}
+		if strings.Contains(stdout, "UID:event-short") {
+			t.Errorf("expected not to find short event, got: %s", stdout)
+		}
+	})
+
+	t.Run("Direct parameterized function filter", func(t *testing.T) {
+		stdout, stderr, code, err := runICal("filter", "f.year[p.DTSTART]", "eq", ".2022")
+		if err != nil {
+			t.Fatalf("run failed: %v, stderr: %s", err, stderr)
+		}
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+		if !strings.Contains(stdout, "UID:event-long") {
+			t.Errorf("expected to find long event, got: %s", stdout)
+		}
+		if strings.Contains(stdout, "UID:event-short") {
+			t.Errorf("expected not to find short event, got: %s", stdout)
+		}
+	})
+}

@@ -53,6 +53,9 @@ func FilterIdentify(s string) (any, error) {
 		return ast.EntryExpression(s), nil
 	case "c", "column":
 		return ast.EntryExpression(s), nil
+	case "f", "func":
+		v, _, err := ParseFunctionExpression([]string{s})
+		return v, err
 	case "":
 		if strings.HasPrefix(s, ".") {
 			return ast.ConstantExpression(ss[1]), nil
@@ -141,6 +144,7 @@ func ParseFunctionExpression(args []string) (ast.ValueExpression, []string, erro
 				Function: m[2],
 				FunctionExpression: evaluator.FunctionExpression{
 					// Func is resolved at runtime via Context
+					Name: m[2],
 					Args: terms,
 				},
 			}, args[1:], nil
@@ -362,8 +366,11 @@ func ParseFilter(args []string, statements []ast.Operation) (*evaluator.Query, [
 				}
 			}
 		case ast.ConstantExpression:
-			ph := fmt.Sprintf("\"L%d\"", len(literals)) // quoted to parse as string literal securely
-			literals[ph] = v
+			// If it's a constant on the LHS (like `.3600 lt f.duration`), the lexer expects an identifier for fields.
+			// Let's use F%d as a generic placeholder for both fields and LHS constants to avoid "expected identifier" errors when `simple.Parse` sees a string literal on LHS.
+			// However, F%d is for fields. We can just map it as a field and the ast.ConstantExpression will be returned by getFieldVal.
+			ph := fmt.Sprintf("F%d", len(fields))
+			fields[ph] = v
 			transformed = append(transformed, ph)
 		default:
 			if vexp, ok := ident.(ast.ValueExpression); ok {
@@ -414,7 +421,7 @@ func walkAndRestore(expr evaluator.Expression, fields map[string]ast.ValueExpres
 		return &evaluator.ComparisonExpression{
 			Operation: "eq",
 			LHS:       getFieldVal(e.Field, fields),
-			RHS:       getLitVal(e.Value, literals),
+			RHS:       getLitVal(e.Value, literals, fields),
 		}
 	case *evaluator.IsNotExpression:
 		return &evaluator.NotExpression{
@@ -422,7 +429,7 @@ func walkAndRestore(expr evaluator.Expression, fields map[string]ast.ValueExpres
 				Expression: &evaluator.ComparisonExpression{
 					Operation: "eq",
 					LHS:       getFieldVal(e.Field, fields),
-					RHS:       getLitVal(e.Value, literals),
+					RHS:       getLitVal(e.Value, literals, fields),
 				},
 			},
 		}
@@ -434,31 +441,31 @@ func walkAndRestore(expr evaluator.Expression, fields map[string]ast.ValueExpres
 		return &evaluator.ComparisonExpression{
 			Operation: opName,
 			LHS:       getFieldVal(e.Field, fields),
-			RHS:       getLitVal(e.Value, literals),
+			RHS:       getLitVal(e.Value, literals, fields),
 		}
 	case *evaluator.GreaterThanExpression:
 		return &ast.SafeComparisonExpression{
 			Operator: ">",
 			Left:     getFieldVal(e.Field, fields),
-			Right:    getLitVal(e.Value, literals),
+			Right:    getLitVal(e.Value, literals, fields),
 		}
 	case *evaluator.GreaterThanOrEqualExpression:
 		return &ast.SafeComparisonExpression{
 			Operator: ">=",
 			Left:     getFieldVal(e.Field, fields),
-			Right:    getLitVal(e.Value, literals),
+			Right:    getLitVal(e.Value, literals, fields),
 		}
 	case *evaluator.LessThanExpression:
 		return &ast.SafeComparisonExpression{
 			Operator: "<",
 			Left:     getFieldVal(e.Field, fields),
-			Right:    getLitVal(e.Value, literals),
+			Right:    getLitVal(e.Value, literals, fields),
 		}
 	case *evaluator.LessThanOrEqualExpression:
 		return &ast.SafeComparisonExpression{
 			Operator: "<=",
 			Left:     getFieldVal(e.Field, fields),
-			Right:    getLitVal(e.Value, literals),
+			Right:    getLitVal(e.Value, literals, fields),
 		}
 	default:
 		return expr
@@ -472,12 +479,18 @@ func getFieldVal(field string, fields map[string]ast.ValueExpression) ast.ValueE
 	return ast.EntryExpression(field)
 }
 
-func getLitVal(val interface{}, literals map[string]ast.ConstantExpression) ast.ValueExpression {
+func getLitVal(val interface{}, literals map[string]ast.ConstantExpression, fields map[string]ast.ValueExpression) ast.ValueExpression {
 	if s, ok := val.(string); ok {
 		// e.Value comes out of parse/simple.Parse without quotes if it matched a string.
 		// "L0"
 		ph := fmt.Sprintf("\"%s\"", s)
 		if v, ok := literals[ph]; ok {
+			return v
+		}
+		// In some cases (e.g. constant on LHS), the constant was mapped to fields to be parsed as an identifier,
+		// and the function expression is on RHS. In `evaluator.ComparisonExpression`, the RHS might have been mapped to F1,
+		// but simple.Parse extracts the string value.
+		if v, ok := fields[s]; ok {
 			return v
 		}
 		return ast.ConstantExpression(s)
