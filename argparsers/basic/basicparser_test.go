@@ -244,6 +244,74 @@ func TestParseFilter(t *testing.T) {
 			wantErr:    false,
 		},
 		{
+			name: "Ordinary existing literal comparison",
+			args: []string{"h.user-agent", "eq", ".Kmail"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.ComparisonExpression{
+					Operation: "eq",
+					LHS:       ast.EntryExpression("h.user-agent"),
+					RHS:       ast.ConstantExpression("Kmail"),
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
+			name: "Ordinary existing literal icontains",
+			args: []string{"p.SUMMARY", "icontains", ".Report"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.ComparisonExpression{
+					Operation: "icontains",
+					LHS:       ast.EntryExpression("p.SUMMARY"),
+					RHS:       ast.ConstantExpression("Report"),
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
+			name: "Function composition with AND and OR precedence",
+			args: []string{"f.duration", "gt", ".1800", "and", "p.SUMMARY", "icontains", ".Meeting", "or", "p.SUMMARY", "eq", ".Test"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.OrExpression{
+					Expressions: []evaluator.Query{
+						{
+							Expression: &evaluator.AndExpression{
+								Expressions: []evaluator.Query{
+									{
+										Expression: &ast.SafeComparisonExpression{
+											Operator: ">",
+											Left:     &ast.FunctionExpression{Function: "duration"},
+											Right:    ast.ConstantExpression("1800"),
+										},
+									},
+									{
+										Expression: &evaluator.ComparisonExpression{
+											Operation: "icontains",
+											LHS:       ast.EntryExpression("p.SUMMARY"),
+											RHS:       ast.ConstantExpression("Meeting"),
+										},
+									},
+								},
+							},
+						},
+						{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("p.SUMMARY"),
+								RHS:       ast.ConstantExpression("Test"),
+							},
+						},
+					},
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
 			name: "Function on LHS",
 			args: []string{"f.duration", "gt", ".3600"},
 			expectedExpression: &evaluator.Query{
@@ -284,7 +352,7 @@ func TestParseFilter(t *testing.T) {
 							Args: []evaluator.Term{ast.EntryExpression("p.DTSTART")},
 						},
 					},
-					RHS:       ast.ConstantExpression("2023"),
+					RHS: ast.ConstantExpression("2023"),
 				},
 			},
 			statements: []ast.Operation{},
@@ -1177,9 +1245,9 @@ func TestFilterIdentify(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "f.year parameterised",
-			input:   "f.year[p.DTSTART]",
-			want:    &ast.EvaluatorFunctionExpression{
+			name:  "f.year parameterised",
+			input: "f.year[p.DTSTART]",
+			want: &ast.EvaluatorFunctionExpression{
 				Function: "year",
 				FunctionExpression: evaluator.FunctionExpression{
 					Name: "year",
@@ -1199,6 +1267,12 @@ func TestFilterIdentify(t *testing.T) {
 			input:   "xyz.test",
 			want:    nil,
 			wantErr: true,
+		},
+		{
+			name:    "unknown function name resolution",
+			input:   "f.no_such_function",
+			want:    &ast.FunctionExpression{Function: "no_such_function"},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

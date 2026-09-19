@@ -488,6 +488,35 @@ func TestCLIMain_ICalFilterFunctionDirectAcceptance(t *testing.T) {
 		}
 	})
 
+	t.Run("Direct duration filter RHS", func(t *testing.T) {
+		stdout, stderr, code, err := runICal("filter", ".3600", "lt", "f.duration")
+		if err != nil {
+			t.Fatalf("run failed: %v, stderr: %s", err, stderr)
+		}
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+		if !strings.Contains(stdout, "UID:event-long") {
+			t.Errorf("expected to find long event, got: %s", stdout)
+		}
+		if strings.Contains(stdout, "UID:event-short") {
+			t.Errorf("expected not to find short event, got: %s", stdout)
+		}
+	})
+
+	t.Run("Unknown function filter", func(t *testing.T) {
+		stdout, stderr, code, err := runICal("filter", "f.no_such_function", "gt", ".3600")
+		if code != 1 {
+			t.Errorf("expected exit code 1 for unknown function, got %d", code)
+		}
+		if err == nil {
+			t.Errorf("expected command failure, got nil")
+		}
+		if !strings.Contains(stderr, "Execute Error:") || !strings.Contains(stderr, "unknown function") {
+			t.Errorf("stderr expected 'Execute Error:' and 'unknown function', got:\n%s\nstdout:\n%s", stderr, stdout)
+		}
+	})
+
 	t.Run("Direct parameterized function filter", func(t *testing.T) {
 		stdout, stderr, code, err := runICal("filter", "f.year[p.DTSTART]", "eq", ".2022")
 		if err != nil {
