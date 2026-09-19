@@ -337,7 +337,7 @@ func TestYearAdapter_Call(t *testing.T) {
 		t.Errorf("Call(nil arg) expected nil, got %v", res)
 	}
 
-	// Test SimpleStringValue with compact iCalendar DATE "20231027" -> 2023
+		// Test SimpleStringValue with compact iCalendar DATE "20231027" -> 2023
 	res, err = ya.Call(pimtrace.SimpleStringValue("20231027"))
 	if err != nil {
 		t.Errorf("Call(pimtrace.SimpleStringValue) error = %v", err)
@@ -437,7 +437,7 @@ func TestMonthAdapter_Call(t *testing.T) {
 		t.Errorf("Call(nil arg) expected nil, got %v", res)
 	}
 
-	// Test SimpleStringValue with compact iCalendar DATE "20231027" -> 10
+		// Test SimpleStringValue with compact iCalendar DATE "20231027" -> 10
 	res, err = ma.Call(pimtrace.SimpleStringValue("20231027"))
 	if err != nil {
 		t.Errorf("Call(pimtrace.SimpleStringValue) error = %v", err)

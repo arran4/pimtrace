@@ -244,6 +244,20 @@ func TestParseFilter(t *testing.T) {
 			wantErr:    false,
 		},
 		{
+			name: "Ordinary existing literal contains",
+			args: []string{"p.SUMMARY", "contains", ".Report"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.ComparisonExpression{
+					Operation: "contains",
+					LHS:       ast.EntryExpression("p.SUMMARY"),
+					RHS:       ast.ConstantExpression("Report"),
+				},
+			},
+			statements: []ast.Operation{},
+			remaining:  []string{},
+			wantErr:    false,
+		},
+		{
 			name: "Ordinary existing literal comparison",
 			args: []string{"h.user-agent", "eq", ".Kmail"},
 			expectedExpression: &evaluator.Query{

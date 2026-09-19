@@ -1,10 +1,10 @@
 package ast
 
 import (
-	"os"
-	"pimtrace"
 	"pimtrace/dataformats/icaldata"
 	"testing"
+	"os"
+	"pimtrace"
 )
 
 func TestICalTimeValue_Comparison(t *testing.T) {

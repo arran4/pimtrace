@@ -1,10 +1,10 @@
 package funcs
 
 import (
-	"os"
-	"pimtrace"
 	"pimtrace/dataformats/icaldata"
 	"testing"
+	"os"
+	"pimtrace"
 )
 
 func TestYearAdapter_ICalTimeValue(t *testing.T) {
