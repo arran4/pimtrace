@@ -6,6 +6,10 @@
 
 	filter p.DTSTART gt .2022-01-01 and p.DTSTART lt .2022-12-31
 	Explanation: Filters all events using date range comparisons and logical AND.
+
+	filter f.duration gt .3600
+	Explanation: Filters events based on the result of a function evaluation. Function expressions are valid filter operands.
+
 	Available comparison operators: eq, contains, icontains, gt, gte, lt, lte. Available boolean operators: and, or, not.
 	Precedence: 'not' binds most tightly, followed by 'and', then 'or' ('and' binds more tightly than 'or').
 	Parentheses can be used for grouping e.g., \( A or B \) and C (note: escape or quote parentheses in shell, e.g. '\(' '\)' or "(" ")").
