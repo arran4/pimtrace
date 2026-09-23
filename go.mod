@@ -9,7 +9,6 @@ require (
 	github.com/arran4/lookup v1.0.4
 	github.com/emersion/go-mbox v1.0.4
 	github.com/emersion/go-message v0.18.2
-	github.com/goodsign/monday v1.0.2
 	github.com/google/go-cmp v0.7.0
 	github.com/jhillyerd/enmime v1.3.0
 	github.com/olekukonko/tablewriter v0.0.5
