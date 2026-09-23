@@ -1,6 +1,7 @@
 package funcs
 
 import (
+	_ "embed"
 	"errors"
 	"github.com/arran4/golang-ical"
 	"pimtrace/dataformats/icaldata"
@@ -11,6 +12,42 @@ import (
 func intPtr(i int) *int {
 	return &i
 }
+
+//go:embed testdata/event_short.ics
+var testDurationShortICS string
+
+//go:embed testdata/event_tz.ics
+var testDurationTZICS string
+
+//go:embed testdata/event_dst.ics
+var testDurationDSTICS string
+
+//go:embed testdata/event_all_day.ics
+var testDurationAllDayICS string
+
+//go:embed testdata/event_all_day_multi.ics
+var testDurationAllDayMultiICS string
+
+//go:embed testdata/event_missing_end.ics
+var testDurationMissingEndICS string
+
+//go:embed testdata/event_contradictory.ics
+var testDurationContradictoryICS string
+
+//go:embed testdata/event_explicit_duration.ics
+var testDurationExplicitDurationICS string
+
+//go:embed testdata/event_vtodo.ics
+var testDurationVTODOICS string
+
+//go:embed testdata/event_evaluator.ics
+var testDurationEvaluatorICS string
+
+//go:embed testdata/event_malformed.ics
+var testDurationMalformedICS string
+
+//go:embed testdata/event_invalid_timezone.ics
+var testDurationInvalidTimezoneICS string
 
 func TestDuration(t *testing.T) {
 	for _, tc := range []struct {
@@ -90,16 +127,9 @@ END:VCALENDAR`,
 			want: intPtr(7200),
 		},
 		{
-			name: "One-day all-day event",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART;VALUE=DATE:20231027
-DTEND;VALUE=DATE:20231028
-END:VEVENT
-END:VCALENDAR`,
-			want: intPtr(86400),
+			name:   "One-day all-day event",
+			icsStr: testDurationAllDayICS,
+			want:   intPtr(86400),
 		},
 		{
 			name: "Multi-day all-day event",
@@ -114,14 +144,8 @@ END:VCALENDAR`,
 			want: intPtr(172800),
 		},
 		{
-			name: "Missing end/duration",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-END:VEVENT
-END:VCALENDAR`,
+			name:    "Missing end/duration",
+			icsStr:  testDurationMissingEndICS,
 			wantErr: errors.New("duration: missing duration information"),
 		},
 		{
@@ -219,14 +243,7 @@ END:VCALENDAR`,
 
 // This ensures evaluator path integration works
 func TestDurationEvaluator(t *testing.T) {
-	icsStr := `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DTEND:20231027T113000Z
-END:VEVENT
-END:VCALENDAR`
+	icsStr := testDurationEvaluatorICS
 	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
 	icw := &icaldata.ICalWithSource{
 		Component:     cal.Events()[0],
@@ -246,14 +263,7 @@ END:VCALENDAR`
 }
 
 func TestDurationMalformed(t *testing.T) {
-	icsStr := `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DURATION:NOT-A-DURATION
-END:VEVENT
-END:VCALENDAR`
+	icsStr := testDurationMalformedICS
 	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
 	icw := &icaldata.ICalWithSource{
 		Component:     cal.Events()[0],
@@ -271,14 +281,7 @@ END:VCALENDAR`
 }
 
 func TestDurationInvalidTimezone(t *testing.T) {
-	icsStr := `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART;TZID=Invalid/Timezone:20231027T100000
-DTEND;TZID=Invalid/Timezone:20231027T113000
-END:VEVENT
-END:VCALENDAR`
+	icsStr := testDurationInvalidTimezoneICS
 	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
 	icw := &icaldata.ICalWithSource{
 		Component:     cal.Events()[0],
