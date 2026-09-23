@@ -156,9 +156,7 @@ func TestRowsToData(t *testing.T) {
 }
 
 func TestReadCSV(t *testing.T) {
-	csvData := `col1,col2
-val1,val2
-val3,val4`
+	csvData := testCsvStr
 
 	r := strings.NewReader(csvData)
 	rows, err := ReadCSV(r, "csv", "test.csv")
