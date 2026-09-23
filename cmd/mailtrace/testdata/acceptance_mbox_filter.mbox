@@ -1,0 +1,35 @@
+From alice@example.com Mon Jan 01 12:00:00 2024
+From: alice@example.com
+To: bob@example.com
+Subject: Urgent Q1 Financial Report
+Date: Mon, 01 Jan 2024 12:00:00 +0000
+User-Agent: KMail/5.1
+
+Body of Alice message.
+
+From charlie@example.com Tue Jan 02 12:00:00 2024
+From: charlie@example.com
+To: bob@example.com
+Subject: Monthly General Newsletter
+Date: Tue, 02 Jan 2024 12:00:00 +0000
+User-Agent: Thunderbird/1.0
+
+Body of Charlie message.
+
+From david@example.com Wed Jan 03 12:00:00 2024
+From: david@example.com
+To: alice@example.com
+Subject: Urgent Security Notice
+Date: Wed, 03 Jan 2024 12:00:00 +0000
+User-Agent: Mutt/2.0
+
+Body of David message.
+
+From eve@example.com Thu Jan 04 12:00:00 2024
+From: eve@example.com
+To: charlie@example.com
+Subject: Team Lunch Plans
+Date: Thu, 04 Jan 2024 12:00:00 +0000
+User-Agent: KMail/5.2
+
+Body of Eve message.

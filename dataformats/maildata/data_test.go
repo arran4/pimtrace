@@ -2,6 +2,7 @@ package maildata
 
 import (
 	"bytes"
+	_ "embed"
 	"github.com/emersion/go-message/mail"
 	"github.com/google/go-cmp/cmp"
 	"mime/multipart"
@@ -10,6 +11,14 @@ import (
 	"testing"
 	"time"
 )
+
+
+
+//go:embed testdata/test.eml
+var testEmlStr string
+
+//go:embed testdata/test.mbox
+var testMboxStr string
 
 func TestMailWithSourceGetSize(t *testing.T) {
 	m := &MailWithSource{
@@ -310,14 +319,7 @@ func TestData_Output(t *testing.T) {
 }
 
 func TestReadMailStream(t *testing.T) {
-	mailData := `From: "John Doe" <john@example.com>
-To: "Jane Doe" <jane@example.com>
-Subject: Test Email
-Date: Thu, 13 Feb 1969 23:32:54 -0330
-Content-Type: text/plain; charset="utf-8"
-
-This is a test email body.
-`
+	mailData := testEmlStr
 
 	r := strings.NewReader(mailData)
 	res, err := ReadMailStream(r, "mail", "test.eml")
@@ -338,23 +340,7 @@ This is a test email body.
 }
 
 func TestReadMBoxStream(t *testing.T) {
-	mboxData := `From MAILER-DAEMON Thu Feb 13 23:32:54 1969
-From: "John Doe" <john@example.com>
-To: "Jane Doe" <jane@example.com>
-Subject: Message 1
-Date: Thu, 13 Feb 1969 23:32:54 -0330
-Content-Type: text/plain; charset="utf-8"
-
-Body 1
-From MAILER-DAEMON Thu Feb 13 23:33:54 1969
-From: "Alice" <alice@example.com>
-To: "Bob" <bob@example.com>
-Subject: Message 2
-Date: Thu, 13 Feb 1969 23:33:54 -0330
-Content-Type: text/plain; charset="utf-8"
-
-Body 2
-`
+	mboxData := testMboxStr
 
 	r := strings.NewReader(mboxData)
 	res, err := ReadMBoxStream(r, "mbox", "test.mbox")
