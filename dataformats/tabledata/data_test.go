@@ -8,8 +8,6 @@ import (
 	"testing"
 )
 
-
-
 //go:embed testdata/test.csv
 var testCsvStr string
 

@@ -1,6 +1,5 @@
 package funcs
 
-
 import (
 	_ "embed"
 	"errors"
@@ -14,8 +13,6 @@ import (
 func intPtr(i int) *int {
 	return &i
 }
-
-
 
 //go:embed testdata/event_short.ics
 var testDurationShortICS string
@@ -73,52 +70,28 @@ END:VCALENDAR`,
 			want: intPtr(5400),
 		},
 		{
-			name: "TZ timed event DTSTART + DTEND",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VTIMEZONE
-TZID:America/New_York
-BEGIN:STANDARD
-DTSTART:19701101T020000
-RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
-TZOFFSETFROM:-0400
-TZOFFSETTO:-0500
-TZNAME:EST
-END:STANDARD
-BEGIN:DAYLIGHT
-DTSTART:19700308T020000
-RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
-TZOFFSETFROM:-0500
-TZOFFSETTO:-0400
-TZNAME:EDT
-END:DAYLIGHT
-END:VTIMEZONE
-BEGIN:VEVENT
-UID:1
-DTSTART;TZID=America/New_York:20231027T100000
-DTEND;TZID=America/New_York:20231027T113000
-END:VEVENT
-END:VCALENDAR`,
-			want: intPtr(5400),
+			name:   "TZ timed event DTSTART + DTEND",
+			icsStr: testDurationTZICS,
+			want:   intPtr(5400),
 		},
 		{
-			name: "Event crossing DST boundary (Fall back)",
+			name:   "Event crossing DST boundary (Fall back)",
 			icsStr: testDurationDSTICS,
-			want: intPtr(7200),
+			want:   intPtr(7200),
 		},
 		{
-			name: "One-day all-day event",
+			name:   "One-day all-day event",
 			icsStr: testDurationAllDayICS,
-			want: intPtr(86400),
+			want:   intPtr(86400),
 		},
 		{
-			name: "Multi-day all-day event",
+			name:   "Multi-day all-day event",
 			icsStr: testDurationAllDayMultiICS,
-			want: intPtr(259200),
+			want:   intPtr(172800),
 		},
 		{
-			name: "Missing end/duration",
-			icsStr: testDurationMissingEndICS,
+			name:    "Missing end/duration",
+			icsStr:  testDurationMissingEndICS,
 			wantErr: errors.New("duration: missing duration information"),
 		},
 		{

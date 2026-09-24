@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-
-
 //go:embed testdata/test.eml
 var testEmlStr string
 
