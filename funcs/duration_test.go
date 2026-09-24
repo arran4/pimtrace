@@ -59,14 +59,7 @@ func TestDuration(t *testing.T) {
 	}{
 		{
 			name: "UTC timed event DTSTART + DTEND",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DTEND:20231027T113000Z
-END:VEVENT
-END:VCALENDAR`,
+			icsStr: testDurationShortICS,
 			want: intPtr(5400),
 		},
 		{
@@ -96,39 +89,17 @@ END:VCALENDAR`,
 		},
 		{
 			name: "Contradictory DTEND + DURATION",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DTEND:20231027T113000Z
-DURATION:PT1H30M
-END:VEVENT
-END:VCALENDAR`,
+			icsStr: testDurationContradictoryICS,
 			wantErr: errors.New("duration: contradictory properties, both DURATION and DTEND present"),
 		},
 		{
 			name: "Explicit DURATION (unsupported by golang-ical)",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DURATION:PT1H30M
-END:VEVENT
-END:VCALENDAR`,
+			icsStr: testDurationExplicitDurationICS,
 			wantErr: errors.New("duration: golang-ical does not expose a safe public way to interpret a DURATION property: PT1H30M"),
 		},
 		{
 			name: "VTODO with DUE",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VTODO
-UID:1
-DTSTART:20231027T100000Z
-DUE:20231027T113000Z
-END:VTODO
-END:VCALENDAR`,
+			icsStr: testDurationVTODOICS,
 			want: intPtr(5400),
 		},
 	} {
