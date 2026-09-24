@@ -2,12 +2,28 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+//go:embed testdata/acceptance_simple.ics
+var acceptanceSimpleICS string
+
+//go:embed testdata/acceptance_daterange.ics
+var acceptanceDateRangeICS string
+
+//go:embed testdata/acceptance_allday.ics
+var acceptanceAllDayICS string
+
+//go:embed testdata/acceptance_duration.ics
+var acceptanceDurationICS string
+
+//go:embed testdata/acceptance_filter_function.ics
+var acceptanceFilterFunctionICS string
 
 func TestCLIMain_StdoutRegression(t *testing.T) {
 	// Build the CLI tool temporarily
@@ -43,15 +59,7 @@ func TestCLIMain_StdoutRegression(t *testing.T) {
 	t.Run("ical stream down pipeline", func(t *testing.T) {
 		cmd := exec.Command(binPath, "-parser", "basic", "-input", "-", "-input-type", "ical", "-output", "-", "-output-type", "ical")
 
-		icalInput := `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//arran4//golang-ical//EN
-BEGIN:VEVENT
-UID:12345
-SUMMARY:Test Event
-END:VEVENT
-END:VCALENDAR
-`
+		icalInput := acceptanceSimpleICS
 		cmd.Stdin = strings.NewReader(icalInput)
 		var stdoutBuf bytes.Buffer
 		var stderrBuf bytes.Buffer
@@ -79,31 +87,7 @@ func TestCLIMain_ICalDateRangeFilteringAcceptance(t *testing.T) {
 		t.Fatalf("failed to build icaltrace for acceptance tests: %v", err)
 	}
 
-	icsFixture := "BEGIN:VCALENDAR\r\n" +
-		"VERSION:2.0\r\n" +
-		"PRODID:-//arran4//golang-ical//EN\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-2019-early\r\n" +
-		"SUMMARY:Pre-Holiday Review\r\n" +
-		"DTSTART:20191230T100000Z\r\n" +
-		"DTEND:20191230T110000Z\r\n" +
-		"LOCATION:Room A\r\n" +
-		"END:VEVENT\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-2020-target\r\n" +
-		"SUMMARY:New Year Strategic Planning\r\n" +
-		"DTSTART:20200102T090000Z\r\n" +
-		"DTEND:20200102T170000Z\r\n" +
-		"LOCATION:Main Auditorium\r\n" +
-		"END:VEVENT\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-2020-late\r\n" +
-		"SUMMARY:Sprint Retrospective\r\n" +
-		"DTSTART:20200105T140000Z\r\n" +
-		"DTEND:20200105T150000Z\r\n" +
-		"LOCATION:Room B\r\n" +
-		"END:VEVENT\r\n" +
-		"END:VCALENDAR\r\n"
+	icsFixture := acceptanceDateRangeICS
 
 	runICal := func(query ...string) (stdout string, stderr string, exitCode int, err error) {
 		tmpFile := filepath.Join(t.TempDir(), "calendar.ics")
@@ -216,28 +200,7 @@ func TestCLIMain_ICalAllDayEventAcceptance(t *testing.T) {
 		t.Fatalf("failed to build icaltrace for all-day acceptance tests: %v", err)
 	}
 
-	allDayFixture := "BEGIN:VCALENDAR\r\n" +
-		"VERSION:2.0\r\n" +
-		"PRODID:-//arran4//golang-ical//EN\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-all-day-early\r\n" +
-		"SUMMARY:Early All-Day Event\r\n" +
-		"DTSTART;VALUE=DATE:20191231\r\n" +
-		"DTEND;VALUE=DATE:20200101\r\n" +
-		"END:VEVENT\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-all-day-target\r\n" +
-		"SUMMARY:All Day Target\r\n" +
-		"DTSTART;VALUE=DATE:20200102\r\n" +
-		"DTEND;VALUE=DATE:20200103\r\n" +
-		"END:VEVENT\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-all-day-late\r\n" +
-		"SUMMARY:Late All-Day Event\r\n" +
-		"DTSTART;VALUE=DATE:20200105\r\n" +
-		"DTEND;VALUE=DATE:20200106\r\n" +
-		"END:VEVENT\r\n" +
-		"END:VCALENDAR\r\n"
+	allDayFixture := acceptanceAllDayICS
 
 	runICal := func(query ...string) (stdout string, stderr string, exitCode int, err error) {
 		tmpFile := filepath.Join(t.TempDir(), "allday.ics")
@@ -339,22 +302,7 @@ func TestCLIMain_ICalDurationFilteringAcceptance(t *testing.T) {
 		t.Fatalf("failed to build icaltrace for acceptance tests: %v", err)
 	}
 
-	icsFixture := "BEGIN:VCALENDAR\r\n" +
-		"VERSION:2.0\r\n" +
-		"PRODID:-//arran4//golang-ical//EN\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-short\r\n" +
-		"SUMMARY:Short Meeting\r\n" +
-		"DTSTART:20231027T100000Z\r\n" +
-		"DTEND:20231027T103000Z\r\n" +
-		"END:VEVENT\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-long\r\n" +
-		"SUMMARY:Long Meeting\r\n" +
-		"DTSTART:20231027T100000Z\r\n" +
-		"DTEND:20231027T120000Z\r\n" +
-		"END:VEVENT\r\n" +
-		"END:VCALENDAR\r\n"
+	icsFixture := acceptanceDurationICS
 
 	for _, tc := range []struct {
 		name    string
@@ -429,22 +377,7 @@ func TestCLIMain_ICalFilterFunctionDirectAcceptance(t *testing.T) {
 		t.Fatalf("failed to build icaltrace for acceptance tests: %v", err)
 	}
 
-	icsFixture := "BEGIN:VCALENDAR\r\n" +
-		"VERSION:2.0\r\n" +
-		"PRODID:-//arran4//golang-ical//EN\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-short\r\n" +
-		"SUMMARY:Short Meeting\r\n" +
-		"DTSTART:20231027T100000Z\r\n" +
-		"DTEND:20231027T103000Z\r\n" +
-		"END:VEVENT\r\n" +
-		"BEGIN:VEVENT\r\n" +
-		"UID:event-long\r\n" +
-		"SUMMARY:Long Meeting\r\n" +
-		"DTSTART:20221027T100000Z\r\n" +
-		"DTEND:20221027T120000Z\r\n" +
-		"END:VEVENT\r\n" +
-		"END:VCALENDAR\r\n"
+	icsFixture := acceptanceFilterFunctionICS
 
 	tmpFile := filepath.Join(dir, "input.ics")
 	if err := os.WriteFile(tmpFile, []byte(icsFixture), 0644); err != nil {

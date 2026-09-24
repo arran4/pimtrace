@@ -2,12 +2,19 @@ package main
 
 import (
 	"bytes"
+	_ "embed"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+//go:embed testdata/acceptance_simple.eml
+var acceptanceSimpleMail string
+
+//go:embed testdata/acceptance_mbox_filter.mbox
+var acceptanceMboxFilterMail string
 
 func TestCLIMain_StdoutRegression(t *testing.T) {
 	// Build the CLI tool temporarily
@@ -19,13 +26,7 @@ func TestCLIMain_StdoutRegression(t *testing.T) {
 		t.Fatalf("failed to build mailtrace for integration test: %v", err)
 	}
 
-	mailInput := `From: sender@example.com
-To: recipient@example.com
-Subject: Test Subject
-Date: Mon, 01 Jan 2024 12:00:00 +0000
-
-This is a test email.
-`
+	mailInput := acceptanceSimpleMail
 	mboxInput := "From sender@example.com Mon Jan 01 12:00:00 2024\r\n" + mailInput
 
 	t.Run("version flag", func(t *testing.T) {
@@ -99,41 +100,7 @@ func TestCLIMain_MailFilteringBooleanAcceptance(t *testing.T) {
 		t.Fatalf("failed to build mailtrace for acceptance tests: %v", err)
 	}
 
-	mboxFixture := "From alice@example.com Mon Jan 01 12:00:00 2024\r\n" +
-		"From: alice@example.com\r\n" +
-		"To: bob@example.com\r\n" +
-		"Subject: Urgent Q1 Financial Report\r\n" +
-		"Date: Mon, 01 Jan 2024 12:00:00 +0000\r\n" +
-		"User-Agent: KMail/5.1\r\n" +
-		"\r\n" +
-		"Body of Alice message.\r\n" +
-		"\r\n" +
-		"From charlie@example.com Tue Jan 02 12:00:00 2024\r\n" +
-		"From: charlie@example.com\r\n" +
-		"To: bob@example.com\r\n" +
-		"Subject: Monthly General Newsletter\r\n" +
-		"Date: Tue, 02 Jan 2024 12:00:00 +0000\r\n" +
-		"User-Agent: Thunderbird/1.0\r\n" +
-		"\r\n" +
-		"Body of Charlie message.\r\n" +
-		"\r\n" +
-		"From david@example.com Wed Jan 03 12:00:00 2024\r\n" +
-		"From: david@example.com\r\n" +
-		"To: alice@example.com\r\n" +
-		"Subject: Urgent Security Notice\r\n" +
-		"Date: Wed, 03 Jan 2024 12:00:00 +0000\r\n" +
-		"User-Agent: Mutt/2.0\r\n" +
-		"\r\n" +
-		"Body of David message.\r\n" +
-		"\r\n" +
-		"From eve@example.com Thu Jan 04 12:00:00 2024\r\n" +
-		"From: eve@example.com\r\n" +
-		"To: charlie@example.com\r\n" +
-		"Subject: Team Lunch Plans\r\n" +
-		"Date: Thu, 04 Jan 2024 12:00:00 +0000\r\n" +
-		"User-Agent: KMail/5.2\r\n" +
-		"\r\n" +
-		"Body of Eve message.\r\n"
+	mboxFixture := acceptanceMboxFilterMail
 
 	runMail := func(query ...string) (stdout string, stderr string, exitCode int, err error) {
 		tmpFile := filepath.Join(t.TempDir(), "inbox.mbox")

@@ -1,0 +1,16 @@
+From MAILER-DAEMON Thu Feb 13 23:32:54 1969
+From: "John Doe" <john@example.com>
+To: "Jane Doe" <jane@example.com>
+Subject: Message 1
+Date: Thu, 13 Feb 1969 23:32:54 -0330
+Content-Type: text/plain; charset="utf-8"
+
+Body 1
+From MAILER-DAEMON Thu Feb 13 23:33:54 1969
+From: "Alice" <alice@example.com>
+To: "Bob" <bob@example.com>
+Subject: Message 2
+Date: Thu, 13 Feb 1969 23:33:54 -0330
+Content-Type: text/plain; charset="utf-8"
+
+Body 2

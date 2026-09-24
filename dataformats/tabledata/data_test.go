@@ -1,11 +1,18 @@
 package tabledata
 
 import (
+	_ "embed"
 	"pimtrace"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+//go:embed testdata/test.csv
+var testCsvStr string
+
+//go:embed testdata/bad.csv
+var badCsvStr string
 
 func TestRowGetSize(t *testing.T) {
 	r := &Row{
@@ -147,9 +154,7 @@ func TestRowsToData(t *testing.T) {
 }
 
 func TestReadCSV(t *testing.T) {
-	csvData := `col1,col2
-val1,val2
-val3,val4`
+	csvData := testCsvStr
 
 	r := strings.NewReader(csvData)
 	rows, err := ReadCSV(r, "csv", "test.csv")
@@ -167,8 +172,7 @@ val3,val4`
 	}
 
 	// Test read error
-	badCsvData := `col1,col2
-val1,val2"bad`
+	badCsvData := badCsvStr
 	rBad := strings.NewReader(badCsvData)
 	_, err = ReadCSV(rBad, "csv", "bad.csv")
 	if err == nil {

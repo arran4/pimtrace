@@ -1,7 +1,9 @@
 package funcs
 
 import (
+	_ "embed"
 	"errors"
+
 	"github.com/arran4/golang-ical"
 	"pimtrace/dataformats/icaldata"
 	"strings"
@@ -12,6 +14,42 @@ func intPtr(i int) *int {
 	return &i
 }
 
+//go:embed testdata/event_short.ics
+var testDurationShortICS string
+
+//go:embed testdata/event_tz.ics
+var testDurationTZICS string
+
+//go:embed testdata/event_dst.ics
+var testDurationDSTICS string
+
+//go:embed testdata/event_all_day.ics
+var testDurationAllDayICS string
+
+//go:embed testdata/event_all_day_multi.ics
+var testDurationAllDayMultiICS string
+
+//go:embed testdata/event_missing_end.ics
+var testDurationMissingEndICS string
+
+//go:embed testdata/event_contradictory.ics
+var testDurationContradictoryICS string
+
+//go:embed testdata/event_explicit_duration.ics
+var testDurationExplicitDurationICS string
+
+//go:embed testdata/event_vtodo.ics
+var testDurationVTODOICS string
+
+//go:embed testdata/event_evaluator.ics
+var testDurationEvaluatorICS string
+
+//go:embed testdata/event_malformed.ics
+var testDurationMalformedICS string
+
+//go:embed testdata/event_invalid_timezone.ics
+var testDurationInvalidTimezoneICS string
+
 func TestDuration(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
@@ -21,144 +59,47 @@ func TestDuration(t *testing.T) {
 	}{
 		{
 			name: "UTC timed event DTSTART + DTEND",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DTEND:20231027T113000Z
-END:VEVENT
-END:VCALENDAR`,
+			icsStr: testDurationShortICS,
 			want: intPtr(5400),
 		},
 		{
-			name: "TZ timed event DTSTART + DTEND",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VTIMEZONE
-TZID:America/New_York
-BEGIN:STANDARD
-DTSTART:19701101T020000
-RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
-TZOFFSETFROM:-0400
-TZOFFSETTO:-0500
-TZNAME:EST
-END:STANDARD
-BEGIN:DAYLIGHT
-DTSTART:19700308T020000
-RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
-TZOFFSETFROM:-0500
-TZOFFSETTO:-0400
-TZNAME:EDT
-END:DAYLIGHT
-END:VTIMEZONE
-BEGIN:VEVENT
-UID:1
-DTSTART;TZID=America/New_York:20231027T100000
-DTEND;TZID=America/New_York:20231027T113000
-END:VEVENT
-END:VCALENDAR`,
-			want: intPtr(5400),
+			name:   "TZ timed event DTSTART + DTEND",
+			icsStr: testDurationTZICS,
+			want:   intPtr(5400),
 		},
 		{
-			name: "Event crossing DST boundary (Fall back)",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VTIMEZONE
-TZID:America/New_York
-BEGIN:STANDARD
-DTSTART:19701101T020000
-RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
-TZOFFSETFROM:-0400
-TZOFFSETTO:-0500
-TZNAME:EST
-END:STANDARD
-BEGIN:DAYLIGHT
-DTSTART:19700308T020000
-RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU
-TZOFFSETFROM:-0500
-TZOFFSETTO:-0400
-TZNAME:EDT
-END:DAYLIGHT
-END:VTIMEZONE
-BEGIN:VEVENT
-UID:1
-DTSTART;TZID=America/New_York:20231105T010000
-DTEND;TZID=America/New_York:20231105T020000
-END:VEVENT
-END:VCALENDAR`,
-			want: intPtr(7200),
+			name:   "Event crossing DST boundary (Fall back)",
+			icsStr: testDurationDSTICS,
+			want:   intPtr(7200),
 		},
 		{
-			name: "One-day all-day event",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART;VALUE=DATE:20231027
-DTEND;VALUE=DATE:20231028
-END:VEVENT
-END:VCALENDAR`,
-			want: intPtr(86400),
+			name:   "One-day all-day event",
+			icsStr: testDurationAllDayICS,
+			want:   intPtr(86400),
 		},
 		{
-			name: "Multi-day all-day event",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART;VALUE=DATE:20231027
-DTEND;VALUE=DATE:20231029
-END:VEVENT
-END:VCALENDAR`,
-			want: intPtr(172800),
+			name:   "Multi-day all-day event",
+			icsStr: testDurationAllDayMultiICS,
+			want:   intPtr(172800),
 		},
 		{
-			name: "Missing end/duration",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-END:VEVENT
-END:VCALENDAR`,
+			name:    "Missing end/duration",
+			icsStr:  testDurationMissingEndICS,
 			wantErr: errors.New("duration: missing duration information"),
 		},
 		{
 			name: "Contradictory DTEND + DURATION",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DTEND:20231027T113000Z
-DURATION:PT1H30M
-END:VEVENT
-END:VCALENDAR`,
+			icsStr: testDurationContradictoryICS,
 			wantErr: errors.New("duration: contradictory properties, both DURATION and DTEND present"),
 		},
 		{
 			name: "Explicit DURATION (unsupported by golang-ical)",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DURATION:PT1H30M
-END:VEVENT
-END:VCALENDAR`,
+			icsStr: testDurationExplicitDurationICS,
 			wantErr: errors.New("duration: golang-ical does not expose a safe public way to interpret a DURATION property: PT1H30M"),
 		},
 		{
 			name: "VTODO with DUE",
-			icsStr: `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VTODO
-UID:1
-DTSTART:20231027T100000Z
-DUE:20231027T113000Z
-END:VTODO
-END:VCALENDAR`,
+			icsStr: testDurationVTODOICS,
 			want: intPtr(5400),
 		},
 	} {
@@ -219,14 +160,7 @@ END:VCALENDAR`,
 
 // This ensures evaluator path integration works
 func TestDurationEvaluator(t *testing.T) {
-	icsStr := `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DTEND:20231027T113000Z
-END:VEVENT
-END:VCALENDAR`
+	icsStr := testDurationEvaluatorICS
 	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
 	icw := &icaldata.ICalWithSource{
 		Component:     cal.Events()[0],
@@ -246,14 +180,7 @@ END:VCALENDAR`
 }
 
 func TestDurationMalformed(t *testing.T) {
-	icsStr := `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART:20231027T100000Z
-DURATION:NOT-A-DURATION
-END:VEVENT
-END:VCALENDAR`
+	icsStr := testDurationMalformedICS
 	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
 	icw := &icaldata.ICalWithSource{
 		Component:     cal.Events()[0],
@@ -271,14 +198,7 @@ END:VCALENDAR`
 }
 
 func TestDurationInvalidTimezone(t *testing.T) {
-	icsStr := `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-UID:1
-DTSTART;TZID=Invalid/Timezone:20231027T100000
-DTEND;TZID=Invalid/Timezone:20231027T113000
-END:VEVENT
-END:VCALENDAR`
+	icsStr := testDurationInvalidTimezoneICS
 	cal, _ := ics.ParseCalendar(strings.NewReader(icsStr))
 	icw := &icaldata.ICalWithSource{
 		Component:     cal.Events()[0],

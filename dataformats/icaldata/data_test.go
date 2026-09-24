@@ -1,6 +1,7 @@
 package icaldata
 
 import (
+	_ "embed"
 	"pimtrace"
 	"reflect"
 	"strings"
@@ -8,6 +9,9 @@ import (
 
 	ics "github.com/arran4/golang-ical"
 )
+
+//go:embed testdata/tz.ics
+var tzRegressionICS string
 
 func TestICalWithSourceGetSize(t *testing.T) {
 	cb := &ics.ComponentBase{
@@ -242,26 +246,7 @@ END:VCALENDAR`
 
 	// Test regression fixture: VTIMEZONE + VEVENT to ensure it doesn't panic
 	// and timezone is ignored while event is kept, while retaining timestamp interpretation.
-	tzData := `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Example Corp.//Cal//EN
-BEGIN:VTIMEZONE
-TZID:America/New_York
-BEGIN:STANDARD
-DTSTART:20071104T020000
-RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU
-TZOFFSETFROM:-0400
-TZOFFSETTO:-0500
-TZNAME:EST
-END:STANDARD
-END:VTIMEZONE
-BEGIN:VEVENT
-UID:12345
-DTSTAMP:20231027T100000Z
-DTSTART;TZID=America/New_York:20231027T100000
-SUMMARY:Test Event
-END:VEVENT
-END:VCALENDAR`
+	tzData := tzRegressionICS
 
 	rTz := strings.NewReader(tzData)
 	tzSources, tzErr := ReadICalStream(rTz, "ical", "tz.ics")
