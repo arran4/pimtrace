@@ -1,8 +1,10 @@
 package funcs
 
+
 import (
 	_ "embed"
 	"errors"
+
 	"github.com/arran4/golang-ical"
 	"pimtrace/dataformats/icaldata"
 	"strings"
@@ -12,6 +14,8 @@ import (
 func intPtr(i int) *int {
 	return &i
 }
+
+
 
 //go:embed testdata/event_short.ics
 var testDurationShortICS string
@@ -127,9 +131,9 @@ END:VCALENDAR`,
 			want: intPtr(7200),
 		},
 		{
-			name:   "One-day all-day event",
+			name: "One-day all-day event",
 			icsStr: testDurationAllDayICS,
-			want:   intPtr(86400),
+			want: intPtr(86400),
 		},
 		{
 			name: "Multi-day all-day event",
@@ -144,8 +148,8 @@ END:VCALENDAR`,
 			want: intPtr(172800),
 		},
 		{
-			name:    "Missing end/duration",
-			icsStr:  testDurationMissingEndICS,
+			name: "Missing end/duration",
+			icsStr: testDurationMissingEndICS,
 			wantErr: errors.New("duration: missing duration information"),
 		},
 		{
