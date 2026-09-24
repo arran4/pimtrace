@@ -1,0 +1,6 @@
+# These acceptance fixtures intentionally retain their original CRLF bytes.
+cmd/icaltrace/testdata/acceptance_daterange.ics -text
+cmd/icaltrace/testdata/acceptance_allday.ics -text
+cmd/icaltrace/testdata/acceptance_duration.ics -text
+cmd/icaltrace/testdata/acceptance_filter_function.ics -text
+cmd/mailtrace/testdata/acceptance_mbox_filter.mbox -text
