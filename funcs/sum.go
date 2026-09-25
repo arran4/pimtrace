@@ -22,7 +22,7 @@ func (c Sum[T]) Arguments() []ArgumentList {
 		},
 		{
 			Args:        []Argument{Any},
-			Description: "Returns the number of truthy elements returned",
+			Description: "Returns the sum of integer values of the elements returned",
 		},
 	}
 }

@@ -48,7 +48,7 @@ func Run(c *Config) int {
 	var (
 		inputType   = f.String("input-type", "list", "The input type")
 		inputFile   = f.String("input", "-", "Input file or - for stdin")
-		outputType  = f.String("output-type", "list", "The input type")
+		outputType  = f.String("output-type", "list", "The output type")
 		outputFile  = f.String("output", "-", "Output file or - for stdout")
 		parser      = f.String("parser", "", "Just use `basic`")
 		versionFlag = f.Bool("version", false, "Prints the version")
