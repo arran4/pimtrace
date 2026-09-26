@@ -36,7 +36,7 @@ Requires [Go](https://go.dev/) 1.24+.
 ```bash
 git clone https://github.com/arran4/pimtrace.git
 cd pimtrace
-go build ./cmd/...
+go build -o . ./cmd/...
 ```
 This will build `csvtrace`, `mailtrace`, and `icaltrace` in the current directory.
 
@@ -53,10 +53,12 @@ PIMTrace provides three main tools, each targeting a specific data format:
 All tools follow a similar usage pattern:
 
 ```bash
-toolname -input <file> -parser basic [QUERY]
+toolname -input <file> -input-type <type> -parser basic -output-type <type> [QUERY]
 ```
 
 *   `-input`: The source file (defaults to stdin `-`).
+*   `-input-type <type>`: Specifies the input format. (Defaults to `list`, which prints available types and exits).
+*   `-output-type <type>`: Specifies the output format. (Defaults to `list`, which prints available types and exits).
 *   `-parser basic`: **Required.** Specifies the query parser to use.
 *   `[QUERY]`: The sequence of operations to perform on the data.
 
@@ -148,28 +150,28 @@ Imagine a CSV `expenses.csv` with columns: `Date`, `Category`, `Amount`.
 
 **Task:** Show me all "Food" expenses, showing just the Date and Amount.
 ```bash
-csvtrace -input expenses.csv -parser basic \
+csvtrace -input expenses.csv -input-type csv -parser basic -output-type table \
   filter c.Category icontains .Food \
   into table c.Date c.Amount
 ```
 
 **Task:** Show me all large expenses (over $50).
 ```bash
-csvtrace -input expenses.csv -parser basic \
+csvtrace -input expenses.csv -input-type csv -parser basic -output-type table \
   filter c.Amount gt .50 \
   into table c.Category c.Amount
 ```
 
 **Task:** Complex conditions using AND, OR, grouping and NOT. (Note shell escaping for parentheses).
 ```bash
-csvtrace -input expenses.csv -parser basic \
+csvtrace -input expenses.csv -input-type csv -parser basic -output-type table \
   filter \( c.Category eq .Food or c.Category eq .Travel \) and not c.Amount lt .10 \
   into table c.Date c.Category c.Amount
 ```
 
 **Task:** How much did I spend on each category?
 ```bash
-csvtrace -input expenses.csv -parser basic \
+csvtrace -input expenses.csv -input-type csv -parser basic -output-type table \
   into summary c.Category calculate f.sum[c.Amount]
 ```
 *Output:*
@@ -185,9 +187,8 @@ csvtrace -input expenses.csv -parser basic \
 
 **Task:** Plot a bar chart of spending per category.
 ```bash
-csvtrace -input expenses.csv -parser basic \
-  into summary c.Category calculate f.sum[c.Amount] \
-  -output-type plot.bar -output expenses_plot.png
+csvtrace -input expenses.csv -input-type csv -parser basic -output-type plot.bar -output expenses_plot.png \
+  into summary c.Category calculate f.sum[c.Amount]
 ```
 *Output: Generates `expenses_plot.png` with a bar chart.*
 
@@ -195,14 +196,14 @@ csvtrace -input expenses.csv -parser basic \
 
 **Task:** Find all emails from "Amazon" and show the Subject and Date.
 ```bash
-mailtrace -input inbox.mbox -input-type mbox -parser basic \
+mailtrace -input inbox.mbox -input-type mbox -parser basic -output-type table \
   filter h.From icontains .Amazon \
   into table h.Date h.Subject
 ```
 
 **Task:** Who are the top senders in my inbox?
 ```bash
-mailtrace -input inbox.mbox -input-type mbox -parser basic \
+mailtrace -input inbox.mbox -input-type mbox -parser basic -output-type table \
   into summary h.From calculate f.count \
   sort f.count desc limit 10
 ```
@@ -211,14 +212,14 @@ mailtrace -input inbox.mbox -input-type mbox -parser basic \
 
 **Task:** List all events containing "Meeting" in the summary.
 ```bash
-icaltrace -input calendar.ics -parser basic \
+icaltrace -input calendar.ics -input-type ical -parser basic -output-type table \
   filter p.SUMMARY icontains .Meeting \
   into table p.DTSTART p.SUMMARY
 ```
 
 **Task:** Count how many events I have per month.
 ```bash
-icaltrace -input calendar.ics -parser basic \
+icaltrace -input calendar.ics -input-type ical -parser basic -output-type table \
   into summary f.year[p.DTSTART] f.month[p.DTSTART] calculate f.count
 ```
 *Output:*
@@ -236,7 +237,7 @@ icaltrace -input calendar.ics -parser basic \
 Find the 5 longest meetings:
 
 ```bash
-icaltrace -input calendar.ics -parser basic \
+icaltrace -input calendar.ics -input-type ical -parser basic -output-type table \
   sort f.duration desc limit 5 \
   into table p.SUMMARY f.duration
 ```
@@ -244,7 +245,7 @@ icaltrace -input calendar.ics -parser basic \
 Find events longer than 1 hour (3600 seconds):
 
 ```bash
-icaltrace -input calendar.ics -parser basic \
+icaltrace -input calendar.ics -input-type ical -parser basic -output-type table \
   into table p.SUMMARY f.duration \
   filter c.duration gt .3600
 ```
@@ -252,7 +253,7 @@ icaltrace -input calendar.ics -parser basic \
 Get total meeting time (in seconds) per day:
 
 ```bash
-icaltrace -input calendar.ics -parser basic \
+icaltrace -input calendar.ics -input-type ical -parser basic -output-type table \
   into summary f.date[p.DTSTART] calculate f.sum[f.duration] \
   sort c.date-DTSTART asc \
   into table c.date-DTSTART c.sum-duration
@@ -267,9 +268,10 @@ icaltrace -input calendar.ics -parser basic \
 *   **iCal**: iCalendar files (`.ics`).
 
 ### Outputs
-*   **Table**: ASCII table (default for human reading).
+*   **Table**: ASCII table.
 *   **CSV**: Good for piping into other tools.
 *   **Plot**: Generate simple bar charts (e.g., `-output-type plot.bar -output chart.png`).
+*   **List**: Prints available formats (this is the default behavior if `-input-type` or `-output-type` are omitted).
 
 ## FAQ
 
