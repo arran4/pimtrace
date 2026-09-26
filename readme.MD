@@ -53,7 +53,7 @@ PIMTrace provides three main tools, each targeting a specific data format:
 All tools follow a similar usage pattern:
 
 ```bash
-toolname -input <file> -parser basic [QUERY]
+toolname -input <file> -input-type <type> -parser basic -output-type <type> [QUERY]
 ```
 
 *   `-input`: The source file (defaults to stdin `-`).
@@ -266,7 +266,7 @@ icaltrace -input calendar.ics -input-type ical -parser basic -output-type table 
 *   **iCal**: iCalendar files (`.ics`).
 
 ### Outputs
-*   **Table**: ASCII table (default for human reading).
+*   **Table**: ASCII table.
 *   **CSV**: Good for piping into other tools.
 *   **Plot**: Generate simple bar charts (e.g., `-output-type plot.bar -output chart.png`).
 
