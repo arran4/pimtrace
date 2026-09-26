@@ -57,6 +57,8 @@ toolname -input <file> -input-type <type> -parser basic -output-type <type> [QUE
 ```
 
 *   `-input`: The source file (defaults to stdin `-`).
+*   `-input-type <type>`: Specifies the input format. (Defaults to `list`, which prints available types and exits).
+*   `-output-type <type>`: Specifies the output format. (Defaults to `list`, which prints available types and exits).
 *   `-parser basic`: **Required.** Specifies the query parser to use.
 *   `[QUERY]`: The sequence of operations to perform on the data.
 
@@ -269,6 +271,7 @@ icaltrace -input calendar.ics -input-type ical -parser basic -output-type table 
 *   **Table**: ASCII table.
 *   **CSV**: Good for piping into other tools.
 *   **Plot**: Generate simple bar charts (e.g., `-output-type plot.bar -output chart.png`).
+*   **List**: Prints available formats (this is the default behavior if `-input-type` or `-output-type` are omitted).
 
 ## FAQ
 
