@@ -70,7 +70,7 @@ func IntoIdentify(args []string) (any, []string, error) {
 	}
 	ss := strings.SplitN(args[0], ".", 2)
 	switch ss[0] {
-	case "into", "filter", "where", "sort", "limit":
+	case "into", "filter", "where", "sort", "calculate", "limit":
 		return Terminator(args[0]), args[0:], nil
 	case "asc":
 		if len(ss) == 1 {
