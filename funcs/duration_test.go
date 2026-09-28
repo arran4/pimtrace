@@ -58,9 +58,9 @@ func TestDuration(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "UTC timed event DTSTART + DTEND",
+			name:   "UTC timed event DTSTART + DTEND",
 			icsStr: testDurationShortICS,
-			want: intPtr(5400),
+			want:   intPtr(5400),
 		},
 		{
 			name:   "TZ timed event DTSTART + DTEND",
@@ -88,19 +88,19 @@ func TestDuration(t *testing.T) {
 			wantErr: errors.New("duration: missing duration information"),
 		},
 		{
-			name: "Contradictory DTEND + DURATION",
-			icsStr: testDurationContradictoryICS,
+			name:    "Contradictory DTEND + DURATION",
+			icsStr:  testDurationContradictoryICS,
 			wantErr: errors.New("duration: contradictory properties, both DURATION and DTEND present"),
 		},
 		{
-			name: "Explicit DURATION (unsupported by golang-ical)",
-			icsStr: testDurationExplicitDurationICS,
+			name:    "Explicit DURATION (unsupported by golang-ical)",
+			icsStr:  testDurationExplicitDurationICS,
 			wantErr: errors.New("duration: golang-ical does not expose a safe public way to interpret a DURATION property: PT1H30M"),
 		},
 		{
-			name: "VTODO with DUE",
+			name:   "VTODO with DUE",
 			icsStr: testDurationVTODOICS,
-			want: intPtr(5400),
+			want:   intPtr(5400),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

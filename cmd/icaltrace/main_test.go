@@ -437,6 +437,34 @@ func TestCLIMain_ICalFilterFunctionDirectAcceptance(t *testing.T) {
 		}
 	})
 
+	t.Run("Chained filter sort limit integration test", func(t *testing.T) {
+		args := []string{"-parser", "basic", "-input", tmpFile, "-input-type", "ical", "-output", "-", "-output-type", "table", "filter", "f.duration", "gt", ".1800", "sort", "f.duration", "desc", "limit", "1", "into", "table", "p.UID", "f.duration"}
+		cmd := exec.Command(binPath, args...)
+		var outBuf, errBuf bytes.Buffer
+		cmd.Stdout = &outBuf
+		cmd.Stderr = &errBuf
+		cmdErr := cmd.Run()
+		code := 0
+		if cmd.ProcessState != nil {
+			code = cmd.ProcessState.ExitCode()
+		}
+		stdout := outBuf.String()
+		stderr := errBuf.String()
+		err := cmdErr
+		if err != nil {
+			t.Fatalf("run failed: %v, stderr: %s", err, stderr)
+		}
+		if code != 0 {
+			t.Errorf("expected exit code 0, got %d", code)
+		}
+		if !strings.Contains(stdout, "event-long") {
+			t.Errorf("expected to find long event, got: %s", stdout)
+		}
+		if strings.Contains(stdout, "event-short") {
+			t.Errorf("expected not to find short event, got: %s", stdout)
+		}
+	})
+
 	t.Run("Unknown function filter", func(t *testing.T) {
 		stdout, stderr, code, err := runICal("filter", "f.no_such_function", "gt", ".3600")
 		if code != 1 {

@@ -229,6 +229,46 @@ func TestParseFilter(t *testing.T) {
 			remaining:          nil,
 			wantErr:            true,
 		},
+
+		{
+			name: "Sort remaining tokens",
+			args: []string{"c.a", "eq", ".1", "sort", "c.b"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.ComparisonExpression{
+					Operation: "eq",
+					LHS:       ast.EntryExpression("c.a"),
+					RHS:       ast.ConstantExpression("1"),
+				},
+			},
+			remaining: []string{"sort", "c.b"},
+			wantErr:   false,
+		},
+		{
+			name: "Limit remaining tokens",
+			args: []string{"c.a", "eq", ".1", "limit", "10"},
+			expectedExpression: &evaluator.Query{
+				Expression: &evaluator.ComparisonExpression{
+					Operation: "eq",
+					LHS:       ast.EntryExpression("c.a"),
+					RHS:       ast.ConstantExpression("1"),
+				},
+			},
+			remaining: []string{"limit", "10"},
+			wantErr:   false,
+		},
+		{
+			name: "Direct function remaining tokens",
+			args: []string{"f.duration", "gt", ".3600", "sort", "f.duration"},
+			expectedExpression: &evaluator.Query{
+				Expression: &ast.SafeComparisonExpression{
+					Operator: ">",
+					Left:     &ast.FunctionExpression{Function: "duration"},
+					Right:    ast.ConstantExpression("3600"),
+				},
+			},
+			remaining: []string{"sort", "f.duration"},
+			wantErr:   false,
+		},
 		{
 			name: "Basic neg expression",
 			args: []string{"not", "h.user-agent", "eq", ".Kmail"},
@@ -422,6 +462,108 @@ func TestParseFilter(t *testing.T) {
 	}
 }
 
+func TestParseFilters(t *testing.T) {
+	tests := []struct {
+		name              string
+		args              []string
+		expectedOperation ast.Operation
+		remaining         []string
+		wantErr           bool
+	}{
+		{
+			name: "Sort remainder",
+			args: []string{"filter", "c.a", "eq", ".1", "sort", "c.b"},
+			expectedOperation: &ast.FilterStatement{
+				Expression: &evaluator.Query{
+					Expression: &evaluator.ComparisonExpression{
+						Operation: "eq",
+						LHS:       ast.EntryExpression("c.a"),
+						RHS:       ast.ConstantExpression("1"),
+					},
+				},
+			},
+			remaining: []string{"sort", "c.b"},
+			wantErr:   false,
+		},
+		{
+			name: "Limit remainder",
+			args: []string{"filter", "c.a", "eq", ".1", "limit", "10"},
+			expectedOperation: &ast.FilterStatement{
+				Expression: &evaluator.Query{
+					Expression: &evaluator.ComparisonExpression{
+						Operation: "eq",
+						LHS:       ast.EntryExpression("c.a"),
+						RHS:       ast.ConstantExpression("1"),
+					},
+				},
+			},
+			remaining: []string{"limit", "10"},
+			wantErr:   false,
+		},
+		{
+			name: "Into remainder",
+			args: []string{"filter", "c.a", "eq", ".1", "into", "mbox"},
+			expectedOperation: &ast.FilterStatement{
+				Expression: &evaluator.Query{
+					Expression: &evaluator.ComparisonExpression{
+						Operation: "eq",
+						LHS:       ast.EntryExpression("c.a"),
+						RHS:       ast.ConstantExpression("1"),
+					},
+				},
+			},
+			remaining: []string{"into", "mbox"},
+			wantErr:   false,
+		},
+		{
+			name: "Filter chain remainder inside ParseFilters",
+			args: []string{"filter", "c.a", "eq", ".1", "filter", "c.b", "eq", ".2", "sort", "c.c"},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("c.a"),
+								RHS:       ast.ConstantExpression("1"),
+							},
+						},
+					},
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("c.b"),
+								RHS:       ast.ConstantExpression("2"),
+							},
+						},
+					},
+				},
+			},
+			remaining: []string{"sort", "c.c"},
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1, err := ParseFilters(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseFilters() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(got, tt.expectedOperation, cmp.Options{
+				cmpopts.IgnoreUnexported(ast.FunctionExpression{}),
+				cmpopts.IgnoreUnexported(evaluator.FunctionExpression{}),
+			}); diff != "" {
+				t.Errorf("ParseFilters() expectedExpression %s", diff)
+			}
+			if diff := cmp.Diff(got1, tt.remaining); diff != "" {
+				t.Errorf("ParseFilters() remaining %s", diff)
+			}
+		})
+	}
+}
+
 func TestParseOperations(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -451,6 +593,112 @@ func TestParseOperations(t *testing.T) {
 			},
 			remaining: []string{},
 			wantErr:   false,
+		},
+
+		{
+			name: "Filter followed by sort",
+			args: []string{"filter", "c.a", "eq", ".1", "sort", "c.b", "asc"},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("c.a"),
+								RHS:       ast.ConstantExpression("1"),
+							},
+						},
+					},
+					&ast.SortTransformer{
+						Keys: []ast.SortKey{
+							{
+								Expression: ast.EntryExpression("c.b"),
+								Direction:  ast.Ascending,
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Filter followed by limit",
+			args: []string{"filter", "c.a", "eq", ".1", "limit", "10"},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("c.a"),
+								RHS:       ast.ConstantExpression("1"),
+							},
+						},
+					},
+					&ast.LimitTransformer{Limit: 10},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Filter followed by sort and limit",
+			args: []string{"filter", "c.a", "eq", ".1", "sort", "c.b", "desc", "limit", "10"},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("c.a"),
+								RHS:       ast.ConstantExpression("1"),
+							},
+						},
+					},
+					&ast.SortTransformer{
+						Keys: []ast.SortKey{
+							{
+								Expression: ast.EntryExpression("c.b"),
+								Direction:  ast.Descending,
+							},
+						},
+					},
+					&ast.LimitTransformer{Limit: 10},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Direct function filter followed by sort and limit",
+			args: []string{"filter", "f.duration", "gt", ".3600", "sort", "f.duration", "desc", "limit", "10"},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &ast.SafeComparisonExpression{
+								Operator: ">",
+								Left: &ast.FunctionExpression{
+									Function: "duration",
+								},
+								Right: ast.ConstantExpression("3600"),
+							},
+						},
+					},
+					&ast.SortTransformer{
+						Keys: []ast.SortKey{
+							{
+								Expression: &ast.FunctionExpression{
+									Function: "duration",
+								},
+								Direction: ast.Descending,
+							},
+						},
+					},
+					&ast.LimitTransformer{
+						Limit: 10,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
 			name: "filter out into a mbox",
