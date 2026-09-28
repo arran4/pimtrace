@@ -37,7 +37,7 @@ var _ ast.ValueExpression = ast.EntryExpression("")
 func FilterIdentify(s string) (any, error) {
 	ss := strings.SplitN(s, ".", 2)
 	switch ss[0] {
-	case "into", "filter", "where", "sort":
+	case "into", "filter", "where", "sort", "limit":
 		return Terminator(s), nil
 	case "not":
 		return FilterNot(s), nil
@@ -663,8 +663,6 @@ func ParseFilters(args []string) (ast.Operation, []string, error) {
 	p := args
 	for len(p) > 0 {
 		switch p[0] {
-		case "into":
-			return result.Simplify(), p, nil
 		case "filter", "where":
 			p = p[1:]
 			fallthrough
@@ -678,6 +676,11 @@ func ParseFilters(args []string) (ast.Operation, []string, error) {
 				Expression: boolExp,
 			}
 			result.Statements = append(result.Statements, statement)
+
+			// If we have remaining tokens, check if the next token is a continuation of the filter chain
+			if len(p) > 0 && p[0] != "filter" && p[0] != "where" {
+				return result.Simplify(), p, nil
+			}
 		}
 	}
 	return result.Simplify(), p, nil

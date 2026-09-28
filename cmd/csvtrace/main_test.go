@@ -62,6 +62,31 @@ func TestCLIMain_StdoutRegression(t *testing.T) {
 		}
 	})
 
+	t.Run("filter with sort and limit integration test", func(t *testing.T) {
+		tempCSV := filepath.Join(t.TempDir(), "test.csv")
+		err := os.WriteFile(tempCSV, []byte("ID,Value\n1,10\n2,20\n3,30\n4,25\n"), 0644)
+		if err != nil {
+			t.Fatalf("failed to create temp file: %v", err)
+		}
+
+		cmd := exec.Command(binPath, "-parser", "basic", "-input", tempCSV, "-input-type", "csv", "-output-type", "csv", "filter", "c.Value", "gt", ".15", "sort", "c.Value", "desc", "limit", "2")
+		var stdoutBuf bytes.Buffer
+		var stderrBuf bytes.Buffer
+		cmd.Stdout = &stdoutBuf
+		cmd.Stderr = &stderrBuf
+
+		err = cmd.Run()
+		if err != nil {
+			t.Fatalf("command execution failed: %v, stderr: %s", err, stderrBuf.String())
+		}
+
+		output := stdoutBuf.String()
+		expected := "ID,Value\n3,30\n4,25\n"
+		if !strings.Contains(output, expected) {
+			t.Errorf("stdout did not contain expected CSV data, got: %s, expected to contain: %s", output, expected)
+		}
+	})
+
 	t.Run("missing input file", func(t *testing.T) {
 		cmd := exec.Command(binPath, "-parser", "basic", "-input", "non_existent_file_12345.csv", "-input-type", "csv")
 		var stdoutBuf bytes.Buffer
