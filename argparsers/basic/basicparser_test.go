@@ -515,6 +515,35 @@ func TestParseFilters(t *testing.T) {
 			remaining: []string{"into", "mbox"},
 			wantErr:   false,
 		},
+
+		{
+			name: "Filter chain remainder inside ParseFilters mixed where",
+			args: []string{"filter", "c.a", "eq", ".1", "where", "c.b", "eq", ".2", "sort", "c.c"},
+			expectedOperation: &ast.CompoundStatement{
+				Statements: []ast.Operation{
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("c.a"),
+								RHS:       ast.ConstantExpression("1"),
+							},
+						},
+					},
+					&ast.FilterStatement{
+						Expression: &evaluator.Query{
+							Expression: &evaluator.ComparisonExpression{
+								Operation: "eq",
+								LHS:       ast.EntryExpression("c.b"),
+								RHS:       ast.ConstantExpression("2"),
+							},
+						},
+					},
+				},
+			},
+			remaining: []string{"sort", "c.c"},
+			wantErr:   false,
+		},
 		{
 			name: "Filter chain remainder inside ParseFilters",
 			args: []string{"filter", "c.a", "eq", ".1", "filter", "c.b", "eq", ".2", "sort", "c.c"},

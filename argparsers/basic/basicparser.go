@@ -70,7 +70,7 @@ func IntoIdentify(args []string) (any, []string, error) {
 	}
 	ss := strings.SplitN(args[0], ".", 2)
 	switch ss[0] {
-	case "into", "filter", "where", "sort", "calculate", "limit":
+	case "into", "filter", "where", "sort", "limit":
 		return Terminator(args[0]), args[0:], nil
 	case "asc":
 		if len(ss) == 1 {
@@ -663,8 +663,6 @@ func ParseFilters(args []string) (ast.Operation, []string, error) {
 	p := args
 	for len(p) > 0 {
 		switch p[0] {
-		case "into", "sort", "limit":
-			return result.Simplify(), p, nil
 		case "filter", "where":
 			p = p[1:]
 			fallthrough
@@ -678,6 +676,11 @@ func ParseFilters(args []string) (ast.Operation, []string, error) {
 				Expression: boolExp,
 			}
 			result.Statements = append(result.Statements, statement)
+
+			// If we have remaining tokens, check if the next token is a continuation of the filter chain
+			if len(p) > 0 && p[0] != "filter" && p[0] != "where" {
+				return result.Simplify(), p, nil
+			}
 		}
 	}
 	return result.Simplify(), p, nil
