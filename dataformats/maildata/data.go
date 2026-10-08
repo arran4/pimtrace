@@ -74,6 +74,21 @@ func (s *MailWithSource) Self() *MailWithSource {
 	return s
 }
 
+
+func (s *MailWithSource) SchemaFields() []pimtrace.FieldDescriptor {
+	var fields []pimtrace.FieldDescriptor
+	for h := range s.MailHeader.Map() {
+		fields = append(fields, pimtrace.FieldDescriptor{
+			Name:            h,
+			QueryExpression: "h." + h,
+			Component:       "mail",
+		})
+	}
+	return fields
+}
+
+var _ pimtrace.SchemaDescriber = (*MailWithSource)(nil)
+
 func (s *MailWithSource) HeadersStringArray() (result []string) {
 	result = make([]string, 0, s.MailHeader.Len())
 	for h := range s.MailHeader.Map() {

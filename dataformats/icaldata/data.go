@@ -28,6 +28,48 @@ func (s *ICalWithSource) Self() *ICalWithSource {
 	return s
 }
 
+
+func (s *ICalWithSource) SchemaFields() []pimtrace.FieldDescriptor {
+	var fields []pimtrace.FieldDescriptor
+	seen := make(map[string]bool)
+
+	var compType string
+	if s.Component != nil {
+		switch s.Component.(type) {
+		case *ics.VEvent:
+			compType = "VEVENT"
+		case *ics.VTodo:
+			compType = "VTODO"
+		case *ics.VJournal:
+			compType = "VJOURNAL"
+		case *ics.VBusy:
+			compType = "VBUSY"
+		case *ics.VTimezone:
+			compType = "VTIMEZONE"
+		case *ics.VAlarm:
+			compType = "VALARM"
+		default:
+			compType = fmt.Sprintf("%T", s.Component)
+		}
+	} else {
+		compType = "UNKNOWN"
+	}
+
+	for _, prop := range s.ComponentBase.Properties {
+		if !seen[prop.IANAToken] {
+			seen[prop.IANAToken] = true
+			fields = append(fields, pimtrace.FieldDescriptor{
+				Name:            prop.IANAToken,
+				QueryExpression: "p." + prop.IANAToken,
+				Component:       compType,
+			})
+		}
+	}
+	return fields
+}
+
+var _ pimtrace.SchemaDescriber = (*ICalWithSource)(nil)
+
 func (s *ICalWithSource) HeadersStringArray() (result []string) {
 	result = make([]string, 0, len(s.Header))
 	for h := range s.Header {
