@@ -74,7 +74,6 @@ func (s *MailWithSource) Self() *MailWithSource {
 	return s
 }
 
-
 func (s *MailWithSource) SchemaFields() []pimtrace.FieldDescriptor {
 	var fields []pimtrace.FieldDescriptor
 	for h := range s.MailHeader.Map() {

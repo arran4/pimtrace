@@ -28,7 +28,6 @@ func (s *ICalWithSource) Self() *ICalWithSource {
 	return s
 }
 
-
 func (s *ICalWithSource) SchemaFields() []pimtrace.FieldDescriptor {
 	var fields []pimtrace.FieldDescriptor
 	seen := make(map[string]bool)

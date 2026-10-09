@@ -44,7 +44,6 @@ func (s *Row) Get(key string) (pimtrace.Value, error) {
 	}
 }
 
-
 func (s *Row) SchemaFields() []pimtrace.FieldDescriptor {
 	var fields []pimtrace.FieldDescriptor
 	for h := range s.Headers {

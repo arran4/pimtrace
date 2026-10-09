@@ -75,6 +75,40 @@ PIMTrace tools follow a consistent contract for exit codes and standard streams:
 *   **`stdout` (Standard Output):** Reserved exclusively for the actual query results, or explicit help/version output. This ensures that the output is safe to pipe to other tools or redirect to files.
 *   **`stderr` (Standard Error):** Used for all diagnostic messages, progress indicators, warnings, and error messages.
 
+
+### Discovering Fields with "-describe"
+
+If you have an unfamiliar file and don't know what columns or headers you can query, you can use the "-describe" flag. This discovers available fields, infer their data types by sampling up to the first 1000 records, and prints the exact query expression you need to use.
+
+1. **Describe the file:**
+   ```bash
+   csvtrace -input unknown_data.csv -input-type csv -describe
+   ```
+   *Output:*
+   ```text
+   Note: Values are sampled up to a maximum of 1000 records to infer types.
+
+   Component	Name      Expression   Observed Types   Matches (Sampled)
+   ---------	----      ----------   --------------   -----------------
+   table    	ID        c.ID         integer          10/10
+   table    	Name      c.Name       string           10/10
+   table    	Balance   c.Balance    float            10/10
+   ```
+
+2. **Copy an expression from the output.** For example, "c.Balance".
+
+3. **Use it in a normal query:**
+   ```bash
+   csvtrace -input unknown_data.csv -input-type csv -parser basic -output-type table \
+     filter c.Balance gt .100 \
+     into table c.Name c.Balance
+   ```
+
+You can also use this with standard input by passing "-input -":
+```bash
+cat data.csv | csvtrace -input - -input-type csv -describe
+```
+
 ## The Query Language
 
 The "Basic" parser allows you to chain operations together linearly. It reads like a sentence: "Filter this, then put it into a table with these columns, then sort by that."

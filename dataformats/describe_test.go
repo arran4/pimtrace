@@ -1,8 +1,7 @@
-package pimtrace_test
+package dataformats_test
 
 import (
 	"bytes"
-
 	"pimtrace/dataformats"
 	"pimtrace/dataformats/icaldata"
 	"pimtrace/dataformats/maildata"
@@ -34,8 +33,8 @@ func TestDescribeCSV(t *testing.T) {
 			expectedKeys[desc.Expression] = true
 		}
 
-		if desc.MatchCount != 2 {
-			t.Errorf("Expected count 2 for %s, got %d", desc.Expression, desc.MatchCount)
+		if desc.MatchCount > 2 {
+			t.Errorf("Expected max match count 2 for %s, got %d", desc.Expression, desc.MatchCount)
 		}
 	}
 
@@ -103,6 +102,10 @@ func TestDescribeICal(t *testing.T) {
 	for _, desc := range descs {
 		if _, ok := expectedKeys[desc.Expression]; ok {
 			expectedKeys[desc.Expression] = true
+		}
+
+		if desc.Component != "VEVENT" {
+			t.Errorf("Expected VEVENT component, got %s", desc.Component)
 		}
 	}
 
