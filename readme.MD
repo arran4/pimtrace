@@ -24,21 +24,24 @@ Pre-built binaries are available on the [Releases Page](https://github.com/arran
 
 **Debian/Ubuntu Example:**
 ```bash
-VERSION=<latest release tag>
-wget https://github.com/arran4/pimtrace/releases/download/$VERSION/pimtrace_${VERSION}_linux_amd64.deb
+VERSION=1.3.17
+wget https://github.com/arran4/pimtrace/releases/download/v$VERSION/pimtrace_${VERSION}_linux_amd64.deb
 sudo apt install ./pimtrace_${VERSION}_linux_amd64.deb
 ```
 
 ### Build from Source
 
-Requires [Go](https://go.dev/) 1.24+.
+Requires [Go](https://go.dev/) 1.25.3+.
 
 ```bash
 git clone https://github.com/arran4/pimtrace.git
 cd pimtrace
-go build -o . ./cmd/...
+mkdir -p bin
+go build -o bin/csvtrace ./cmd/csvtrace
+go build -o bin/mailtrace ./cmd/mailtrace
+go build -o bin/icaltrace ./cmd/icaltrace
 ```
-This will build `csvtrace`, `mailtrace`, and `icaltrace` in the current directory.
+This will build `csvtrace`, `mailtrace`, and `icaltrace` in the `bin/` directory.
 
 ## Usage Overview
 
@@ -210,13 +213,13 @@ csvtrace -input expenses.csv -input-type csv -parser basic -output-type table \
 ```
 *Output:*
 ```text
-+----------+------------+
-| CATEGORY | SUM_AMOUNT |
-+----------+------------+
-| Food     |     150.50 |
-| Transport|      45.00 |
-| Utilities|     120.00 |
-+----------+------------+
++-----------+------------+
+| CATEGORY  | SUM-AMOUNT |
++-----------+------------+
+| Food      |        150 |
+| Transport |         45 |
+| Utilities |        120 |
++-----------+------------+
 ```
 
 **Task:** Plot a bar chart of spending per category.
