@@ -90,9 +90,9 @@ If you have an unfamiliar file and don't know what columns or headers you can qu
 
    Component	Name      Expression   Observed Types   Matches (Sampled)
    ---------	----      ----------   --------------   -----------------
-   table    	ID        c.ID         integer          10/10
+   table    	ID        c.ID         string           10/10
    table    	Name      c.Name       string           10/10
-   table    	Balance   c.Balance    float            10/10
+   table    	Balance   c.Balance    string           10/10
    ```
 
 2. **Copy an expression from the output.** For example, "c.Balance".

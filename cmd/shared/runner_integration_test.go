@@ -2,10 +2,13 @@ package shared
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"pimtrace"
 	"pimtrace/dataformats"
+	"pimtrace/dataformats/icaldata"
 	"pimtrace/dataformats/maildata"
+	"pimtrace/dataformats/tabledata"
 	"strings"
 	"testing"
 )
@@ -56,5 +59,88 @@ func TestDescribeEndToEnd(t *testing.T) {
 	code := Run(cfg)
 	if code != 0 {
 		t.Fatalf("Runner failed with code %d: %s", code, stderr.String())
+	}
+}
+
+func TestDescribeStdinIntegration(t *testing.T) {
+	csvData := "A,B\n1,secret_value\n"
+	r := strings.NewReader(csvData)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	cfg := &Config{
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Stdin:  r,
+		Args:   []string{"-describe", "-input-type", "csv", "-input", "-"},
+		Name:   "testcmd",
+		InputHandler: func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+			// Actually process the injected stdin mimicking the real command
+			var rr io.Reader
+			for _, op := range ops {
+				if in, ok := op.(struct{ io.Reader }); ok {
+					rr = in.Reader
+				}
+			}
+			if rr == nil {
+				return nil, fmt.Errorf("stdin missing")
+			}
+			rows, err := tabledata.ReadCSV(rr, "csv", "-")
+			return tabledata.Data(rows), err
+		},
+	}
+
+	code := Run(cfg)
+	if code != 0 {
+		t.Fatalf("Runner failed with code %d: %s", code, stderr.String())
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "c.A") || !strings.Contains(out, "c.B") {
+		t.Errorf("Expected c.A and c.B in describe output: %s", out)
+	}
+
+	if strings.Contains(out, "secret_value") {
+		t.Errorf("Describe output leaked sensitive values: %s", out)
+	}
+}
+
+func TestDescribeICalIntegration(t *testing.T) {
+	icsData := "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Example Corp//NONSGML My Product//EN\nBEGIN:VEVENT\nUID:19970901T130000Z-123401@example.com\nDTSTAMP:19970901T130000Z\nDTSTART:19970903T163000Z\nDTEND:19970903T190000Z\nSUMMARY:Secret Meeting\nCLASS:PRIVATE\nX-MY-CUSTOM:Hello\nEND:VEVENT\nEND:VCALENDAR\n"
+	r := strings.NewReader(icsData)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	cfg := &Config{
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Stdin:  r,
+		Args:   []string{"-describe", "-input-type", "ical", "-input", "-"},
+		Name:   "testcmd",
+		InputHandler: func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+			var rr io.Reader
+			for _, op := range ops {
+				if in, ok := op.(struct{ io.Reader }); ok {
+					rr = in.Reader
+				}
+			}
+			comps, err := icaldata.ReadICalStream(rr, "ical", "-")
+			return icaldata.Data(comps), err
+		},
+	}
+
+	code := Run(cfg)
+	if code != 0 {
+		t.Fatalf("Runner failed with code %d: %s", code, stderr.String())
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "p.SUMMARY") || !strings.Contains(out, "p.X-MY-CUSTOM") {
+		t.Errorf("Expected p.SUMMARY and p.X-MY-CUSTOM in describe output: %s", out)
+	}
+	if strings.Contains(out, "Secret Meeting") {
+		t.Errorf("Describe output leaked sensitive values: %s", out)
 	}
 }

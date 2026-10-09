@@ -82,46 +82,58 @@ func Describe(data pimtrace.Data, maxSample int) []FieldDescription {
 			ep := ast.NewEntryPathor(entry)
 			valPathor := lookup.Reflect(ep).Find(expr)
 
-			if valPathor != nil {
-				rawVal := valPathor.Raw()
-				// If lookup fails completely, it returns an Invalidor where Raw() returns an error or nil.
-				if rawVal == nil {
-					// PIMTrace entry.Get lookup natively
-					rawVal, _ = entry.Get(expr)
+			var rawVal interface{}
+			var resolveErr error
+
+			// A valid Pathor from go-evaluator lookup does not have an error,
+			// or if it's an Invalidor, it returns an error via .Error() or as Raw().
+			// But since we can't depend on .IsValid() or .Error() methods safely across versions,
+			// we evaluate the path using Entry.Get(expr) natively.
+
+			if val, err := entry.Get(expr); err == nil {
+				rawVal = val
+			} else {
+				resolveErr = err
+			}
+
+			// Pathor raw logic fallback
+			if resolveErr != nil && valPathor != nil {
+				v := valPathor.Raw()
+				if _, isErr := v.(error); !isErr && v != nil {
+					rawVal = v
+					resolveErr = nil
 				}
+			}
 
-				// We also check for Invalidor error type, which is wrapped in a type we might not catch easily.
-				// However, if we fall back to Entry.Get and it succeeds or fails, we update the type based on the result.
-				// We just verify it's not an error.
-				if err, ok := rawVal.(error); !ok || err == nil {
-					desc.MatchCount++
-
-					typeStr := "nil"
-					if rawVal != nil {
-						if pimVal, ok := rawVal.(pimtrace.Value); ok {
-							typeStr = fmt.Sprintf("%v", pimVal.Type())
-						} else {
-							t := reflect.TypeOf(rawVal)
-							if t != nil {
-								name := t.Name()
-								if name == "" {
-									name = t.String()
-								}
-								typeStr = strings.TrimPrefix(name, "pimtrace.")
-							} else {
-								typeStr = "unknown"
+			if resolveErr == nil {
+				desc.MatchCount++
+				typeStr := "nil"
+				if rawVal != nil {
+					if pimVal, ok := rawVal.(pimtrace.Value); ok {
+						typeStr = fmt.Sprintf("%v", pimVal.Type())
+					} else {
+						t := reflect.TypeOf(rawVal)
+						if t != nil {
+							name := t.Name()
+							if name == "" {
+								name = t.String()
 							}
+							typeStr = strings.TrimPrefix(name, "pimtrace.")
+						} else {
+							typeStr = "unknown"
 						}
 					}
-					desc.ObservedTypes[typeStr] = true
 				}
+				desc.ObservedTypes[typeStr] = true
 			}
 		}
 	}
 
 	var results []FieldDescription
 	for _, k := range orderedKeys {
-		results = append(results, *fieldMap[k])
+		if fieldMap[k].MatchCount > 0 {
+			results = append(results, *fieldMap[k])
+		}
 	}
 
 	// Deterministic sort by Name, then Expression, then Component
