@@ -44,6 +44,20 @@ func (s *Row) Get(key string) (pimtrace.Value, error) {
 	}
 }
 
+func (s *Row) SchemaFields() []pimtrace.FieldDescriptor {
+	var fields []pimtrace.FieldDescriptor
+	for h := range s.Headers {
+		fields = append(fields, pimtrace.FieldDescriptor{
+			Name:            h,
+			QueryExpression: "c." + h,
+			Component:       "table",
+		})
+	}
+	return fields
+}
+
+var _ pimtrace.SchemaDescriber = (*Row)(nil)
+
 func (s *Row) HeadersStringArray() (result []string) {
 	result = make([]string, len(s.Headers))
 	for h, i := range s.Headers {

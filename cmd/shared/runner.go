@@ -9,6 +9,7 @@ import (
 	"pimtrace"
 	"pimtrace/argparsers/basic"
 	"pimtrace/ast"
+	"pimtrace/dataformats"
 	"pimtrace/funcs"
 
 	"github.com/arran4/go-evaluator"
@@ -46,14 +47,15 @@ func Run(c *Config) int {
 	f.SetOutput(c.Stderr)
 
 	var (
-		inputType   = f.String("input-type", "list", "The input type")
-		inputFile   = f.String("input", "-", "Input file or - for stdin")
-		outputType  = f.String("output-type", "list", "The output type")
-		outputFile  = f.String("output", "-", "Output file or - for stdout")
-		parser      = f.String("parser", "", "Select the query parser (currently only `basic` is supported)")
-		versionFlag = f.Bool("version", false, "Prints the version")
-		helpFlag    = f.Bool("help", false, "Prints help")
-		progress    *bool
+		inputType    = f.String("input-type", "list", "The input type")
+		inputFile    = f.String("input", "-", "Input file or - for stdin")
+		outputType   = f.String("output-type", "list", "The output type")
+		outputFile   = f.String("output", "-", "Output file or - for stdout")
+		parser       = f.String("parser", "", "Select the query parser (currently only `basic` is supported)")
+		versionFlag  = f.Bool("version", false, "Prints the version")
+		helpFlag     = f.Bool("help", false, "Prints help")
+		describeFlag = f.Bool("describe", false, "Discovers and describes the available schema/fields")
+		progress     *bool
 	)
 
 	if c.Progressor {
@@ -98,7 +100,7 @@ func Run(c *Config) int {
 		return 0
 	}
 
-	if len(c.Args) == 0 {
+	if len(c.Args) == 0 && !*describeFlag {
 		_, _ = fmt.Fprintln(c.Stderr, "No query found")
 		printUsage(c.Stderr)
 		return 2
@@ -118,6 +120,14 @@ func Run(c *Config) int {
 	if err != nil {
 		_, _ = fmt.Fprintf(c.Stderr, "Read Error: %s\n", err)
 		return 1
+	}
+
+	if *describeFlag {
+		if err := dataformats.DescribeAndPrint(data, c.Stdout); err != nil {
+			_, _ = fmt.Fprintf(c.Stderr, "Describe Error: %s\n", err)
+			return 1
+		}
+		return 0
 	}
 
 	var ops ast.Operation

@@ -230,4 +230,23 @@ func TestRunner(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("DescribeModeNoQuery", func(t *testing.T) {
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+		cfg := &Config{
+			Stdout: &stdout,
+			Stderr: &stderr,
+			Args:   []string{"-describe"},
+			Name:   "testcmd",
+			InputHandler: func(inputType string, inputFile string, ops ...any) (pimtrace.Data, error) {
+				return nil, nil // empty data is fine for this test
+			},
+		}
+
+		code := Run(cfg)
+		if code != 0 {
+			t.Errorf("Expected exit code 0 for describe with no query, got %d", code)
+		}
+	})
 }
