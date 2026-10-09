@@ -80,29 +80,20 @@ func Describe(data pimtrace.Data, maxSample int) []FieldDescription {
 
 			// Evaluate expression via standard entry lookup to ensure accuracy
 			ep := ast.NewEntryPathor(entry)
-			valPathor := lookup.Reflect(ep).Find(expr)
+			valPathor := ep.Find(expr)
 
 			var rawVal interface{}
 			var resolveErr error
 
-			// A valid Pathor from go-evaluator lookup does not have an error,
-			// or if it's an Invalidor, it returns an error via .Error() or as Raw().
-			// But since we can't depend on .IsValid() or .Error() methods safely across versions,
-			// we evaluate the path using Entry.Get(expr) natively.
-
-			if val, err := entry.Get(expr); err == nil {
-				rawVal = val
-			} else {
-				resolveErr = err
-			}
-
-			// Pathor raw logic fallback
-			if resolveErr != nil && valPathor != nil {
-				v := valPathor.Raw()
-				if _, isErr := v.(error); !isErr && v != nil {
-					rawVal = v
-					resolveErr = nil
+			if _, ok := valPathor.(*lookup.Invalidor); ok {
+				resolveErr = fmt.Errorf("invalid path")
+			} else if valPathor != nil {
+				rawVal = valPathor.Raw()
+				if errRaw, isErr := rawVal.(error); isErr {
+					resolveErr = errRaw
 				}
+			} else {
+				resolveErr = fmt.Errorf("nil pathor")
 			}
 
 			if resolveErr == nil {
@@ -110,7 +101,7 @@ func Describe(data pimtrace.Data, maxSample int) []FieldDescription {
 				typeStr := "nil"
 				if rawVal != nil {
 					if pimVal, ok := rawVal.(pimtrace.Value); ok {
-						typeStr = fmt.Sprintf("%v", pimVal.Type())
+						typeStr = strings.ToLower(fmt.Sprintf("%v", pimVal.Type()))
 					} else {
 						t := reflect.TypeOf(rawVal)
 						if t != nil {
@@ -118,7 +109,7 @@ func Describe(data pimtrace.Data, maxSample int) []FieldDescription {
 							if name == "" {
 								name = t.String()
 							}
-							typeStr = strings.TrimPrefix(name, "pimtrace.")
+							typeStr = strings.ToLower(strings.TrimPrefix(name, "pimtrace."))
 						} else {
 							typeStr = "unknown"
 						}
