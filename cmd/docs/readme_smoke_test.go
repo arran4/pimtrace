@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -18,6 +19,25 @@ func runCmd(t *testing.T, binPath string, args []string) string {
 		t.Fatalf("command failed: %v\nstderr: %s\nargs: %v", err, stderr.String(), args)
 	}
 	return stdout.String()
+}
+
+func parseTable(out string) [][]string {
+	var parsed [][]string
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "+") {
+			continue
+		}
+		if strings.HasPrefix(line, "|") {
+			cells := strings.Split(line, "|")
+			var row []string
+			for i := 1; i < len(cells)-1; i++ {
+				row = append(row, strings.TrimSpace(cells[i]))
+			}
+			parsed = append(parsed, row)
+		}
+	}
+	return parsed
 }
 
 func TestReadmeSmoke(t *testing.T) {
@@ -50,24 +70,30 @@ func TestReadmeSmoke(t *testing.T) {
 
 	// 2. MailTrace
 	out = runCmd(t, mailPath, []string{"-input", "testdata/inbox.mbox", "-input-type", "mbox", "-parser", "basic", "-output-type", "table", "into", "summary", "h.From", "calculate", "f.count", "sort", "c.count", "desc", "limit", "10"})
-	if !strings.Contains(out, "sender11@example.com") || !strings.Contains(out, "11") || !strings.Contains(out, "COUNT") {
-		t.Errorf("Unexpected output for mailtrace: %s", out)
-	}
-	if strings.Contains(out, "sender01@example.com") {
-		t.Errorf("Mailtrace limit 10 failed, output contained excluded sender01: %s", out)
-	}
+	parsedMail := parseTable(out)
+	// Expect 1 header row + 10 data rows = 11 rows
+	if len(parsedMail) != 11 {
+		t.Errorf("Expected exactly 11 rows (1 header + 10 data), got %d", len(parsedMail))
+	} else {
+		if parsedMail[0][1] != "COUNT" {
+			t.Errorf("Expected COUNT header, got %s", parsedMail[0][1])
+		}
+		for i := 1; i <= 10; i++ {
+			// Row 1 should be sender11 (11 count), Row 10 should be sender02 (2 count)
+			expectedSender := fmt.Sprintf("sender%02d@example.com", 12-i)
+			expectedCount := fmt.Sprintf("%d", 12-i)
 
-	// Count number of data rows + header (2 border rows, 1 header row, 1 separator row, 10 data rows, 1 bottom border)
-	// Because out ends without trailing newline in output of strings.Count, there are 14 newlines.
-	if strings.Count(out, "\n") != 14 {
-		t.Errorf("Unexpected number of lines for mailtrace (expected 14): %d\nOutput: %s", strings.Count(out, "\n"), out)
-	}
-
-	// Assert descending order: sender11 should appear before sender10
-	idx11 := strings.Index(out, "sender11")
-	idx10 := strings.Index(out, "sender10")
-	if idx11 == -1 || idx10 == -1 || idx11 > idx10 {
-		t.Errorf("Mailtrace order failed, expected sender11 before sender10. Output: %s", out)
+			if parsedMail[i][0] != expectedSender {
+				t.Errorf("Expected sender %s at rank %d, got %s", expectedSender, i, parsedMail[i][0])
+			}
+			if parsedMail[i][1] != expectedCount {
+				t.Errorf("Expected count %s at rank %d, got %s", expectedCount, i, parsedMail[i][1])
+			}
+		}
+		// Verify sender01 is completely excluded
+		if strings.Contains(out, "sender01@example.com") {
+			t.Errorf("Mailtrace output inappropriately contained sender01: %s", out)
+		}
 	}
 
 	// 3. ICalTrace
