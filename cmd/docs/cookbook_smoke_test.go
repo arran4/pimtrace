@@ -54,11 +54,11 @@ func TestCookbookSmoke(t *testing.T) {
 		if parsed[0][0] != "AMOUNT" {
 			t.Fatalf("Expected header AMOUNT, got %v", parsed[0][0])
 		}
-		// String sorting "desc" means lexical sort, so "50", "45", "120", "100" (or similar).
-		// Wait, PIMTrace sorting might be numeric if typed. Let's see actual output.
-		// Output showed: 50, 45, 120, 100 which implies string sorting (5 > 4 > 1) because c.Amount is string and no numeric cast was done implicitly by sort.
-		if parsed[1][0] != "50" || parsed[2][0] != "45" || parsed[3][0] != "120" {
-			t.Errorf("Sorting failed, expected 50, 45, 120, got %v, %v, %v", parsed[1][0], parsed[2][0], parsed[3][0])
+		if len(parsed) < 5 {
+			t.Fatalf("Expected 4 data rows, got %v", len(parsed)-1)
+		}
+		if parsed[1][0] != "50" || parsed[2][0] != "45" || parsed[3][0] != "120" || parsed[4][0] != "100" {
+			t.Errorf("Sorting failed, expected 50, 45, 120, 100, got %v, %v, %v, %v", parsed[1][0], parsed[2][0], parsed[3][0], parsed[4][0])
 		}
 	})
 
@@ -115,7 +115,7 @@ func TestCookbookSmoke(t *testing.T) {
 		out := runCookbookCmd(t, icalPath, []string{"-input", "../../funcs/testdata/timezone.ics", "-input-type", "ical", "-parser", "basic", "-output-type", "table", "into", "table", "f.date[p.DTSTART]"})
 		parsed := parseTable(out)
 		// Check that the date function successfully extracts a local representation
-		if len(parsed) < 2 {
+		if len(parsed) < 3 {
 			t.Fatalf("Expected results for timezone.ics")
 		}
 		if parsed[1][0] != "2023-10-27" || parsed[2][0] != "2023-11-10" {
@@ -164,7 +164,7 @@ func TestCookbookSmoke(t *testing.T) {
 	t.Run("Mail Find Subjects Senders", func(t *testing.T) {
 		out := runCookbookCmd(t, mailPath, []string{"-input", "testdata/inbox.mbox", "-input-type", "mbox", "-parser", "basic", "-output-type", "table", "into", "table", "h.From", "h.Subject"})
 		parsed := parseTable(out)
-		if len(parsed) < 2 {
+		if len(parsed) < 3 {
 			t.Fatalf("Expected results")
 		}
 		if parsed[0][0] != "FROM" || parsed[0][1] != "SUBJECT" {
@@ -220,7 +220,7 @@ func TestCookbookSmoke(t *testing.T) {
 	t.Run("iCal Weekday Hour Duration", func(t *testing.T) {
 		out := runCookbookCmd(t, icalPath, []string{"-input", "testdata/calendar.ics", "-input-type", "ical", "-parser", "basic", "-output-type", "table", "into", "summary", "f.weekday[p.DTSTART]", "f.hour[p.DTSTART]", "calculate", "f.count", "sort", "c.count", "desc", "limit", "5"})
 		parsed := parseTable(out)
-		if len(parsed) < 2 {
+		if len(parsed) < 3 {
 			t.Fatalf("Expected results")
 		}
 		if parsed[0][0] != "WEEKDAY-DTSTART" {
@@ -231,7 +231,7 @@ func TestCookbookSmoke(t *testing.T) {
 	t.Run("iCal Longest Meetings", func(t *testing.T) {
 		out := runCookbookCmd(t, icalPath, []string{"-input", "testdata/calendar.ics", "-input-type", "ical", "-parser", "basic", "-output-type", "table", "sort", "f.duration", "desc", "limit", "5", "into", "table", "p.SUMMARY", "f.duration"})
 		parsed := parseTable(out)
-		if len(parsed) < 2 {
+		if len(parsed) < 3 {
 			t.Fatalf("Expected results")
 		}
 		if parsed[0][0] != "SUMMARY" || parsed[0][1] != "DURATION" {
@@ -242,7 +242,7 @@ func TestCookbookSmoke(t *testing.T) {
 	t.Run("iCal Total Meeting Time per Day", func(t *testing.T) {
 		out := runCookbookCmd(t, icalPath, []string{"-input", "testdata/calendar.ics", "-input-type", "ical", "-parser", "basic", "-output-type", "table", "into", "summary", "f.date[p.DTSTART]", "calculate", "f.sum[f.duration]", "sort", "c.date-DTSTART", "asc", "into", "table", "c.date-DTSTART", "c.sum-duration"})
 		parsed := parseTable(out)
-		if len(parsed) < 2 {
+		if len(parsed) < 3 {
 			t.Fatalf("Expected results")
 		}
 		if parsed[0][0] != "DATE-DTSTART" || parsed[0][1] != "SUM-DURATION" {
