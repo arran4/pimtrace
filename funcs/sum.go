@@ -18,7 +18,7 @@ func (c Sum[T]) Name() string {
 func (c Sum[T]) Arguments() []ArgumentList {
 	return []ArgumentList{
 		{
-			Description: "Returns a sum of the integer values of lines represented by this",
+			Description: "Returns integer 1",
 		},
 		{
 			Args:        []Argument{Any},

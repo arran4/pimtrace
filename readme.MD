@@ -24,7 +24,7 @@ Pre-built binaries are available on the [Releases Page](https://github.com/arran
 
 **Debian/Ubuntu Example:**
 ```bash
-VERSION=1.3.17
+VERSION=$(curl -s https://api.github.com/repos/arran4/pimtrace/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
 wget https://github.com/arran4/pimtrace/releases/download/v$VERSION/pimtrace_${VERSION}_linux_amd64.deb
 sudo apt install ./pimtrace_${VERSION}_linux_amd64.deb
 ```
