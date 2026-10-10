@@ -411,6 +411,12 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Validate GoReleaser v2 configuration
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: check
       - name: Build candidate artifacts
         run: |
           set -euo pipefail
@@ -438,10 +444,15 @@ jobs:
       - name: Smoke candidate artifacts
         run: |
           set -euo pipefail
-          chmod +x release-candidates/*
-          ./release-candidates/csvtrace -help || true
-          ./release-candidates/icaltrace -help || true
-          ./release-candidates/mailtrace -help || true
+          for cmd in csvtrace icaltrace mailtrace; do
+            test -s "release-candidates/$cmd"
+            chmod +x "release-candidates/$cmd"
+            output="$("./release-candidates/$cmd" -help)"
+            if [[ "$output" != *"Usage:"* ]]; then
+              echo "Unexpected help output for $cmd" >&2
+              exit 1
+            fi
+          done
 
   release-ready:
     name: Release Quality Gates Passed
@@ -482,7 +493,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
-          version: latest
+          version: '~> v2'
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
