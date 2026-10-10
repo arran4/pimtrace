@@ -14,7 +14,7 @@
 | `f.hour[Integer]` | Converts Unix time to a date and returns the hour of the day (0-23) of that date |
 | `f.month[String]` | Converts time string to a date and returns the month number of that date |
 | `f.month[Integer]` | Converts Unix time to a date and returns the month number of that date |
-| `f.sum` | Returns a sum of lines represented by this |
+| `f.sum` | Returns integer 1 |
 | `f.sum[Any]` | Returns the sum of integer values of the elements returned |
 | `f.weekday[String]` | Converts time string to a date and returns the weekday name (e.g. Monday) of that date |
 | `f.weekday[Integer]` | Converts Unix time to a date and returns the weekday name (e.g. Monday) of that date |
