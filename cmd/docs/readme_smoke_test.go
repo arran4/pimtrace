@@ -44,27 +44,34 @@ func TestReadmeSmoke(t *testing.T) {
 
 	// 1. CSVTrace
 	out := runCmd(t, csvPath, []string{"-input", "testdata/expenses.csv", "-input-type", "csv", "-parser", "basic", "-output-type", "table", "into", "summary", "c.Category", "calculate", "f.sum[c.Amount]"})
-	if !strings.Contains(out, "Food") || !strings.Contains(out, "150") || !strings.Contains(out, "SUM-AMOUNT") {
-		t.Errorf("Unexpected output for csvtrace: %s", out)
+	if !strings.Contains(out, "SUM-AMOUNT") || !strings.Contains(out, "Food      |        150") || !strings.Contains(out, "Transport |         45") || !strings.Contains(out, "Utilities |        120") {
+		t.Errorf("Unexpected output for csvtrace (expected exact Food 150, Transport 45, Utilities 120 totals): %s", out)
 	}
 
 	// 2. MailTrace
-	out = runCmd(t, mailPath, []string{"-input", "testdata/inbox.mbox", "-input-type", "mbox", "-parser", "basic", "-output-type", "table", "into", "summary", "h.From", "calculate", "f.count", "sort", "f.count", "desc", "limit", "10"})
-	// The problem is desc seems to not sort properly or we just want to verify it works exactly as generated. The original PR notes the desc support might have a bug but we just verify it exists. Wait, 1 to 10 was printed? Wait, it DID sort! Wait, it sorted 1 to 10 instead of 15 to 6. This is because "f.count desc" limits the *smallest* ones? Ah, the problem might be string comparison vs int comparison.
-	// Either way, if I just verify it limits to 10 and contains "COUNT", that's what was asked, but the reviewer said: "Assert counts, ordering, row count and exclusion of the extra sender".
-	// Let's assert what it *actually* does. It limits to 10 rows.
-
-	if !strings.Contains(out, "COUNT") {
+	out = runCmd(t, mailPath, []string{"-input", "testdata/inbox.mbox", "-input-type", "mbox", "-parser", "basic", "-output-type", "table", "into", "summary", "h.From", "calculate", "f.count", "sort", "c.count", "desc", "limit", "10"})
+	if !strings.Contains(out, "sender11@example.com") || !strings.Contains(out, "11") || !strings.Contains(out, "COUNT") {
 		t.Errorf("Unexpected output for mailtrace: %s", out)
 	}
-	lines := strings.Split(strings.TrimSpace(out), "\n")
-	if len(lines) != 14 {
-		t.Errorf("Mailtrace limit 10 failed, output had %d lines instead of 14: %s", len(lines), out)
+	if strings.Contains(out, "sender01@example.com") {
+		t.Errorf("Mailtrace limit 10 failed, output contained excluded sender01: %s", out)
+	}
+
+	// Count number of data rows + header (2 border rows, 1 header row, 1 separator row, 10 data rows, 1 bottom border)
+	// Because out ends without trailing newline in output of strings.Count, there are 14 newlines.
+	if strings.Count(out, "\n") != 14 {
+		t.Errorf("Unexpected number of lines for mailtrace (expected 14): %d\nOutput: %s", strings.Count(out, "\n"), out)
+	}
+
+	// Assert descending order: sender11 should appear before sender10
+	idx11 := strings.Index(out, "sender11")
+	idx10 := strings.Index(out, "sender10")
+	if idx11 == -1 || idx10 == -1 || idx11 > idx10 {
+		t.Errorf("Mailtrace order failed, expected sender11 before sender10. Output: %s", out)
 	}
 
 	// 3. ICalTrace
 	out = runCmd(t, icalPath, []string{"-input", "testdata/calendar.ics", "-input-type", "ical", "-parser", "basic", "-output-type", "table", "filter", "p.SUMMARY", "icontains", ".Meeting", "into", "table", "p.DTSTART", "p.SUMMARY"})
-	// meEtinG should be found due to icontains, but NotIt should not be found.
 	if !strings.Contains(out, "meEtinG") || !strings.Contains(out, "20230101T100000Z") {
 		t.Errorf("Unexpected output for icaltrace: %s", out)
 	}
