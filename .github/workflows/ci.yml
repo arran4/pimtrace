@@ -1,8 +1,6 @@
 # Agent rules for generation:
-# https://arran4.github.io/blog/post/2026/042-simplified-github-ci-release-safe/
-# Release safety details:
-# https://arran4.github.io/blog/post/2026/041-release-safe-single-owner-github-ci/
-# Built using these posts as reference/guidance.
+# https://arran4.github.io/blog/post/2026/043-canonical-github-actions-ci-cd-super-reference/
+# Built using this post as reference/guidance.
 name: CI/CD
 
 on:
@@ -23,31 +21,28 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Pipeline mode"
-        required: true
-        default: "lint-fix"
         type: choice
+        required: true
+        default: build
         options:
-          - lint-fix
           - build
+          - lint-fix
+          - monthly-maintenance
           - release-major
           - release-minor
           - release-patch
           - release-test
           - release-rc
           - release-alpha
-          - monthly-maintenance
           - publish-tag
       release_version_override:
-        description: "Optional explicit release version (for example 2.4.0 or 2.4.0-rc.2)"
-        required: false
-        default: ""
         type: string
+        required: false
+        default: ''
       allow_prs:
-        description: "Allow automation to open pull requests"
+        type: boolean
         required: false
         default: true
-        type: boolean
   schedule:
     # preferred heavy monthly run (quota reset strategy)
     - cron: '17 3 1 * *'
@@ -55,8 +50,8 @@ on:
     - cron: '41 2 * * *'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-run-{1}', github.workflow, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -67,110 +62,92 @@ jobs:
     name: Route event
     runs-on: ubuntu-latest
     outputs:
-      run_code_checks: ${{ steps.route.outputs.run_code_checks }}
-      run_pr_meta_checks: ${{ steps.route.outputs.run_pr_meta_checks }}
+      validation: ${{ steps.route.outputs.validation }}
+      release: ${{ steps.route.outputs.release }}
+      publisher: ${{ steps.route.outputs.publisher }}
+      nightly: ${{ steps.route.outputs.nightly }}
+      monthly: ${{ steps.route.outputs.monthly }}
       run_cleanup: ${{ steps.route.outputs.run_cleanup }}
-      run_build: ${{ steps.route.outputs.run_build }}
-      run_release: ${{ steps.route.outputs.run_release }}
-      run_post_release: ${{ steps.route.outputs.run_post_release }}
-      is_monthly: ${{ steps.route.outputs.is_monthly }}
-      is_nightly: ${{ steps.route.outputs.is_nightly }}
     steps:
       - id: route
         shell: bash
         run: |
           set -euo pipefail
 
-          run_code_checks=false
-          run_pr_meta_checks=false
+          validation=false
+          release=false
+          publisher=false
+          nightly=false
+          monthly=false
           run_cleanup=false
-          run_build=false
-          run_release=false
-          run_post_release=false
-          is_monthly=false
-          is_nightly=false
 
           case "${{ github.event_name }}" in
             push)
-              run_code_checks=true
+              validation=true
               if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-                run_build=true
-                run_release=true
+                publisher=true
               fi
               ;;
             pull_request)
               if [[ "${{ github.event.action }}" == "closed" ]]; then
                 run_cleanup=true
               else
-                run_pr_meta_checks=true
-                # In practice, also run code checks on PRs so lint/fmt/vet/test
-                # show up directly in the PR UI. Use concurrency to collapse churn.
-                run_code_checks=true
+                validation=true
               fi
               ;;
             workflow_dispatch)
               case "${{ inputs.mode }}" in
                 lint-fix)
-                  run_code_checks=true
-                  is_nightly=true
+                  validation=true
+                  nightly=true
                   ;;
                 build)
-                  run_code_checks=true
-                  run_build=true
+                  validation=true
                   ;;
                 release-*)
-                  # A manual release mode explicitly dispatches the publisher.
-                  run_code_checks=true
-                  run_build=true
-                  run_release=true
+                  validation=true
+                  release=true
                   ;;
                 publish-tag)
-                  # Internal publisher dispatch mode
                   if [[ "${{ github.ref_type }}" != "tag" || ! "${{ github.ref }}" =~ ^refs/tags/v.* ]]; then
                     echo "publish-tag mode requires an eligible tag context (e.g. refs/tags/v*)" >&2
                     exit 1
                   fi
-                  run_code_checks=true
-                  run_build=true
-                  run_release=true
+                  validation=true
+                  publisher=true
                   ;;
                 monthly-maintenance)
-                  run_code_checks=true
-                  is_monthly=true
+                  validation=true
+                  monthly=true
                   ;;
               esac
               ;;
-
-            release)
-              # The release already exists and is published.
-              # Never route this event back into release creation.
-              run_post_release=true
-              ;;
             schedule)
-              run_code_checks=true
+              validation=true
               if [[ "${{ github.event.schedule }}" == "17 3 1 * *" ]]; then
-                is_monthly=true
+                monthly=true
               fi
               if [[ "${{ github.event.schedule }}" == "41 2 * * *" ]]; then
-                is_nightly=true
+                nightly=true
               fi
               ;;
           esac
 
-          echo "run_code_checks=$run_code_checks" >> "$GITHUB_OUTPUT"
-          echo "run_pr_meta_checks=$run_pr_meta_checks" >> "$GITHUB_OUTPUT"
+          echo "validation=$validation" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+          echo "publisher=$publisher" >> "$GITHUB_OUTPUT"
+          echo "nightly=$nightly" >> "$GITHUB_OUTPUT"
+          echo "monthly=$monthly" >> "$GITHUB_OUTPUT"
           echo "run_cleanup=$run_cleanup" >> "$GITHUB_OUTPUT"
-          echo "run_build=$run_build" >> "$GITHUB_OUTPUT"
-          echo "run_release=$run_release" >> "$GITHUB_OUTPUT"
-          echo "run_post_release=$run_post_release" >> "$GITHUB_OUTPUT"
-          echo "is_monthly=$is_monthly" >> "$GITHUB_OUTPUT"
-          echo "is_nightly=$is_nightly" >> "$GITHUB_OUTPUT"
 
   prepare-release-tag:
     name: Prepare release tag
-    needs: [route]
-    if: ${{ needs.route.outputs.run_release == 'true' }}
+    needs: [route, release-ready]
+    if: ${{ needs.route.outputs.release == 'true' && needs.release-ready.result == 'success' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-release-preparation
+      cancel-in-progress: false
     outputs:
       release_tag: ${{ steps.tag.outputs.release_tag }}
       next_version: ${{ steps.tag.outputs.next_version }}
@@ -278,64 +255,10 @@ jobs:
           IFS='.' read -r maj min pat <<< "$clean_tag"
           echo "next_version=${maj:-0}.${min:-0}.$(( ${pat:-0} + 1 ))-SNAPSHOT" >> "$GITHUB_OUTPUT"
 
-  discover:
-    name: Discover capabilities and cost profile
-    needs: route
-    runs-on: ubuntu-latest
-    outputs:
-      profile: ${{ steps.profile.outputs.profile }}
-      has_go: ${{ steps.detect.outputs.has_go }}
-      has_node: ${{ steps.detect.outputs.has_node }}
-      has_dart: ${{ steps.detect.outputs.has_dart }}
-      has_flutter: ${{ steps.detect.outputs.has_flutter }}
-      has_qt_cpp: ${{ steps.detect.outputs.has_qt_cpp }}
-      has_make_c: ${{ steps.detect.outputs.has_make_c }}
-      has_docker: ${{ steps.detect.outputs.has_docker }}
-      has_goreleaser: ${{ steps.detect.outputs.has_goreleaser }}
-      has_dart_or_flutter_tests: ${{ steps.detect.outputs.has_dart_or_flutter_tests }}
-      has_packaging: ${{ steps.detect.outputs.has_packaging }}
-    steps:
-      - uses: actions/checkout@v7
-
-      - id: detect
-        shell: bash
-        run: |
-          set -euo pipefail
-          EXPECT_GO=true
-          EXPECT_NODE=false
-          EXPECT_DART=false
-          EXPECT_FLUTTER=false
-          EXPECT_QT_CPP=false
-          EXPECT_MAKE_C=false
-          EXPECT_DOCKER=false
-          EXPECT_GORELEASER=true
-
-          echo "has_go=${EXPECT_GO:-false}" >> "$GITHUB_OUTPUT"
-          echo "has_node=${EXPECT_NODE:-false}" >> "$GITHUB_OUTPUT"
-          echo "has_dart=${EXPECT_DART:-false}" >> "$GITHUB_OUTPUT"
-          echo "has_flutter=${EXPECT_FLUTTER:-false}" >> "$GITHUB_OUTPUT"
-          echo "has_qt_cpp=${EXPECT_QT_CPP:-false}" >> "$GITHUB_OUTPUT"
-          echo "has_make_c=${EXPECT_MAKE_C:-false}" >> "$GITHUB_OUTPUT"
-          echo "has_docker=${EXPECT_DOCKER:-false}" >> "$GITHUB_OUTPUT"
-          echo "has_goreleaser=${EXPECT_GORELEASER:-false}" >> "$GITHUB_OUTPUT"
-
-          ([[ -d test ]] || [[ -d tests ]] || [[ -f pubspec.yaml ]]) && echo "has_dart_or_flutter_tests=true" >> "$GITHUB_OUTPUT" || echo "has_dart_or_flutter_tests=false" >> "$GITHUB_OUTPUT"
-          ([[ -d packaging ]] || [[ -d pkg ]] || [[ -f debian/control ]]) && echo "has_packaging=true" >> "$GITHUB_OUTPUT" || echo "has_packaging=false" >> "$GITHUB_OUTPUT"
-
-      - id: profile
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event.repository.private }}" == "true" ]]; then
-            echo "profile=private" >> "$GITHUB_OUTPUT"
-          else
-            echo "profile=public" >> "$GITHUB_OUTPUT"
-          fi
-
   gitleaks:
     name: Secret scan
-    needs: [route, discover]
-    if: ${{ needs.route.outputs.run_cleanup != 'true' && (needs.route.outputs.is_nightly == 'true' || needs.route.outputs.is_monthly == 'true') }}
+    needs: [route]
+    if: ${{ needs.route.outputs.run_cleanup != 'true' && (needs.route.outputs.nightly == 'true' || needs.route.outputs.monthly == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -347,8 +270,8 @@ jobs:
 
   golangci:
     name: lint
-    needs: [route, discover]
-    if: ${{ needs.discover.outputs.has_go == 'true' && needs.route.outputs.run_code_checks == 'true' }}
+    needs: [route]
+    if: ${{ needs.route.outputs.validation == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -362,8 +285,8 @@ jobs:
 
   go-test:
     name: Go lint/test (${{ matrix.os }})
-    needs: [route, discover, golangci]
-    if: ${{ needs.discover.outputs.has_go == 'true' && needs.route.outputs.run_code_checks == 'true' }}
+    needs: [route, golangci]
+    if: ${{ needs.route.outputs.validation == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -380,8 +303,8 @@ jobs:
 
   go-vet:
     name: Go vet
-    needs: [route, discover]
-    if: ${{ needs.discover.outputs.has_go == 'true' && needs.route.outputs.run_code_checks == 'true' && needs.discover.outputs.profile == 'public' }}
+    needs: [route]
+    if: ${{ needs.route.outputs.validation == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -393,7 +316,7 @@ jobs:
 
   autofix:
     name: Auto-format and open PR
-    needs: [route, discover]
+    needs: [route]
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'lint-fix' && inputs.allow_prs == true }}
     runs-on: ubuntu-latest
     permissions:
@@ -401,8 +324,7 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
-      - name: Setup Go (if needed)
-        if: ${{ needs.discover.outputs.has_go == 'true' }}
+      - name: Setup Go
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
@@ -410,10 +332,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "${{ needs.discover.outputs.has_go }}" == "true" ]]; then
-            go fix ./... || true
-            go fmt ./... || true
-          fi
+          go fix ./... || true
+          go fmt ./... || true
       - name: Create PR if changes exist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -465,22 +385,40 @@ jobs:
               git push origin --delete "$branch" || true
             done
 
-  release-validation:
-    name: Release Validation Gate
-    needs: [route, discover, golangci, go-test, go-vet]
-    if: |
-      !failure() && !cancelled() &&
-      needs.route.result == 'success' &&
-      needs.discover.result == 'success' &&
-      (needs.discover.outputs.has_go != 'true' || (needs.golangci.result == 'success' && needs.go-test.result == 'success' && (needs.discover.outputs.profile != 'public' || needs.go-vet.result == 'success')))
+  validation:
+    name: Validation Aggregate
+    needs: [route, golangci, go-test, go-vet]
+    if: ${{ always() && needs.route.outputs.validation == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo "All required language checks passed."
+      - name: Require selected validation jobs
+        env:
+          WORKFLOW_RESULT: ${{ needs.golangci.result }}
+          TEST_RESULT: ${{ needs.go-test.result }}
+          VET_RESULT: ${{ needs.go-vet.result }}
+        run: |
+          set -euo pipefail
+          [[ "$WORKFLOW_RESULT" == "success" ]]
+          [[ "$TEST_RESULT" == "success" ]]
+          [[ "$VET_RESULT" == "success" ]]
+
+  release-ready:
+    name: Release Quality Gates Passed
+    needs: [route, validation]
+    if: ${{ always() && (needs.route.outputs.release == 'true' || needs.route.outputs.publisher == 'true') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require release gates
+        env:
+          VALIDATION_RESULT: ${{ needs.validation.result }}
+        run: |
+          set -euo pipefail
+          [[ "$VALIDATION_RESULT" == "success" ]]
 
   release-context:
     name: Release Context
-    needs: [route, prepare-release-tag, release-validation]
-    if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' }}
+    needs: [route, prepare-release-tag]
+    if: ${{ !failure() && !cancelled() && needs.route.outputs.release == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -544,13 +482,14 @@ jobs:
             gh workflow run "ci.yml" --ref "$TAG" -f mode="publish-tag"
           fi
 
-  goreleaser:
-    name: GoReleaser
-    needs: [route, discover, release-context]
-    if: ${{ !failure() && !cancelled() && needs.route.outputs.run_release == 'true' && needs.discover.outputs.has_goreleaser == 'true' && github.ref_type == 'tag' }}
+  publisher:
+    name: Publish With GoReleaser
+    needs: [route, release-ready]
+    if: ${{ !failure() && !cancelled() && needs.route.outputs.publisher == 'true' && needs.release-ready.result == 'success' && github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -562,9 +501,9 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
-          version: '~> v2'
+          version: latest
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: ${{ needs.release-context.outputs.release_tag }}
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
 
