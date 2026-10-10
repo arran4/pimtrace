@@ -2,6 +2,7 @@ package icaldata
 
 import (
 	_ "embed"
+	"path/filepath"
 	"pimtrace"
 	"reflect"
 	"strings"
@@ -215,7 +216,7 @@ func TestData_Output(t *testing.T) {
 	//d.WriteTableFile("-")
 
 	// Test ICal stream
-	err := d.WriteICalFile("test.ics")
+	err := d.WriteICalFile(filepath.Join(t.TempDir(), "test.ics"))
 	if err != nil {
 		t.Errorf("WriteICalFile error: %v", err)
 	}

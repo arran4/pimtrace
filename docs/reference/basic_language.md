@@ -10,10 +10,10 @@ A query consists of one or more operations executed sequentially:
 
 ### Supported Operations
 
-#### `filter` or `where`
-Excludes records that do not match the specified condition.
+#### `filter`
+Excludes records that do not match the specified condition. `where` is supported as an alias for `and` continuation inside complex `filter` statements, but is not a standalone top-level operation.
 
-**Syntax:** `filter <condition>` or `where <condition>`
+**Syntax:** `filter <condition> [where <condition> ...]`
 
 The `<condition>` is a boolean expression evaluating to true or false.
 
@@ -23,24 +23,24 @@ Transforms the data into a tabular format, keeping only the specified columns.
 **Syntax:** `into table <column_expr> [ <column_expr> ... ]`
 
 #### `into summary`
-Groups the incoming data by the specified columns and allows for aggregate calculations. Used in conjunction with `calculate`.
+Groups the incoming data by the specified columns and computes aggregate calculations using the `calculate` continuation.
 
 **Syntax:** `into summary <group_by_expr> [ <group_by_expr> ... ] calculate <aggregate_expr> [ <aggregate_expr> ... ]`
 
-#### `calculate`
-Specifies the aggregate functions to apply to the groups created by `into summary`.
+#### `into mbox`
+Writes the filtered records into a standard mbox file format (only applicable in `mailtrace`).
 
-**Syntax:** `calculate <aggregate_expr> [ <aggregate_expr> ... ]`
+**Syntax:** `into mbox`
 
 #### `sort`
-Sorts the output rows based on a specific expression.
+Sorts the output rows based on one or more expressions. Each expression can optionally specify a direction.
 
-**Syntax:** `sort <expression> [ asc | desc ]`
+**Syntax:** `sort <expression> [asc|desc] [ <expression> [asc|desc] ... ]`
 
 The default sort direction is `asc` (ascending). Use `desc` for descending order.
 
 #### `limit`
-Limits the number of output rows to the specified integer. Must be placed at the end of the query or after `sort`.
+Limits the number of output rows to the specified integer. The parser generally applies limits at the end of the query or after sorting, depending on standard operation flow.
 
 **Syntax:** `limit <N>` (where N is a positive integer)
 
@@ -113,6 +113,16 @@ Use parentheses `(` and `)` to override default precedence: `( A or B ) and C`.
 
 ---
 
+## Format Contracts & Limitations
+
+### Input/Output Formats
+*   **Default Behavior:** If `-input-type` or `-output-type` are omitted, the tools default to `list` mode, printing available formats and exiting.
+*   **Explicit Typing Required:** You must explicitly provide values (e.g., `csv`, `mbox`, `table`, `plot.bar`) to actually parse input or format data.
+
+### Duration
+*   The `f.duration` function requires valid timing properties to exist on the record (e.g., `DTSTART` and `DTEND`, or `DTSTART` and `DUE`).
+*   A standalone iCalendar `DURATION` property is currently rejected by the implementation.
+
 ## Execution Environment
 
 ### Standard Stream Contract
@@ -132,5 +142,5 @@ A full list of available functions is maintained in `functions.md` at the root o
 
 To regenerate this file and ensure it matches the current source code capabilities, run:
 ```bash
-go run cmd/docs/genfunctionmd/main.go
+go run cmd/docs/genfunctionmd/*.go
 ```
