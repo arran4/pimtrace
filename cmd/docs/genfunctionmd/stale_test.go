@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 )
 
@@ -19,6 +20,15 @@ func TestFunctionsMDStaleness(t *testing.T) {
 	existing := string(existingBytes)
 
 	if expected != existing {
-		t.Errorf("functions.md is stale. Please run 'go run cmd/docs/genfunctionmd/*.go' to regenerate it.\n\nDiff check failed.")
+		t.Errorf("functions.md is stale. Please run 'go run ./cmd/docs/genfunctionmd' to regenerate it.\n\nDiff check failed.")
+	}
+}
+
+func TestExecuteGenerator(t *testing.T) {
+	cmd := exec.Command("go", "run", "./cmd/docs/genfunctionmd")
+	cmd.Dir = "../../.." // root of repo
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Failed to execute generator: %v\nOutput: %s", err, out)
 	}
 }

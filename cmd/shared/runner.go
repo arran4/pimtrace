@@ -69,6 +69,10 @@ func Run(c *Config) int {
 		if c.PrintQueryHelp != nil {
 			c.PrintQueryHelp(w, *parser)
 		}
+		_, _ = fmt.Fprintln(w, "\nFor complete documentation, see:")
+		_, _ = fmt.Fprintln(w, "- Basic Language Reference: https://github.com/arran4/pimtrace/blob/main/docs/reference/basic_language.md")
+		_, _ = fmt.Fprintln(w, "- Cookbook Examples: https://github.com/arran4/pimtrace/blob/main/docs/cookbook/cookbook.md")
+		_, _ = fmt.Fprintln(w, "- Functions Reference: https://github.com/arran4/pimtrace/blob/main/functions.md")
 		f.SetOutput(c.Stderr)
 	}
 

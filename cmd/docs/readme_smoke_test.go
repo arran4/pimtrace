@@ -21,7 +21,6 @@ func runCmd(t *testing.T, binPath string, args []string) string {
 	return stdout.String()
 }
 
-
 func TestReadmeSmoke(t *testing.T) {
 	dir := t.TempDir()
 

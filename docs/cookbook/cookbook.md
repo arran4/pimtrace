@@ -39,7 +39,7 @@ csvtrace -input testdata/expenses.csv -input-type csv -parser basic -output-type
 ```
 
 ### Sort
-List expenses sorted by amount in descending order:
+List expenses sorted by amount in descending order (note that CSV columns sort lexically as strings by default, e.g., 50, 45, 120, 100):
 ```bash
 csvtrace -input testdata/expenses.csv -input-type csv -parser basic -output-type table \
   sort c.Amount desc \

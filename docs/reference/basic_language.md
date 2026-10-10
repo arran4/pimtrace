@@ -39,6 +39,8 @@ Sorts the output rows based on one or more expressions. Each expression can opti
 
 The default sort direction is `asc` (ascending). Use `desc` for descending order.
 
+*Note:* Data types determine sorting behavior. Uncoerced CSV string columns like `c.Amount` will sort lexically (e.g., 100, 120, 45, 50).
+
 #### `limit`
 Limits the number of output rows to the specified integer. The parser generally applies limits at the end of the query or after sorting, depending on standard operation flow.
 
@@ -142,5 +144,5 @@ A full list of available functions is maintained in `functions.md` at the root o
 
 To regenerate this file and ensure it matches the current source code capabilities, run:
 ```bash
-go run cmd/docs/genfunctionmd/*.go
+go run ./cmd/docs/genfunctionmd
 ```
