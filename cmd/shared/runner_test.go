@@ -32,14 +32,14 @@ func TestRunner(t *testing.T) {
 			name:       "help flag",
 			args:       []string{"-help"},
 			wantErr:    0,
-			wantStdout: "Usage:  testtool [Flags] [Query]",
+			wantStdout: "For complete documentation, see:\n- Basic Language Reference: https://github.com/arran4/pimtrace/blob/main/docs/reference/basic_language.md",
 			wantStderr: "",
 		},
 		{
 			name:       "short help flag",
 			args:       []string{"-h"},
 			wantErr:    0,
-			wantStdout: "Usage:  testtool [Flags] [Query]",
+			wantStdout: "For complete documentation, see:\n- Basic Language Reference: https://github.com/arran4/pimtrace/blob/main/docs/reference/basic_language.md",
 			wantStderr: "",
 		},
 		{
