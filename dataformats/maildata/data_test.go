@@ -3,7 +3,6 @@ package maildata
 import (
 	"bytes"
 	_ "embed"
-	"errors"
 	"github.com/emersion/go-message/mail"
 	"github.com/google/go-cmp/cmp"
 	"mime/multipart"
@@ -387,12 +386,6 @@ func TestMailWithSource_Header(t *testing.T) {
 	if resH.Get("Subject") != "Test" {
 		t.Errorf("Header() failed")
 	}
-}
-
-type errReader struct{}
-
-func (errReader) Read(p []byte) (n int, err error) {
-	return 0, errors.New("mock read error")
 }
 
 func TestReadMBoxStream_Strict(t *testing.T) {

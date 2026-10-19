@@ -127,7 +127,8 @@ func ReaderStreamMapperOptionProcessor(f io.Reader, ops []any) (io.Reader, []io.
 			// Injected stdout/stderr
 		case string:
 			// "progressor" flag passing
-			if op == "progressor" {
+			switch op {
+			case "progressor":
 				var err error
 				ff, err = NewProgressor()(ff)
 				if err != nil {
@@ -136,10 +137,10 @@ func ReaderStreamMapperOptionProcessor(f io.Reader, ops []any) (io.Reader, []io.
 				if fc, ok := ff.(io.Closer); ok {
 					closers = append(closers, fc)
 				}
-			} else if op == "strict" {
+			case "strict":
 				// "strict" mode flag
 				// Handled by specific readers, ignore here
-			} else {
+			default:
 				return nil, closers, fmt.Errorf("unknown string option: %v", op)
 			}
 		default:
