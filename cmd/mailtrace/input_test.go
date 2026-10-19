@@ -47,21 +47,20 @@ func TestInputHandler(t *testing.T) {
 }
 
 func TestInputHandler_Stdin(t *testing.T) {
-	mailContent := `From: "John" <john@example.com>
-To: "Jane" <jane@example.com>
-Subject: Test
-Date: Thu, 13 Feb 1969 23:32:54 -0330
+	mailContent := "From: \"John\" <john@example.com>\n" +
+		"To: \"Jane\" <jane@example.com>\n" +
+		"Subject: Test\n" +
+		"Date: Thu, 13 Feb 1969 23:32:54 -0330\n" +
+		"\n" +
+		"body\n"
 
-
-body
-`
 	r := strings.NewReader(mailContent)
 	data, err := InputHandler("mailfile", "-", r)
 	if err != nil {
-		t.Errorf("InputHandler(mailfile, -) error: %v", err)
+		t.Fatalf("InputHandler(mailfile, -) error: %v", err)
 	}
 	if data == nil || data.Len() != 1 {
-		t.Errorf("InputHandler(mailfile, -) expected 1 msg")
+		t.Fatalf("InputHandler(mailfile, -) expected 1 msg")
 	}
 	mb := data.Entry(0).(*maildata.MailWithSource).MailBodies
 	if len(mb) < 2 {
@@ -71,20 +70,19 @@ body
 	if err != nil {
 		t.Fatalf("error reading mail body: %v", err)
 	}
-	if string(b) != "\nbody\n" {
+	if string(b) != "body\n" {
 		t.Errorf("InputHandler(mailfile, -) body not parsed properly, got: %q", string(b))
 	}
 }
 
 func TestInputHandler_File(t *testing.T) {
-	mailContent := `From: "John" <john@example.com>
-To: "Jane" <jane@example.com>
-Subject: Test
-Date: Thu, 13 Feb 1969 23:32:54 -0330
+	mailContent := "From: \"John\" <john@example.com>\n" +
+		"To: \"Jane\" <jane@example.com>\n" +
+		"Subject: Test\n" +
+		"Date: Thu, 13 Feb 1969 23:32:54 -0330\n" +
+		"\n" +
+		"body\n"
 
-
-body
-`
 	mockFS := fsystest.MapFSAdapter{
 		MapFS: fstest.MapFS{
 			"test.eml": &fstest.MapFile{Data: []byte(mailContent)},
@@ -92,10 +90,10 @@ body
 	}
 	data, err := InputHandler("mailfile", "test.eml", mockFS)
 	if err != nil {
-		t.Errorf("InputHandler(mailfile, file) error: %v", err)
+		t.Fatalf("InputHandler(mailfile, file) error: %v", err)
 	}
 	if data == nil || data.Len() != 1 {
-		t.Errorf("InputHandler(mailfile, file) expected 1 msg")
+		t.Fatalf("InputHandler(mailfile, file) expected 1 msg")
 	}
 	mb := data.Entry(0).(*maildata.MailWithSource).MailBodies
 	if len(mb) < 2 {
@@ -105,7 +103,7 @@ body
 	if err != nil {
 		t.Fatalf("error reading mail body: %v", err)
 	}
-	if string(b) != "\nbody\n" {
+	if string(b) != "body\n" {
 		t.Errorf("InputHandler(mailfile, file) body not parsed properly, got: %q", string(b))
 	}
 }
