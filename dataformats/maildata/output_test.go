@@ -160,8 +160,10 @@ func TestWriteMailStream_Multipart(t *testing.T) {
 	if err == nil {
 		// Documenting known deficiency: the multipart parsing will fail due to lowercased boundary in `mime.ParseMediaType` inside production code
 		// A dedicated fix PR should assert nil error and proper boundary closing here instead.
-		t.Logf("expected an error due to known multipart boundary uppercase issue, but succeeded. This indicates the underlying bug was fixed.")
-	} else if err != nil {
-		t.Logf("Known deficiency hit: %v", err)
+		t.Fatal("expected known multipart boundary error, but got nil")
+	} else {
+		if !bytes.Contains([]byte(err.Error()), []byte("multipart boundary error")) && !bytes.Contains([]byte(err.Error()), []byte("boundary parameter")) {
+			t.Fatalf("expected known multipart boundary error, got different error: %v", err)
+		}
 	}
 }
