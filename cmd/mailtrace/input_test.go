@@ -47,6 +47,11 @@ func TestInputHandler(t *testing.T) {
 }
 
 func TestInputHandler_Stdin(t *testing.T) {
+
+
+
+
+
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
@@ -54,6 +59,9 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
+
+
+
 	r := strings.NewReader(mailContent)
 
 	data, err := InputHandler("mailfile", "-", r)

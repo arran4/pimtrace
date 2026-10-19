@@ -50,6 +50,14 @@ func TestInputHandler(t *testing.T) {
 }
 
 func TestInputHandler_Stdin(t *testing.T) {
+
+
+
+
+
+
+
+
 	r := strings.NewReader("col1,col2\nval1,val2\n")
 
 	data, err := InputHandler("csv", "-", r)

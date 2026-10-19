@@ -118,7 +118,19 @@ func TestOutputHandlerICal(t *testing.T) {
 
 func TestInputHandler_Stdin(t *testing.T) {
 	// Let's test the "-" case which reads from stdin
-	// Write a minimal valid ical to our fake stdin
+	// We can replace os.Stdin temporarily or just pass "-" and have it fail on stdin reading / parsing
+	// golang-ical parsing an empty stdin or whatever might just return empty or error.
+
+	// Temporarily hijack stdin
+
+
+
+
+
+	// Write a minimal valid ical to our fake stdin so it doesn't block
+
+
+
 	r := strings.NewReader("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 
 	data, err := InputHandler("ical", "-", r)
