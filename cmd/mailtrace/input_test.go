@@ -14,6 +14,7 @@ func captureOutput(f func(w io.Writer)) (string, error) {
 	f(&buf)
 	return buf.String(), nil
 }
+
 func TestPrintInputHelpContainsTypes(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintInputHelp(w) })
 	if err != nil {
@@ -26,6 +27,7 @@ func TestPrintInputHelpContainsTypes(t *testing.T) {
 		t.Errorf("expected help to contain 'mailfile' but got %q", out)
 	}
 }
+
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
@@ -42,11 +44,14 @@ func TestInputHandler(t *testing.T) {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
 }
+
 func TestInputHandler_Stdin(t *testing.T) {
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
 Date: Thu, 13 Feb 1969 23:32:54 -0330
+
+
 body
 `
 	r := strings.NewReader(mailContent)
@@ -58,11 +63,14 @@ body
 		t.Errorf("InputHandler(mailfile, -) expected 1 msg")
 	}
 }
+
 func TestInputHandler_File(t *testing.T) {
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
 Date: Thu, 13 Feb 1969 23:32:54 -0330
+
+
 body
 `
 	mockFS := fsystest.MapFSAdapter{

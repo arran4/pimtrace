@@ -15,6 +15,7 @@ func captureOutput(f func(w io.Writer)) (string, error) {
 	f(&buf)
 	return buf.String(), nil
 }
+
 func TestPrintInputHelpContainsIcal(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintInputHelp(w) })
 	if err != nil {
@@ -24,6 +25,7 @@ func TestPrintInputHelpContainsIcal(t *testing.T) {
 		t.Errorf("expected help to contain 'ical' but got %q", out)
 	}
 }
+
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
@@ -47,6 +49,7 @@ func TestInputHandler(t *testing.T) {
 		t.Errorf("InputHandler(ical, nonexistent.ics) expected error")
 	}
 }
+
 func TestOutputHandler(t *testing.T) {
 	// Test unsupported struct format
 	var d pimtrace.Data // Data interface without actual struct implementation
@@ -60,6 +63,7 @@ func TestOutputHandler(t *testing.T) {
 		t.Errorf("OutputHandler fallback expected error")
 	}
 }
+
 func TestPrintQueryHelp(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "basic") })
 	if err != nil {
@@ -91,6 +95,7 @@ func (d *dummyICalData) Entry(n int) pimtrace.Entry                         { re
 func (d *dummyICalData) Truncate(n int) pimtrace.Data                       { return nil }
 func (d *dummyICalData) SetEntry(n int, entry pimtrace.Entry) pimtrace.Data { return nil }
 func (d *dummyICalData) NewSelf() pimtrace.Data                             { return nil }
+
 func TestOutputHandlerICal(t *testing.T) {
 	d := &dummyICalData{}
 	err := OutputHandler(d, "ical", "-")
@@ -102,6 +107,7 @@ func TestOutputHandlerICal(t *testing.T) {
 		t.Errorf("OutputHandler ical file error: %v", err)
 	}
 }
+
 func TestInputHandler_Stdin(t *testing.T) {
 	r := strings.NewReader("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 	data, err := InputHandler("ical", "-", r)
@@ -113,6 +119,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 		t.Errorf("InputHandler(ical, -) expected empty data")
 	}
 }
+
 func TestInputHandler_File(t *testing.T) {
 	mockFS := fsystest.MapFSAdapter{
 		MapFS: fstest.MapFS{

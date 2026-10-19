@@ -14,6 +14,7 @@ func captureOutput(f func(w io.Writer)) (string, error) {
 	f(&buf)
 	return buf.String(), nil
 }
+
 func TestPrintInputHelpContainsCsv(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintInputHelp(w) })
 	if err != nil {
@@ -23,6 +24,7 @@ func TestPrintInputHelpContainsCsv(t *testing.T) {
 		t.Errorf("expected help to contain 'csv' but got %q", out)
 	}
 }
+
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
@@ -44,6 +46,7 @@ func TestInputHandler(t *testing.T) {
 		t.Errorf("InputHandler(csv, nonexistent.csv) expected error")
 	}
 }
+
 func TestInputHandler_Stdin(t *testing.T) {
 	r := strings.NewReader("col1,col2\nval1,val2\n")
 	data, err := InputHandler("csv", "-", r)
@@ -54,6 +57,7 @@ func TestInputHandler_Stdin(t *testing.T) {
 		t.Errorf("InputHandler(csv, -) expected 1 row")
 	}
 }
+
 func TestInputHandler_File(t *testing.T) {
 	mockFS := fsystest.MapFSAdapter{
 		MapFS: fstest.MapFS{
@@ -68,6 +72,7 @@ func TestInputHandler_File(t *testing.T) {
 		t.Errorf("InputHandler(csv, file) expected 1 row")
 	}
 }
+
 func TestPrintQueryHelp(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "basic") })
 	if err != nil {
