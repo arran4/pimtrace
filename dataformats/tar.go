@@ -47,7 +47,7 @@ func ReadTarFile[T any](fType string, fName string, next Next[T], globs []string
 	if err != nil {
 		return nil, err
 	}
-	return ReadTarStream(ff, fType, fName, next, globs)
+	return ReadTarStream(ff, fType, fName, next, globs, ops...)
 }
 
 func ReadTarStream[T any](f io.Reader, fType string, fName string, next Next[T], globs []string, ops ...any) (res []T, err error) {
@@ -89,7 +89,7 @@ func ReadTarStream[T any](f io.Reader, fType string, fName string, next Next[T],
 		if !m {
 			continue
 		}
-		taa, err := next(t, fType, ht.Name)
+		taa, err := next(t, fType, ht.Name, ops...)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("tar: %w", err)
 		}

@@ -136,6 +136,11 @@ func ReaderStreamMapperOptionProcessor(f io.Reader, ops []any) (io.Reader, []io.
 				if fc, ok := ff.(io.Closer); ok {
 					closers = append(closers, fc)
 				}
+			} else if op == "strict" {
+				// "strict" mode flag
+				// Handled by specific readers, ignore here
+			} else {
+				return nil, closers, fmt.Errorf("unknown string option: %v", op)
 			}
 		default:
 			return nil, closers, fmt.Errorf("unknown option: %T %v", op, op)
