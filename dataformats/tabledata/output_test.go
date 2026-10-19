@@ -63,7 +63,17 @@ func TestWriteCSVStream_WithData(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	if err := data.WriteCSVStream(&buf, "file.csv"); err != nil {
-		t.Errorf("WriteCSVStream returned error: %v", err)
+		t.Fatalf("WriteCSVStream returned error: %v", err)
+	}
+	out := buf.String()
+	if out == "" {
+		t.Errorf("WriteCSVStream produced empty output")
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("A")) || !bytes.Contains(buf.Bytes(), []byte("B")) {
+		t.Errorf("WriteCSVStream output missing headers, got: %s", out)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("1")) || !bytes.Contains(buf.Bytes(), []byte("4")) {
+		t.Errorf("WriteCSVStream output missing data values, got: %s", out)
 	}
 }
 
@@ -75,6 +85,16 @@ func TestWriteTableStream_WithData(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	if err := data.WriteTableStream(&buf, "file.txt"); err != nil {
-		t.Errorf("WriteTableStream returned error: %v", err)
+		t.Fatalf("WriteTableStream returned error: %v", err)
+	}
+	out := buf.String()
+	if out == "" {
+		t.Errorf("WriteTableStream produced empty output")
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("A")) || !bytes.Contains(buf.Bytes(), []byte("B")) {
+		t.Errorf("WriteTableStream output missing headers, got: %s", out)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("1")) || !bytes.Contains(buf.Bytes(), []byte("4")) {
+		t.Errorf("WriteTableStream output missing data values, got: %s", out)
 	}
 }

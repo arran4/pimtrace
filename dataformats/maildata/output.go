@@ -69,7 +69,11 @@ func (mdt Data) WriteMailStream(f io.Writer, fName string) error {
 		switch mt {
 		case "multipart/alternative":
 			mpw := multipart.NewWriter(f)
-			if err := mpw.SetBoundary(mtp["Boundary"]); err != nil {
+			bnd := mtp["boundary"]
+			if bnd == "" {
+				bnd = mtp["Boundary"]
+			}
+			if err := mpw.SetBoundary(bnd); err != nil {
 				return fmt.Errorf("multipart boundary error message %d header %s content type: %w", mi+1, fName, err)
 			}
 			for _, mb := range m.MailBodies {

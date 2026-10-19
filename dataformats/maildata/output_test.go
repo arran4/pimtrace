@@ -112,7 +112,13 @@ func TestWriteMBoxStream_WithData(t *testing.T) {
 		},
 	}
 	var buf bytes.Buffer
-	_ = data.WriteMBoxStream(&buf, "file.mbox")
+	err := data.WriteMBoxStream(&buf, "file.mbox")
+	if err != nil {
+		t.Fatalf("WriteMBoxStream returned error: %v", err)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("From: test@example.com")) {
+		t.Errorf("WriteMBoxStream output missing header, got: %s", buf.String())
+	}
 }
 
 func TestWriteMailStream_WithData(t *testing.T) {
@@ -127,12 +133,18 @@ func TestWriteMailStream_WithData(t *testing.T) {
 		},
 	}
 	var buf bytes.Buffer
-	_ = data.WriteMailStream(&buf, "file.eml")
+	err := data.WriteMailStream(&buf, "file.eml")
+	if err != nil {
+		t.Fatalf("WriteMailStream returned error: %v", err)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("From: test@example.com")) {
+		t.Errorf("WriteMailStream output missing header, got: %s", buf.String())
+	}
 }
 
 func TestWriteMailStream_Multipart(t *testing.T) {
 	h := mail.Header{}
-	h.Set("Content-Type", "multipart/alternative; boundary=\"foo\"")
+	h.Set("Content-Type", "multipart/alternative; boundary=\"this-is-a-valid-boundary\"")
 	data := Data{
 		&MailWithSource{
 			MailHeader: h,
@@ -142,5 +154,11 @@ func TestWriteMailStream_Multipart(t *testing.T) {
 		},
 	}
 	var buf bytes.Buffer
-	_ = data.WriteMailStream(&buf, "file.eml")
+	err := data.WriteMailStream(&buf, "file.eml")
+	if err != nil {
+		t.Fatalf("WriteMailStream returned error: %v", err)
+	}
+	if !bytes.Contains(buf.Bytes(), []byte("boundary=\"this-is-a-valid-boundary\"")) {
+		t.Errorf("WriteMailStream multipart output missing boundary, got: %s", buf.String())
+	}
 }
