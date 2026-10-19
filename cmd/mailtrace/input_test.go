@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"os"
 	"pimtrace/fsys/fsystest"
 	"strings"
 	"testing"
@@ -48,11 +47,6 @@ func TestInputHandler(t *testing.T) {
 }
 
 func TestInputHandler_Stdin(t *testing.T) {
-	r, w, _ := os.Pipe()
-	oldStdin := os.Stdin
-	os.Stdin = r
-	defer func() { os.Stdin = oldStdin }()
-
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
@@ -60,10 +54,9 @@ Date: Thu, 13 Feb 1969 23:32:54 -0330
 
 body
 `
-	_, _ = w.WriteString(mailContent)
-	_ = w.Close()
+	r := strings.NewReader(mailContent)
 
-	data, err := InputHandler("mailfile", "-")
+	data, err := InputHandler("mailfile", "-", r)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, -) error: %v", err)
 	}

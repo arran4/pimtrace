@@ -25,16 +25,8 @@ func TestWriteCSVFile(t *testing.T) {
 
 func TestWriteCSVStream(t *testing.T) {
 	data := Data{}
-	tmpFile, err := os.CreateTemp("", "test*.csv")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpFile.Name())
-	}()
-
-	if err := data.WriteCSVStream(tmpFile, "file.csv"); err != nil {
+	var buf bytes.Buffer
+	if err := data.WriteCSVStream(&buf, "file.csv"); err != nil {
 		t.Errorf("WriteCSVStream returned error: %v", err)
 	}
 }
@@ -57,16 +49,8 @@ func TestWriteTableFile(t *testing.T) {
 
 func TestWriteTableStream(t *testing.T) {
 	data := Data{}
-	tmpFile, err := os.CreateTemp("", "test*.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpFile.Name())
-	}()
-
-	if err := data.WriteTableStream(tmpFile, "file.txt"); err != nil {
+	var buf bytes.Buffer
+	if err := data.WriteTableStream(&buf, "file.txt"); err != nil {
 		t.Errorf("WriteTableStream returned error: %v", err)
 	}
 }
@@ -89,16 +73,8 @@ func TestWriteMBoxFile(t *testing.T) {
 
 func TestWriteMBoxStream(t *testing.T) {
 	data := Data{}
-	tmpFile, err := os.CreateTemp("", "test*.mbox")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpFile.Name())
-	}()
-
-	if err := data.WriteMBoxStream(tmpFile, "file.mbox"); err != nil {
+	var buf bytes.Buffer
+	if err := data.WriteMBoxStream(&buf, "file.mbox"); err != nil {
 		t.Errorf("WriteMBoxStream returned error: %v", err)
 	}
 }
@@ -121,16 +97,8 @@ func TestWriteMailFile(t *testing.T) {
 
 func TestWriteMailStream(t *testing.T) {
 	data := Data{}
-	tmpFile, err := os.CreateTemp("", "test*.eml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpFile.Name())
-	}()
-
-	if err := data.WriteMailStream(tmpFile, "file.eml"); err != nil {
+	var buf bytes.Buffer
+	if err := data.WriteMailStream(&buf, "file.eml"); err != nil {
 		t.Errorf("WriteMailStream returned error: %v", err)
 	}
 }
@@ -143,16 +111,8 @@ func TestWriteMBoxStream_WithData(t *testing.T) {
 			MailHeader: h,
 		},
 	}
-	tmpFile, err := os.CreateTemp("", "test*.mbox")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpFile.Name())
-	}()
-
-	_ = data.WriteMBoxStream(tmpFile, "file.mbox")
+	var buf bytes.Buffer
+	_ = data.WriteMBoxStream(&buf, "file.mbox")
 }
 
 func TestWriteMailStream_WithData(t *testing.T) {
@@ -166,16 +126,8 @@ func TestWriteMailStream_WithData(t *testing.T) {
 			},
 		},
 	}
-	tmpFile, err := os.CreateTemp("", "test*.eml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpFile.Name())
-	}()
-
-	_ = data.WriteMailStream(tmpFile, "file.eml")
+	var buf bytes.Buffer
+	_ = data.WriteMailStream(&buf, "file.eml")
 }
 
 func TestWriteMailStream_Multipart(t *testing.T) {
@@ -189,14 +141,6 @@ func TestWriteMailStream_Multipart(t *testing.T) {
 			},
 		},
 	}
-	tmpFile, err := os.CreateTemp("", "test*.eml")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpFile.Name())
-	}()
-
-	_ = data.WriteMailStream(tmpFile, "file.eml")
+	var buf bytes.Buffer
+	_ = data.WriteMailStream(&buf, "file.eml")
 }

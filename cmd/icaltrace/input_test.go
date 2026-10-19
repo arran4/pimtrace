@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"os"
 	"pimtrace"
 	"pimtrace/fsys/fsystest"
 	"strings"
@@ -119,20 +118,10 @@ func TestOutputHandlerICal(t *testing.T) {
 
 func TestInputHandler_Stdin(t *testing.T) {
 	// Let's test the "-" case which reads from stdin
-	// We can replace os.Stdin temporarily or just pass "-" and have it fail on stdin reading / parsing
-	// golang-ical parsing an empty stdin or whatever might just return empty or error.
+	// Write a minimal valid ical to our fake stdin
+	r := strings.NewReader("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
 
-	// Temporarily hijack stdin
-	r, w, _ := os.Pipe()
-	oldStdin := os.Stdin
-	os.Stdin = r
-	defer func() { os.Stdin = oldStdin }()
-
-	// Write a minimal valid ical to our fake stdin so it doesn't block
-	_, _ = w.WriteString("BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR\n")
-	_ = w.Close()
-
-	data, err := InputHandler("ical", "-")
+	data, err := InputHandler("ical", "-", r)
 	if err != nil {
 		t.Errorf("InputHandler(ical, -) error: %v", err)
 	}

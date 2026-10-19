@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io"
-	"os"
 	"pimtrace/fsys/fsystest"
 	"strings"
 	"testing"
@@ -51,15 +50,9 @@ func TestInputHandler(t *testing.T) {
 }
 
 func TestInputHandler_Stdin(t *testing.T) {
-	r, w, _ := os.Pipe()
-	oldStdin := os.Stdin
-	os.Stdin = r
-	defer func() { os.Stdin = oldStdin }()
+	r := strings.NewReader("col1,col2\nval1,val2\n")
 
-	_, _ = w.WriteString("col1,col2\nval1,val2\n")
-	_ = w.Close()
-
-	data, err := InputHandler("csv", "-")
+	data, err := InputHandler("csv", "-", r)
 	if err != nil {
 		t.Errorf("InputHandler(csv, -) error: %v", err)
 	}
