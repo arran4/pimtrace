@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io"
+	"pimtrace/dataformats/maildata"
 	"pimtrace/fsys/fsystest"
 	"strings"
 	"testing"
@@ -62,6 +63,17 @@ body
 	if data == nil || data.Len() != 1 {
 		t.Errorf("InputHandler(mailfile, -) expected 1 msg")
 	}
+	mb := data.Entry(0).(*maildata.MailWithSource).MailBodies
+	if len(mb) < 2 {
+		t.Fatalf("expected at least 2 mail bodies (HTML, Text), got %d", len(mb))
+	}
+	b, err := io.ReadAll(mb[1].Reader())
+	if err != nil {
+		t.Fatalf("error reading mail body: %v", err)
+	}
+	if string(b) != "\nbody\n" {
+		t.Errorf("InputHandler(mailfile, -) body not parsed properly, got: %q", string(b))
+	}
 }
 
 func TestInputHandler_File(t *testing.T) {
@@ -84,5 +96,16 @@ body
 	}
 	if data == nil || data.Len() != 1 {
 		t.Errorf("InputHandler(mailfile, file) expected 1 msg")
+	}
+	mb := data.Entry(0).(*maildata.MailWithSource).MailBodies
+	if len(mb) < 2 {
+		t.Fatalf("expected at least 2 mail bodies (HTML, Text), got %d", len(mb))
+	}
+	b, err := io.ReadAll(mb[1].Reader())
+	if err != nil {
+		t.Fatalf("error reading mail body: %v", err)
+	}
+	if string(b) != "\nbody\n" {
+		t.Errorf("InputHandler(mailfile, file) body not parsed properly, got: %q", string(b))
 	}
 }

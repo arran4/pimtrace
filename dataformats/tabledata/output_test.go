@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"os"
 	"pimtrace"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -82,6 +83,16 @@ func TestWriteCSVStream_WithData(t *testing.T) {
 	if (records[0][0] != "A" && records[0][1] != "A") || (records[0][0] != "B" && records[0][1] != "B") {
 		t.Errorf("expected headers A and B, got %v", records[0])
 	}
+
+	var expected [][]string
+	if records[0][0] == "A" {
+		expected = [][]string{{"A", "B"}, {"1", "2"}, {"3", "4"}}
+	} else {
+		expected = [][]string{{"B", "A"}, {"2", "1"}, {"4", "3"}}
+	}
+	if !reflect.DeepEqual(records, expected) {
+		t.Errorf("CSV records mismatch.\nGot: %v\nWant: %v", records, expected)
+	}
 }
 
 func TestWriteTableStream_WithData(t *testing.T) {
@@ -97,13 +108,22 @@ func TestWriteTableStream_WithData(t *testing.T) {
 	out := buf.String()
 
 	// Validate table rows minimally without strict whitespace matching
-	if !strings.Contains(out, "A") || !strings.Contains(out, "B") {
-		t.Errorf("missing headers in output: %s", out)
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+
+	found12 := false
+	found34 := false
+	for _, line := range lines {
+		if strings.Contains(line, "1") && strings.Contains(line, "2") {
+			found12 = true
+		}
+		if strings.Contains(line, "3") && strings.Contains(line, "4") {
+			found34 = true
+		}
 	}
-	if !strings.Contains(out, "1") || !strings.Contains(out, "2") {
-		t.Errorf("missing row 1 in output: %s", out)
+	if !found12 {
+		t.Errorf("Row values 1 and 2 not found on the same line in output:\n%s", out)
 	}
-	if !strings.Contains(out, "3") || !strings.Contains(out, "4") {
-		t.Errorf("missing row 2 in output: %s", out)
+	if !found34 {
+		t.Errorf("Row values 3 and 4 not found on the same line in output:\n%s", out)
 	}
 }
