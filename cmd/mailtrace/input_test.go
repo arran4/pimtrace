@@ -14,7 +14,6 @@ func captureOutput(f func(w io.Writer)) (string, error) {
 	f(&buf)
 	return buf.String(), nil
 }
-
 func TestPrintInputHelpContainsTypes(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintInputHelp(w) })
 	if err != nil {
@@ -27,7 +26,6 @@ func TestPrintInputHelpContainsTypes(t *testing.T) {
 		t.Errorf("expected help to contain 'mailfile' but got %q", out)
 	}
 }
-
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
@@ -38,32 +36,20 @@ func TestInputHandler(t *testing.T) {
 	if !strings.Contains(buf.String(), "mbox") {
 		t.Errorf("InputHandler(list) output did not contain expected help")
 	}
-
 	// Test unsupported type
 	_, err = InputHandler("unknown", "")
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
 }
-
 func TestInputHandler_Stdin(t *testing.T) {
-
-
-
-
-
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
 Date: Thu, 13 Feb 1969 23:32:54 -0330
-
 body
 `
-
-
-
 	r := strings.NewReader(mailContent)
-
 	data, err := InputHandler("mailfile", "-", r)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, -) error: %v", err)
@@ -72,13 +58,11 @@ body
 		t.Errorf("InputHandler(mailfile, -) expected 1 msg")
 	}
 }
-
 func TestInputHandler_File(t *testing.T) {
 	mailContent := `From: "John" <john@example.com>
 To: "Jane" <jane@example.com>
 Subject: Test
 Date: Thu, 13 Feb 1969 23:32:54 -0330
-
 body
 `
 	mockFS := fsystest.MapFSAdapter{
@@ -86,7 +70,6 @@ body
 			"test.eml": &fstest.MapFile{Data: []byte(mailContent)},
 		},
 	}
-
 	data, err := InputHandler("mailfile", "test.eml", mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(mailfile, file) error: %v", err)

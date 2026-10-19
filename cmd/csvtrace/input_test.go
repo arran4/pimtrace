@@ -14,7 +14,6 @@ func captureOutput(f func(w io.Writer)) (string, error) {
 	f(&buf)
 	return buf.String(), nil
 }
-
 func TestPrintInputHelpContainsCsv(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintInputHelp(w) })
 	if err != nil {
@@ -24,7 +23,6 @@ func TestPrintInputHelpContainsCsv(t *testing.T) {
 		t.Errorf("expected help to contain 'csv' but got %q", out)
 	}
 }
-
 func TestInputHandler(t *testing.T) {
 	// Test 'list'
 	var buf bytes.Buffer
@@ -35,31 +33,19 @@ func TestInputHandler(t *testing.T) {
 	if !strings.Contains(buf.String(), "csv") {
 		t.Errorf("InputHandler(list) did not print expected help")
 	}
-
 	// Test unsupported type
 	_, err = InputHandler("unknown", "")
 	if err == nil {
 		t.Errorf("InputHandler(unknown) expected error")
 	}
-
 	// File error case
 	_, err = InputHandler("csv", "nonexistent.csv")
 	if err == nil {
 		t.Errorf("InputHandler(csv, nonexistent.csv) expected error")
 	}
 }
-
 func TestInputHandler_Stdin(t *testing.T) {
-
-
-
-
-
-
-
-
 	r := strings.NewReader("col1,col2\nval1,val2\n")
-
 	data, err := InputHandler("csv", "-", r)
 	if err != nil {
 		t.Errorf("InputHandler(csv, -) error: %v", err)
@@ -68,14 +54,12 @@ func TestInputHandler_Stdin(t *testing.T) {
 		t.Errorf("InputHandler(csv, -) expected 1 row")
 	}
 }
-
 func TestInputHandler_File(t *testing.T) {
 	mockFS := fsystest.MapFSAdapter{
 		MapFS: fstest.MapFS{
 			"test.csv": &fstest.MapFile{Data: []byte("col1,col2\nval1,val2\n")},
 		},
 	}
-
 	data, err := InputHandler("csv", "test.csv", mockFS)
 	if err != nil {
 		t.Errorf("InputHandler(csv, file) error: %v", err)
@@ -84,7 +68,6 @@ func TestInputHandler_File(t *testing.T) {
 		t.Errorf("InputHandler(csv, file) expected 1 row")
 	}
 }
-
 func TestPrintQueryHelp(t *testing.T) {
 	out, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "basic") })
 	if err != nil {
@@ -93,7 +76,6 @@ func TestPrintQueryHelp(t *testing.T) {
 	if !strings.Contains(out, "Basic Parser") {
 		t.Errorf("expected help to contain 'Basic Parser' but got %q", out)
 	}
-
 	out2, err := captureOutput(func(w io.Writer) { PrintQueryHelp(w, "unknown") })
 	if err != nil {
 		t.Fatalf("error capturing output: %v", err)
