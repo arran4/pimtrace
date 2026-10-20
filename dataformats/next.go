@@ -46,5 +46,5 @@ func ReadFile[T any](fType string, fName string, next Next[T], ops ...any) (res 
 	if err != nil {
 		return nil, err
 	}
-	return next(ff, fType, fName)
+	return next(ff, fType, fName, ops...)
 }

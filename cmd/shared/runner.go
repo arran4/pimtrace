@@ -55,6 +55,7 @@ func Run(c *Config) int {
 		versionFlag  = f.Bool("version", false, "Prints the version")
 		helpFlag     = f.Bool("help", false, "Prints help")
 		describeFlag = f.Bool("describe", false, "Discovers and describes the available schema/fields")
+		strictFlag   = f.Bool("strict", false, "Fail on unreadable records (strict mode)")
 		progress     *bool
 	)
 
@@ -118,6 +119,9 @@ func Run(c *Config) int {
 
 	if c.Progressor && progress != nil && *progress {
 		iops = append(iops, "progressor")
+	}
+	if *strictFlag {
+		iops = append(iops, "strict")
 	}
 
 	data, err := c.InputHandler(*inputType, *inputFile, iops...)
