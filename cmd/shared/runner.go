@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -54,8 +55,10 @@ func Run(c *Config) int {
 		parser       = f.String("parser", "", "Select the query parser (currently only `basic` is supported)")
 		versionFlag  = f.Bool("version", false, "Prints the version")
 		helpFlag     = f.Bool("help", false, "Prints help")
-		describeFlag = f.Bool("describe", false, "Discovers and describes the available schema/fields")
-		progress     *bool
+		describeFlag   = f.Bool("describe", false, "Discovers and describes the available schema/fields")
+		strictFlag     = f.Bool("strict", false, "Fail on unreadable records (strict mode)")
+		failOnPartial  = f.Bool("fail-on-partial", false, "Exit with non-zero status if any records were skipped")
+		progress       *bool
 	)
 
 	if c.Progressor {
@@ -119,11 +122,22 @@ func Run(c *Config) int {
 	if c.Progressor && progress != nil && *progress {
 		iops = append(iops, "progressor")
 	}
+	if *strictFlag {
+		iops = append(iops, "strict")
+	}
+
+	var hasPartialResult bool
 
 	data, err := c.InputHandler(*inputType, *inputFile, iops...)
 	if err != nil {
-		_, _ = fmt.Fprintf(c.Stderr, "Read Error: %s\n", err)
-		return 1
+		var partial *pimtrace.PartialResultError
+		if errors.As(err, &partial) {
+			_, _ = fmt.Fprintf(c.Stderr, "Warning: %s\n", partial.Error())
+			hasPartialResult = true
+		} else {
+			_, _ = fmt.Fprintf(c.Stderr, "Read Error: %s\n", err)
+			return 1
+		}
 	}
 
 	if *describeFlag {
@@ -167,6 +181,10 @@ func Run(c *Config) int {
 			_, _ = fmt.Fprintf(c.Stderr, "Write Error: %s\n", err)
 			return 1
 		}
+	}
+
+	if hasPartialResult && *failOnPartial {
+		return 3
 	}
 
 	return 0

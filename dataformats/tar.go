@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"pimtrace"
 	"pimtrace/fsys"
 )
 
@@ -47,7 +48,7 @@ func ReadTarFile[T any](fType string, fName string, next Next[T], globs []string
 	if err != nil {
 		return nil, err
 	}
-	return ReadTarStream(ff, fType, fName, next, globs)
+	return ReadTarStream(ff, fType, fName, next, globs, ops...)
 }
 
 func ReadTarStream[T any](f io.Reader, fType string, fName string, next Next[T], globs []string, ops ...any) (res []T, err error) {
@@ -69,6 +70,7 @@ func ReadTarStream[T any](f io.Reader, fType string, fName string, next Next[T],
 	}
 	t := tar.NewReader(ff)
 	var ta []T
+	var partialErrors []*pimtrace.PartialResultError
 	for {
 		ht, err := t.Next()
 		if errors.Is(err, io.EOF) {
@@ -89,11 +91,29 @@ func ReadTarStream[T any](f io.Reader, fType string, fName string, next Next[T],
 		if !m {
 			continue
 		}
-		taa, err := next(t, fType, ht.Name)
+		taa, err := next(t, fType, ht.Name, ops...)
 		if err != nil && !errors.Is(err, io.EOF) {
+			var partial *pimtrace.PartialResultError
+			if errors.As(err, &partial) {
+				partialErrors = append(partialErrors, partial)
+				ta = append(ta, taa...)
+				continue
+			}
 			return nil, fmt.Errorf("tar: %w", err)
 		}
 		ta = append(ta, taa...)
+	}
+	if len(partialErrors) > 0 {
+		totalSkipped := 0
+		var messages []string
+		for _, pe := range partialErrors {
+			totalSkipped += pe.Skipped
+			messages = append(messages, pe.Message)
+		}
+		return ta, &pimtrace.PartialResultError{
+			Skipped: totalSkipped,
+			Message: fmt.Sprintf("best-effort: skipping errors in %s (e.g. %s)", fName, messages[0]),
+		}
 	}
 	return ta, nil
 }
