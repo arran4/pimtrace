@@ -9,7 +9,6 @@ import (
 	"github.com/jhillyerd/enmime"
 	"io"
 	"log"
-	"pimtrace"
 	"pimtrace/dataformats"
 )
 
@@ -30,36 +29,19 @@ func ReadMBoxStream(f io.Reader, fType string, fName string, ops ...any) (res []
 	if err != nil {
 		return nil, err
 	}
-	strict := false
-	for _, op := range ops {
-		if s, ok := op.(string); ok && s == "strict" {
-			strict = true
-			break
-		}
-	}
-
 	mbr := mbox.NewReader(ff)
 	var ms []*MailWithSource
-	skipped := 0
 	for {
 		mr, nextErr := mbr.NextMessage()
 		if nextErr != nil && !errors.Is(nextErr, io.EOF) {
-			return nil, fmt.Errorf("reading message %d from Mbox %s: %w", len(ms)+skipped+1, fName, nextErr)
+			return nil, fmt.Errorf("reading message %d from Mbox %s: %w", len(ms)+1, fName, nextErr)
 		}
 		if mr == nil {
-			if skipped > 0 {
-				return ms, &pimtrace.PartialResultError{Skipped: skipped, Message: fmt.Sprintf("best-effort: skipped unparseable messages in %s", fName)}
-			}
 			return ms, nil
 		}
 		mrms, readErr := ReadMailStream(mr, fType, fName)
 		if readErr != nil {
-			errToLog := fmt.Errorf("parsing message %d from Mbox %s: %w", len(ms)+skipped+1, fName, readErr)
-			if strict {
-				return nil, errToLog
-			}
-			log.Printf("best-effort diagnostic: %v", errToLog)
-			skipped++
+			log.Printf("parsing message %d from Mbox %s: %v", len(ms)+1, fName, readErr)
 			continue
 		}
 		ms = append(ms, mrms...)
