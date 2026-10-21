@@ -21,8 +21,8 @@ func TestReadTarStream_StrictAndBestEffort(t *testing.T) {
 		Mode: 0600,
 		Size: int64(len("valid content")),
 	}
-	tw.WriteHeader(hdr1)
-	tw.Write([]byte("valid content"))
+	_ = tw.WriteHeader(hdr1)
+	_, _ = tw.Write([]byte("valid content"))
 
 	// Invalid entry
 	hdr2 := &tar.Header{
@@ -30,8 +30,8 @@ func TestReadTarStream_StrictAndBestEffort(t *testing.T) {
 		Mode: 0600,
 		Size: int64(len("invalid content")),
 	}
-	tw.WriteHeader(hdr2)
-	tw.Write([]byte("invalid content"))
+	_ = tw.WriteHeader(hdr2)
+	_, _ = tw.Write([]byte("invalid content"))
 
 	// Valid entry 2
 	hdr3 := &tar.Header{
@@ -39,9 +39,9 @@ func TestReadTarStream_StrictAndBestEffort(t *testing.T) {
 		Mode: 0600,
 		Size: int64(len("valid content 2")),
 	}
-	tw.WriteHeader(hdr3)
-	tw.Write([]byte("valid content 2"))
-	tw.Close()
+	_ = tw.WriteHeader(hdr3)
+	_, _ = tw.Write([]byte("valid content 2"))
+	_ = tw.Close()
 
 	mockNext := func(f io.Reader, fType string, fName string, ops ...any) ([]string, error) {
 		strict := false
