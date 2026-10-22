@@ -78,12 +78,6 @@ PIMTrace tools follow a consistent contract for exit codes and standard streams:
 *   **`stdout` (Standard Output):** Reserved exclusively for the actual query results, or explicit help/version output. This ensures that the output is safe to pipe to other tools or redirect to files.
 *   **`stderr` (Standard Error):** Used for all diagnostic messages, progress indicators, warnings, and error messages.
 
-### Strict vs Best-Effort Parsing
-By default, tools like `mailtrace` will use a **best-effort** parsing approach when reading data formats (e.g. mbox files or tar archives). If an individual record within a file is malformed or unreadable, it will be skipped, a warning will be emitted to `stderr`, and parsing will continue with the rest of the valid data.
-
-*   **`-strict`**: Passing this flag will cause the parser to immediately fail on the first unreadable record and exit with an error code (1).
-*   **`-fail-on-partial`**: Use this flag to retain the best-effort behavior (collecting all valid records) but enforce a machine-detectable exit code. The tool will exit with `3` if any records were skipped due to parsing errors.
-
 
 ### Discovering Fields with "-describe"
 

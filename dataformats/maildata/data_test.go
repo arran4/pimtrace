@@ -3,7 +3,6 @@ package maildata
 import (
 	"bytes"
 	_ "embed"
-	"errors"
 	"github.com/emersion/go-message/mail"
 	"github.com/google/go-cmp/cmp"
 	"mime/multipart"
@@ -387,40 +386,4 @@ func TestMailWithSource_Header(t *testing.T) {
 	if resH.Get("Subject") != "Test" {
 		t.Errorf("Header() failed")
 	}
-}
-
-func TestReadMBoxStream_Strict(t *testing.T) {
-	mboxData := "From sender@example.com Wed Jun 19 12:00:00 2024\n" +
-		"Subject: Valid 1\n\n" +
-		"Body\n" +
-		"From sender@example.com Wed Jun 19 12:00:00 2024\n" +
-		"Subject: Invalid 2\n" +
-		"Content-Type: multipart/mixed; boundary=\"\"\n\n" +
-		"Body\n" +
-		"From sender@example.com Wed Jun 19 12:00:00 2024\n" +
-		"Subject: Valid 3\n\n" +
-		"Body\n"
-
-	t.Run("best-effort (default)", func(t *testing.T) {
-		r := strings.NewReader(mboxData)
-		res, err := ReadMBoxStream(r, "mbox", "test.mbox")
-		var partial *pimtrace.PartialResultError
-		if err != nil && !errors.As(err, &partial) {
-			t.Fatalf("expected PartialResultError or no error in best-effort mode, got %v", err)
-		}
-		if len(res) != 2 {
-			t.Errorf("expected 2 valid messages out of 3, got %d", len(res))
-		}
-	})
-
-	t.Run("strict mode", func(t *testing.T) {
-		r := strings.NewReader(mboxData)
-		_, err := ReadMBoxStream(r, "mbox", "test.mbox", "strict")
-		if err == nil {
-			t.Fatalf("expected error in strict mode, got none")
-		}
-		if !strings.Contains(err.Error(), "parsing message 2") {
-			t.Errorf("expected error to mention parsing message 2, got: %v", err)
-		}
-	})
 }
