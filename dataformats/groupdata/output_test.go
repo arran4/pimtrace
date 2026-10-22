@@ -1,6 +1,7 @@
 package groupdata
 
 import (
+	"bytes"
 	"os"
 	"testing"
 )
@@ -20,13 +21,8 @@ func TestWriteCSVFile(t *testing.T) {
 
 func TestWriteCSVStream(t *testing.T) {
 	data := &Data{}
-	tmpFile, err := os.CreateTemp("", "test*.csv")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = os.Remove(tmpFile.Name()) }()
-
-	if err := data.WriteCSVStream(tmpFile, "file.csv"); err != nil {
+	var buf bytes.Buffer
+	if err := data.WriteCSVStream(&buf, "file.csv"); err != nil {
 		t.Errorf("WriteCSVStream returned error: %v", err)
 	}
 }
@@ -46,13 +42,8 @@ func TestWriteTableFile(t *testing.T) {
 
 func TestWriteTableStream(t *testing.T) {
 	data := &Data{}
-	tmpFile, err := os.CreateTemp("", "test*.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = os.Remove(tmpFile.Name()) }()
-
-	if err := data.WriteTableStream(tmpFile, "file.txt"); err != nil {
+	var buf bytes.Buffer
+	if err := data.WriteTableStream(&buf, "file.txt"); err != nil {
 		t.Errorf("WriteTableStream returned error: %v", err)
 	}
 }
